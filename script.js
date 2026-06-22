@@ -3,7 +3,7 @@ const hikingDestinations = [
     "name": "Langano",
     "duration": "1–2 days",
     "price": "4,000 ETB",
-    "image": "assets/hikings/langano.jpg",
+    "image": "assets/hikings/langano.webp",
     "description": "A relaxing short trip with lake views, photography, games, and group fun.",
     "category": "langano",
     "start": "Addis Ababa",
@@ -18,7 +18,7 @@ const hikingDestinations = [
     "name": "Wenchi Crater Lake",
     "duration": "1 day",
     "price": "4,000 ETB",
-    "image": "assets/hikings/wenchi.jpg",
+    "image": "assets/hikings/wenchi.webp",
     "description": "Green scenery, crater lake views, fresh air, and peaceful walking routes.",
     "category": "wenchi",
     "start": "Addis Ababa",
@@ -33,7 +33,7 @@ const hikingDestinations = [
     "name": "Abijata Shala",
     "duration": "1–2 days",
     "price": "4,000 ETB",
-    "image": "assets/hikings/abijata-shala.jpg",
+    "image": "assets/hikings/abijata-shala.webp",
     "description": "Open landscapes, lake scenery, group photos, and a simple outdoor escape.",
     "category": "abijata-shala",
     "start": "Addis Ababa",
@@ -48,7 +48,7 @@ const hikingDestinations = [
     "name": "Afar Doho & Benuna Village",
     "duration": "2 days",
     "price": "4,000 ETB",
-    "image": "assets/hikings/afar-doho-benuna.jpg",
+    "image": "assets/hikings/afar-doho-benuna.webp",
     "description": "Warm cultural experience, lodge moments, local scenery, and guided travel.",
     "category": "afar-doho-benuna",
     "start": "Addis Ababa",
@@ -63,7 +63,7 @@ const hikingDestinations = [
     "name": "Doho Lodge & Harar",
     "duration": "3 days",
     "price": "4,000 ETB",
-    "image": "assets/hikings/doho-harar.jpg",
+    "image": "assets/hikings/doho-harar.webp",
     "description": "A mix of lodge relaxation, Harar culture, traditional scenes, and photography.",
     "category": "doho-harar",
     "start": "Addis Ababa",
@@ -78,7 +78,7 @@ const hikingDestinations = [
     "name": "Insisaal",
     "duration": "1 day",
     "price": "4,000 ETB",
-    "image": "assets/hikings/langano.jpg",
+    "image": "assets/hikings/langano.webp",
     "description": "A scenic day trip with beautiful landscapes and group adventure.",
     "category": "insisaal",
     "start": "Addis Ababa",
@@ -340,7 +340,7 @@ function renderDestinations() {
   destinationGrid.innerHTML = hikingDestinations.map((trip) => `
     <article class="destination-card fade-up">
       <div class="destination-image">
-        <img src="${trip.image}" alt="${trip.name} trip photo" loading="lazy">
+        <img src="${trip.image}" alt="${trip.name} trip photo" loading="lazy" decoding="async">
         <span class="duration-badge">${trip.duration}</span>
       </div>
       <div class="destination-body">
@@ -436,6 +436,10 @@ function renderGalleryFilters() {
   });
 }
 
+function thumbPath(src) {
+  return src.replace(/\.(jpg|jpeg|png)$/i, ".webp").replace(/\/([^/]+)$/, "/thumb/$1");
+}
+
 function renderGallery() {
   const items = activeGalleryCategory === "all"
     ? galleryImages
@@ -443,7 +447,7 @@ function renderGallery() {
 
   galleryGrid.innerHTML = items.map((img) => `
     <button class="gallery-item" data-src="${img.src}" data-place="${img.place}">
-      <img src="${img.src}" alt="${img.place} gallery photo" loading="lazy">
+      <img src="${thumbPath(img.src)}" alt="${img.place} gallery photo" loading="lazy" decoding="async">
       <span>${img.place}</span>
     </button>
   `).join("");
@@ -520,16 +524,15 @@ function scrollToSection(id, updateHash = true) {
 }
 
 function setupNavigation() {
-  const menuToggle = document.querySelector(".menu-toggle");
-  const nav = document.querySelector(".main-nav");
-  menuToggle.addEventListener("click", () => {
-    nav.classList.toggle("open");
-    menuToggle.setAttribute("aria-expanded", nav.classList.contains("open"));
+  document.querySelectorAll(".main-nav a, .mobile-nav-item").forEach(link => {
+    link.addEventListener("click", (e) => {
+      const href = link.getAttribute("href");
+      if (href && href.startsWith("#")) {
+        e.preventDefault();
+        scrollToSection(href.slice(1));
+      }
+    });
   });
-  nav.querySelectorAll("a").forEach(link => link.addEventListener("click", () => {
-    nav.classList.remove("open");
-    menuToggle.setAttribute("aria-expanded", "false");
-  }));
 }
 
 function setupActiveNavOnScroll() {
