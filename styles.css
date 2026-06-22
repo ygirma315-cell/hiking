@@ -164,8 +164,8 @@ a{color:inherit;text-decoration:none}img{max-width:100%;display:block}
 /* --- Footer --- */
 .site-footer{background:var(--cream);padding:36px 0 0}
 .footer-grid{display:grid;grid-template-columns:1.3fr .8fr;gap:32px}
-.footer-brand-col{text-align:center}
-.footer-brand{display:flex;justify-content:center;align-items:center;gap:10px;font-weight:900;font-size:1.1rem;margin-bottom:10px}
+.footer-brand-col{display:flex;flex-direction:column;align-items:center}
+.footer-brand{display:flex;justify-content:center;align-items:center;gap:10px;font-weight:900;font-size:1.1rem;margin-bottom:10px;width:100%}
 .footer-brand-icon{width:42px;height:42px;border-radius:12px;overflow:hidden;flex-shrink:0;display:grid;place-items:center}
 .footer-brand-icon img{width:100%;height:100%;object-fit:contain}
 .footer-brand-col p{color:var(--muted);max-width:340px;font-size:.88rem;line-height:1.5;margin:0 auto 12px}
