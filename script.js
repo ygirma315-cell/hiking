@@ -310,6 +310,20 @@ const nativeFeatures = [
   "የተለያዩ ጨዋታዎች እና ሽልማቶች"
 ];
 
+const nativeOvernightFeatures = [
+  "ትራንስፖርት ቱሪስት ስታንዳርድ (ኮስተር ባስ)",
+  "ቁርስ፣ ምሳ፣ እራት፣ ቁርስ፣ ምሳ",
+  "የካምፕ ምሽት (የፍዩል ጥብስ)",
+  "የካምፕ መሳሪያ (ድንኳን፣ ብርድ ልብስ)",
+  "የታሸገ ውሃ እና መጠጥ",
+  "ድንሽ (ክፍል)",
+  "የፓርክ የመግቢያ ዋጋ",
+  "አስጎብኚ እና የፓርክ ጠባቂ",
+  "ፎቶግራፍ",
+  "የእሳት ምሽት እና ዘፈን",
+  "የተለያዩ ጨዋታዎች እና ሽልማቶች"
+];
+
 const foreignerFeatures = [
   "Transport with coaster bus",
   "Meals: breakfast, lunch, dinner",
@@ -377,14 +391,22 @@ function updateSelectedDestination() {
 function renderPackageCards() {
   if (activePackageView === "native") {
     const features = nativeFeatures.map(item => `<li>${item}</li>`).join("");
-    pricingGrid.className = "pricing-grid single";
+    const overnightFeatures = nativeOvernightFeatures.map(item => `<li>${item}</li>`).join("");
+    pricingGrid.className = "pricing-grid native";
     pricingGrid.innerHTML = `
       <article class="pricing-card featured">
-        <h3>የሀገር ውስጥ</h3>
-        <p>በኢትዮጵያ ነዋሪ ለሆኑ ደንበኞች የተዘጋጀ።</p>
+        <h3>የሀገር ውስጥ የአንድ ቀን</h3>
+        <p>ለአንድ ቀን ጉዞ የተዘጋጀ ፓኬጅ።</p>
         <div class="price">4,000 ETB <small>/ ሰው</small></div>
-        <ul class="check-list">${features}</ul>
+        <ul class="check-list compact">${features}</ul>
         <button class="btn btn-orange full choose-package" data-package="Native / Local Package">ይምረጡ</button>
+      </article>
+      <article class="pricing-card">
+        <h3>አዳር (Overnight)</h3>
+        <p>ለአንድ ሌሊት ካምፕ የተዘጋጀ ፓኬጅ።</p>
+        <div class="price">9,999 ETB <small>/ ሰው</small></div>
+        <ul class="check-list compact">${overnightFeatures}</ul>
+        <button class="btn btn-orange full choose-package" data-package="Native Overnight">ይምረጡ</button>
       </article>
     `;
   } else {
