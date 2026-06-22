@@ -513,7 +513,8 @@ function scrollToSection(id, updateHash = true) {
   if (!el) return;
   const header = document.querySelector(".site-header");
   const headerH = header ? header.offsetHeight : 78;
-  const top = el.getBoundingClientRect().top + window.scrollY - headerH + 50;
+  const offset = id === "register" ? 50 : 0;
+  const top = el.getBoundingClientRect().top + window.scrollY - headerH + offset;
   window.scrollTo({ top, behavior: "smooth" });
   if (updateHash) history.replaceState(null, "", "#" + id);
 }
