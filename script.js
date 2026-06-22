@@ -534,15 +534,15 @@ function setupNavigation() {
 function setupActiveNavOnScroll() {
   const sections = document.querySelectorAll(".section-anchor");
   const navLinks = document.querySelectorAll(".main-nav a");
-  if (!sections.length || !navLinks.length) return;
+  const mobileLinks = document.querySelectorAll(".mobile-nav-item");
+  if (!sections.length) return;
 
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
         const id = entry.target.id;
-        navLinks.forEach(link => {
-          link.classList.toggle("active", link.getAttribute("href") === "#" + id);
-        });
+        navLinks.forEach(link => link.classList.toggle("active", link.getAttribute("href") === "#" + id));
+        mobileLinks.forEach(link => link.classList.toggle("active", link.getAttribute("href") === "#" + id));
       }
     });
   }, { rootMargin: "-38% 0px -55% 0px", threshold: 0 });
@@ -643,7 +643,16 @@ setupNavSmoothScroll();
 updateSelectedDestination();
 
 window.addEventListener("load", () => {
+  setTimeout(() => {
+    document.getElementById("loadingScreen").classList.add("hidden");
+  }, 400);
   if (window.location.hash) {
     setTimeout(() => scrollToSection(window.location.hash.slice(1), false), 60);
   }
 });
+
+// Fallback: hide loading after 5s even if load event fails
+setTimeout(() => {
+  const ls = document.getElementById("loadingScreen");
+  if (ls && !ls.classList.contains("hidden")) ls.classList.add("hidden");
+}, 5000);
