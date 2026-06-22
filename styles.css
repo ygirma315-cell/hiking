@@ -42,7 +42,7 @@ a{color:inherit;text-decoration:none}img{max-width:100%;display:block}
 .section-warm{background:var(--cream)}
 
 /* --- Header --- */
-.site-header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.08);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:1px solid rgba(255,255,255,.1)}
+.site-header{position:sticky;top:0;z-index:50;background:rgba(255,253,247,.94);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
 .header-inner{height:var(--header-h);display:flex;align-items:center;gap:28px}
 .brand{display:flex;align-items:center;gap:12px;min-width:max-content}
 .brand-mark{width:58px;height:58px;border-radius:16px;background:#080808;display:grid;place-items:center;box-shadow:0 8px 20px rgba(0,0,0,.12);overflow:hidden;flex-shrink:0}
