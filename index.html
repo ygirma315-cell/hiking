@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ereft Hiking — Explore Ethiopia</title>
+  <meta name="description" content="Ereft Hiking organizes safe, fun, and memorable hiking trips from Addis Ababa across Ethiopia." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header" id="top">
+    <div class="container header-inner">
+      <a href="#home" class="brand" aria-label="Ereft Hiking home">
+        <span class="brand-mark"><img src="assets/logo/logo.png" alt="Ereft Hiking logo"></span>
+        <span class="brand-text"><strong>Ereft Hiking</strong><small>Friendship at the peak</small></span>
+      </a>
+
+      <button class="menu-toggle" aria-label="Open navigation" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+
+      <nav class="main-nav" aria-label="Primary navigation">
+        <a href="#home">Home</a>
+        <a href="#hikings">Hikings</a>
+        <a href="#register">Register</a>
+        <a href="#gallery">Gallery</a>
+        <a href="#about">About Us</a>
+      </nav>
+
+      <button class="btn btn-small btn-orange signup-open">Sign Up</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero section-anchor" id="home">
+      <div class="hero-overlay"></div>
+      <div class="container hero-content">
+        <span class="hero-badge">Addis Ababa &bull; Group Hiking &bull; Adventure</span>
+        <h1>Explore Ethiopia With Ereft Hiking</h1>
+        <p>Safe, organized, and memorable hiking adventures from Addis Ababa with trusted local guides.</p>
+        <div class="hero-actions">
+          <a class="btn btn-orange" href="#register">Register for Hiking</a>
+          <a class="btn btn-ghost" href="#hikings">Explore Destinations</a>
+        </div>
+        <p class="hero-promo">Refreshments • Group games • Photography • Trusted guides • Safe transport</p>
+      </div>
+    </section>
+
+    <section class="section section-warm fade-up section-anchor" id="hikings">
+      <div class="container">
+        <div class="section-heading">
+          <span class="eyebrow">Destinations</span>
+          <h2>Our Hiking Destinations</h2>
+          <p>Choose a trip, see the details, then register in a few simple steps.</p>
+        </div>
+        <div class="destination-grid" id="destinationGrid"></div>
+      </div>
+    </section>
+
+    <section class="section register-section fade-up section-anchor" id="register">
+      <div class="container">
+        <div class="section-heading">
+          <span class="eyebrow">Registration</span>
+          <h2>Choose Your Package</h2>
+        </div>
+
+        <div class="register-shell">
+          <div class="register-top">
+            <div class="package-toggle" role="tablist" aria-label="Package type">
+              <button class="toggle-option active" data-package-view="native" role="tab">Native / Local</button>
+              <button class="toggle-option" data-package-view="foreigner" role="tab">Foreigner</button>
+            </div>
+          </div>
+
+          <div class="selected-strip">
+            <span>Selected destination:</span>
+            <strong id="selectedDestinationLabel">Langano</strong>
+          </div>
+
+          <div class="pricing-grid" id="pricingGrid"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-warm fade-up section-anchor" id="gallery">
+      <div class="container">
+        <div class="section-heading">
+          <span class="eyebrow">Moments</span>
+          <h2>Trip Gallery</h2>
+          <p>Photos are classified by destination folders, so each place stays organized.</p>
+        </div>
+        <div class="gallery-filters" id="galleryFilters"></div>
+        <div class="gallery-grid" id="galleryGrid"></div>
+      </div>
+    </section>
+
+    <section class="section about-section fade-up section-anchor" id="about">
+      <div class="container about-grid">
+        <div class="about-card main-about">
+          <span class="eyebrow">About Ereft</span>
+          <h2>Friendship at the peak.</h2>
+          <p>Ereft Hiking is an Ethiopian hiking and tour community based in Addis Ababa. We organize friendly, safe, and memorable group trips for people who want to explore Ethiopia's nature, culture, and outdoor beauty.</p>
+          <p>Our trips focus on clear planning, group safety, good energy, photography, games, and respectful travel with local communities.</p>
+          <div class="contact-pills">
+            <a href="tel:+251966752720">+251 966 752 720</a>
+            <a href="tel:+251927928407">+251 927 928 407</a>
+            <a href="mailto:info@erefthiking.com">info@erefthiking.com</a>
+          </div>
+        </div>
+        <div class="about-card rules-card">
+          <h3>Rules &amp; Regulations</h3>
+          <ul class="check-list compact">
+            <li>Respect the guide and group schedule</li>
+            <li>Keep the environment clean</li>
+            <li>No littering during the trip</li>
+            <li>Follow all safety instructions</li>
+            <li>Be on time for departure</li>
+            <li>Inform the team about health issues before the trip</li>
+            <li>Respect local communities and nature</li>
+            <li>Bring necessary personal items</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand-col">
+          <a href="#home" class="footer-brand">
+            <span class="footer-brand-icon"><img src="assets/logo/logo.png" alt="Ereft Hiking logo"></span>
+            <span>Ereft Hiking</span>
+          </a>
+          <p>Safe, organized Ethiopian hiking trips from Addis Ababa. Friendship at the peak.</p>
+          <div class="footer-social">
+            <a href="https://instagram.com/ereft.ethiopia" target="_blank" rel="noopener" aria-label="Instagram">
+              <svg class="social-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.8 2h8.4A5.8 5.8 0 0 1 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8A5.8 5.8 0 0 1 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2Zm0 2A3.8 3.8 0 0 0 4 7.8v8.4A3.8 3.8 0 0 0 7.8 20h8.4a3.8 3.8 0 0 0 3.8-3.8V7.8A3.8 3.8 0 0 0 16.2 4H7.8Zm4.2 3.5A4.5 4.5 0 1 1 7.5 12 4.5 4.5 0 0 1 12 7.5Zm0 2A2.5 2.5 0 1 0 14.5 12 2.5 2.5 0 0 0 12 9.5Zm5.2-2.6a1.1 1.1 0 1 1-1.1 1.1 1.1 1.1 0 0 1 1.1-1.1Z"/></svg>
+              Instagram
+            </a>
+            <a href="https://www.tiktok.com/@ereft_ethiopia" target="_blank" rel="noopener" aria-label="TikTok">
+              <svg class="social-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.6 6.2c-1.1-.7-1.8-1.8-2-3.2h-3.1v12.2a2.7 2.7 0 1 1-2.1-2.6V9.4a6 6 0 1 0 5.2 5.9V8.9c1.2.9 2.6 1.3 4.1 1.4V7.2c-.8 0-1.5-.3-2.1-1Z"/></svg>
+              TikTok
+            </a>
+          </div>
+        </div>
+        <div class="footer-links-col">
+          <h4>Quick Links</h4>
+          <a href="#home">Home</a>
+          <a href="#hikings">Hikings</a>
+          <a href="#register">Register</a>
+          <a href="#gallery">Gallery</a>
+          <a href="#about">About Us</a>
+        </div>
+        <div class="footer-contact-col">
+          <h4>Contact</h4>
+          <a href="tel:+251966752720">+251 966 752 720</a>
+          <a href="tel:+251927928407">+251 927 928 407</a>
+          <a href="mailto:info@erefthiking.com">info@erefthiking.com</a>
+          <a href="https://instagram.com/ereft.ethiopia" target="_blank" rel="noopener">@ereft.ethiopia</a>
+        </div>
+      </div>
+      <div class="footer-bottom">&copy; 2026 Ereft Hiking. All rights reserved.</div>
+    </div>
+  </footer>
+
+  <div class="modal" id="signupModal" aria-hidden="true">
+    <div class="modal-panel small-panel">
+      <button class="modal-close" data-close-modal aria-label="Close">&times;</button>
+      <h3>Sign Up</h3>
+      <p>Create a simple front-end interest profile. This is optional and does not block registration.</p>
+      <form class="simple-form" id="signupForm">
+        <label>Full Name<input type="text" required placeholder="Your name"></label>
+        <label>Email<input type="email" required placeholder="you@gmail.com"></label>
+        <button class="btn btn-orange full" type="submit">Continue</button>
+      </form>
+    </div>
+  </div>
+
+
+  <div class="modal" id="tripDetailsModal" aria-hidden="true">
+    <div class="modal-panel trip-panel">
+      <button class="modal-close" data-close-modal aria-label="Close">&times;</button>
+      <div class="trip-detail-image"><img id="tripDetailImage" src="" alt="Trip image"></div>
+      <div class="trip-detail-content">
+        <span class="eyebrow">Hiking details</span>
+        <h3 id="tripDetailTitle">Trip Details</h3>
+        <p id="tripDetailDescription" class="modal-subtitle"></p>
+        <div class="trip-detail-meta">
+          <span><strong>Duration</strong><em id="tripDetailDuration"></em></span>
+          <span><strong>Starting point</strong><em id="tripDetailStart"></em></span>
+          <span><strong>Local price</strong><em id="tripDetailPrice"></em></span>
+        </div>
+        <div class="trip-detail-columns">
+          <div>
+            <h4>What to expect</h4>
+            <ul class="check-list compact" id="tripExpectList"></ul>
+          </div>
+          <div>
+            <h4>Included</h4>
+            <ul class="check-list compact" id="tripIncludedList"></ul>
+          </div>
+        </div>
+        <button class="btn btn-orange full" id="tripRegisterBtn">Register for this trip</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="registrationModal" aria-hidden="true">
+    <div class="modal-panel">
+      <button class="modal-close" data-close-modal aria-label="Close">&times;</button>
+      <span class="eyebrow">Final step</span>
+      <h3>Hiking Registration</h3>
+      <p class="modal-subtitle">Fill in your information. Ereft Hiking will contact you soon.</p>
+      <form class="simple-form" id="registrationForm">
+        <div class="form-grid">
+          <label>Full Name<input id="fullName" type="text" required placeholder="Full name"></label>
+          <label>Age<input id="age" type="number" min="1" required placeholder="Age"></label>
+          <label>Phone Number<input id="phone" type="tel" required placeholder="+251..."></label>
+          <label>Gender<select id="gender" required><option value="">Select gender</option><option>Female</option><option>Male</option><option>Prefer not to say</option></select></label>
+          <label>Selected Destination<select id="destinationSelect" required></select></label>
+          <label>Selected Package<input id="packageInput" type="text" readonly></label>
+        </div>
+        <button class="btn btn-orange full" type="submit">Submit Registration</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal" id="successModal" aria-hidden="true">
+    <div class="modal-panel success-panel small-panel">
+      <div class="success-icon">&#10003;</div>
+      <h3>Registration Successful</h3>
+      <p>Thank you for registering. Ereft Hiking will contact you soon.</p>
+      <button class="btn btn-orange full" data-close-modal>Done</button>
+    </div>
+  </div>
+
+  <div class="lightbox" id="lightbox" aria-hidden="true">
+    <button class="lightbox-close" aria-label="Close image preview">&times;</button>
+    <img src="" alt="Gallery preview" id="lightboxImage">
+    <p id="lightboxCaption"></p>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
