@@ -147,18 +147,19 @@ a{color:inherit;text-decoration:none}img{max-width:100%;display:block}
 .gallery-item span{position:absolute;z-index:1;left:12px;bottom:10px;color:white;font-weight:900;font-size:.86rem;text-align:left;pointer-events:none}
 
 /* --- About --- */
-.about-section{background:white}
-.about-grid{display:grid;grid-template-columns:1.25fr .75fr;gap:24px}
-.about-card{border-radius:30px;padding:32px;background:var(--cream);box-shadow:var(--shadow);border:1px solid var(--line);transition:transform .3s,box-shadow .3s}
+.about-section{background:white;padding:60px 0}
+.about-grid{display:grid;grid-template-columns:1.3fr .7fr;gap:32px;align-items:start}
+.about-card{border-radius:30px;padding:36px;background:var(--cream);box-shadow:var(--shadow);border:1px solid var(--line);transition:transform .3s,box-shadow .3s}
 .about-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
 .main-about{background:linear-gradient(135deg,#fffdf7,#f3efe2)}
 .about-card h2{font-size:clamp(1.8rem,3.5vw,2.8rem);line-height:1.05;letter-spacing:-.04em;margin:10px 0 18px;color:var(--green-2)}
 .about-card h3{margin:0 0 16px;font-size:1.4rem;color:var(--green-2)}
-.about-card p{color:var(--muted);font-size:1rem}
-.contact-pills{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
-.contact-pills a{display:inline-flex;padding:10px 14px;border-radius:999px;background:white;border:1px solid var(--line);font-weight:800;color:var(--green);transition:all .2s}
-.contact-pills a:hover{background:var(--green);color:white;border-color:var(--green);transform:translateY(-2px)}
-.rules-card{background:#fff}
+.about-card p{color:var(--muted);font-size:1.05rem;line-height:1.7;max-width:600px}
+.rules-card{background:#fff;border-left:4px solid var(--orange)}
+.rules-card h3{color:var(--orange)}
+.check-list{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.check-list li{padding:8px 12px 8px 32px;background:var(--cream);border-radius:12px;font-size:.92rem;color:var(--text);position:relative}
+.check-list li::before{content:"";position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;border-radius:50%;background:var(--green)}
 
 /* --- Footer --- */
 .site-footer{background:var(--cream);padding:36px 0 0}
