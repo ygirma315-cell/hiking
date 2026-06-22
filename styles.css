@@ -176,6 +176,8 @@ a{color:inherit;text-decoration:none}img{max-width:100%;display:block}
 .social-instagram:hover{background:#E1306C;color:white;border-color:#E1306C}
 .social-tiktok{color:#000;border-color:#0003}
 .social-tiktok:hover{background:#000;color:white;border-color:#000}
+.social-telegram{color:#08c;border-color:#08c3}
+.social-telegram:hover{background:#08c;color:white;border-color:#08c}
 .site-footer h4{margin:0 0 8px;color:var(--green-2);font-size:.9rem;font-weight:800}
 .site-footer a{display:block;color:var(--muted);margin:4px 0;font-size:.84rem;transition:color .2s}
 .site-footer a:hover{color:var(--green)}
