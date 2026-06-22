@@ -157,9 +157,9 @@ a{color:inherit;text-decoration:none}img{max-width:100%;display:block}
 .about-card p{color:var(--muted);font-size:1.05rem;line-height:1.7;max-width:600px}
 .rules-card{background:#fff;border-left:4px solid var(--orange)}
 .rules-card h3{color:var(--orange)}
-.check-list{list-style:none;padding:0;margin:0;display:grid;gap:8px}
-.check-list li{padding:8px 12px 8px 28px;background:var(--cream);border-radius:12px;font-size:.92rem;color:var(--text);position:relative}
-.check-list li::before{content:"✓";position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:.85rem;color:var(--green);font-weight:900}
+.rules-list{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.rules-list li{padding:8px 12px 8px 28px;background:var(--cream);border-radius:12px;font-size:.92rem;color:var(--text);position:relative}
+.rules-list li::before{content:"✓";position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:.85rem;color:var(--green);font-weight:900}
 
 /* --- Footer --- */
 .site-footer{background:var(--cream);padding:36px 0 0}
