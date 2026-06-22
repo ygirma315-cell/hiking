@@ -395,7 +395,7 @@ function renderPackageCards() {
     pricingGrid.className = "pricing-grid native";
     pricingGrid.innerHTML = `
       <article class="pricing-card featured">
-        <h3>የሀገር ውስጥ የአንድ ቀን</h3>
+        <h3>ደርሶ መልስ</h3>
         <p>ለአንድ ቀን ጉዞ የተዘጋጀ ፓኬጅ።</p>
         <div class="price">4,000 ETB <small>/ ሰው</small></div>
         <ul class="check-list compact">${features}</ul>
