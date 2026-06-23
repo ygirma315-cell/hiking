@@ -502,8 +502,6 @@ function openTripDetails(name) {
   document.getElementById("tripDetailDescription").textContent = trip.description;
   document.getElementById("tripDetailDuration").textContent = trip.duration;
   document.getElementById("tripDetailStart").textContent = trip.start || "A.A (Mexico, Wabi Shebelle)";
-  document.getElementById("tripPriceNative").textContent = "4,000 ETB · 9,999 ETB";
-  document.getElementById("tripPriceForeigner").textContent = "$60 · $120";
   document.getElementById("tripExpectList").innerHTML = (trip.expect || []).map(item => `<li>${item}</li>`).join("");
   const features = activePackageView === "native" ? nativeFeatures : foreignerFeatures;
   document.getElementById("tripIncludedList").innerHTML = features.map(item => `<li>${item}</li>`).join("");
