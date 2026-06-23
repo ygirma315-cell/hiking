@@ -6,12 +6,14 @@ const hikingDestinations = [
     "image": "assets/hikings/langano.webp",
     "description": "A relaxing short trip with lake views, photography, games, and group fun.",
     "category": "langano",
-    "start": "Addis Ababa",
+    "start": "A.A (Mexico, Wabi Shebelle)",
+    "date": "Jun 21–22",
+    "spotsLeft": 8,
     "expect": [
-      "Lake scenery and relaxed outdoor time",
-      "Photography moments and group activities",
-      "Easy trip style for friends and first-time hikers",
-      "Refreshments and simple travel support"
+      "Fresh lake breeze and scenic shoreline views",
+      "Swimming and relaxing by the water",
+      "Beautiful sunset photography at the lake",
+      "Bird watching near the lakeside"
     ]
   },
   {
@@ -21,12 +23,14 @@ const hikingDestinations = [
     "image": "assets/hikings/wenchi.webp",
     "description": "Green scenery, crater lake views, fresh air, and peaceful walking routes.",
     "category": "wenchi",
-    "start": "Addis Ababa",
+    "start": "A.A (Mexico, Wabi Shebelle)",
+    "date": "Jun 28–28",
+    "spotsLeft": 12,
     "expect": [
-      "Crater lake views and fresh highland air",
-      "Peaceful walking routes and nature stops",
-      "Group photos in scenic viewpoints",
-      "Friendly guide support during the trip"
+      "Fresh highland air and cool mountain climate",
+      "Crater lake with stunning volcanic views",
+      "Green walking trails through farmland",
+      "Local village coffee ceremony experience"
     ]
   },
   {
@@ -36,12 +40,14 @@ const hikingDestinations = [
     "image": "assets/hikings/abijata-shala.webp",
     "description": "Open landscapes, lake scenery, group photos, and a simple outdoor escape.",
     "category": "abijata-shala",
-    "start": "Addis Ababa",
+    "start": "A.A (Mexico, Wabi Shebelle)",
+    "date": "Jul 5–6",
+    "spotsLeft": 6,
     "expect": [
-      "Wide lake landscapes and open views",
-      "Simple outdoor escape from the city",
-      "Group photos and easy nature moments",
-      "Organized transport and schedule"
+      "Hot springs and natural steam vents",
+      "Flamingos and other lake birds",
+      "Wide open Rift Valley landscapes",
+      "Sandy lakeshore walking paths"
     ]
   },
   {
@@ -51,12 +57,14 @@ const hikingDestinations = [
     "image": "assets/hikings/afar-doho-benuna.webp",
     "description": "Warm cultural experience, lodge moments, local scenery, and guided travel.",
     "category": "afar-doho-benuna",
-    "start": "Addis Ababa",
+    "start": "A.A (Mexico, Wabi Shebelle)",
+    "date": "Jul 12–13",
+    "spotsLeft": 4,
     "expect": [
-      "Warm Afar scenery and village experience",
-      "Relaxed lodge moments and outdoor views",
-      "Cultural stops with respectful guidance",
-      "Photography and group travel energy"
+      "Warm geothermal hot springs",
+      "Traditional Afar village lifestyle",
+      "Afar food and cultural hospitality",
+      "Stunning desert and lowland scenery"
     ]
   },
   {
@@ -66,12 +74,14 @@ const hikingDestinations = [
     "image": "assets/hikings/doho-harar.webp",
     "description": "A mix of lodge relaxation, Harar culture, traditional scenes, and photography.",
     "category": "doho-harar",
-    "start": "Addis Ababa",
+    "start": "A.A (Mexico, Wabi Shebelle)",
+    "date": "Jul 19–21",
+    "spotsLeft": 10,
     "expect": [
-      "Lodge relaxation and travel comfort",
-      "Harar culture and traditional scenery",
-      "Photo-friendly group moments",
-      "Guided schedule from start to finish"
+      "Colorful Harar walled city streets",
+      "Traditional coffee and spice markets",
+      "Hyena feeding experience at dusk",
+      "Lodge relaxation with panoramic views"
     ]
   },
   {
@@ -81,12 +91,14 @@ const hikingDestinations = [
     "image": "assets/hikings/langano.webp",
     "description": "A scenic day trip with beautiful landscapes and group adventure.",
     "category": "insisaal",
-    "start": "Addis Ababa",
+    "start": "A.A (Mexico, Wabi Shebelle)",
+    "date": "Jul 26–26",
+    "spotsLeft": 15,
     "expect": [
-      "Scenic landscapes and nature views",
-      "Group hiking and outdoor fun",
-      "Photography moments",
-      "Guided travel and refreshments"
+      "Fresh countryside air and green hills",
+      "Open meadow walking trails",
+      "Wildflower and plant spotting",
+      "Panoramic views from hilltop spots"
     ]
   }
 ];
@@ -360,7 +372,10 @@ function renderDestinations() {
       <div class="destination-body">
         <h3>${trip.name}</h3>
         <p>${trip.description}</p>
-        <div class="price-row"><span>Native price</span><strong>${trip.price}</strong></div>
+        <div class="card-info-row">
+          <span class="card-date">${trip.date}</span>
+          <span class="card-spots">${trip.spotsLeft} spots left</span>
+        </div>
         <div class="card-actions">
           <button class="card-details" data-destination="${trip.name}">View Details</button>
           <button class="card-register" data-destination="${trip.name}">Register</button>
@@ -486,8 +501,10 @@ function openTripDetails(name) {
   document.getElementById("tripDetailTitle").textContent = trip.name;
   document.getElementById("tripDetailDescription").textContent = trip.description;
   document.getElementById("tripDetailDuration").textContent = trip.duration;
-  document.getElementById("tripDetailStart").textContent = trip.start || "Addis Ababa";
-  document.getElementById("tripDetailPrice").textContent = trip.price;
+  document.getElementById("tripDetailStart").textContent = trip.start || "A.A (Mexico, Wabi Shebelle)";
+  document.getElementById("tripDetailMeet").textContent = "መገናኛ 12:00 · መነሻ 12:30";
+  document.getElementById("tripPriceNative").textContent = "4,000 ETB · 9,999 ETB";
+  document.getElementById("tripPriceForeigner").textContent = "$60 · $120";
   document.getElementById("tripExpectList").innerHTML = (trip.expect || []).map(item => `<li>${item}</li>`).join("");
   const features = activePackageView === "native" ? nativeFeatures : foreignerFeatures;
   document.getElementById("tripIncludedList").innerHTML = features.map(item => `<li>${item}</li>`).join("");
@@ -656,6 +673,16 @@ function setupFormsAndModals() {
   });
 }
 
+function setupFaqAccordion() {
+  document.querySelectorAll(".faq-question").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const isOpen = btn.getAttribute("aria-expanded") === "true";
+      document.querySelectorAll(".faq-question").forEach(q => q.setAttribute("aria-expanded", "false"));
+      if (!isOpen) btn.setAttribute("aria-expanded", "true");
+    });
+  });
+}
+
 renderDestinations();
 renderPackageCards();
 renderDestinationOptions();
@@ -666,6 +693,7 @@ setupFormsAndModals();
 setupActiveNavOnScroll();
 setupFadeUpAnimations();
 setupNavSmoothScroll();
+setupFaqAccordion();
 updateSelectedDestination();
 
 window.addEventListener("load", () => {
