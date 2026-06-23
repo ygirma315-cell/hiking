@@ -378,7 +378,7 @@ function renderDestinations() {
         </div>
         <div class="card-actions">
           <button class="card-details" data-destination="${trip.name}">View Details</button>
-          <button class="card-register" data-destination="${trip.name}">Register</button>
+          <button class="card-register" data-destination="${trip.name}">Packages</button>
         </div>
       </div>
     </article>
