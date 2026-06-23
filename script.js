@@ -502,7 +502,6 @@ function openTripDetails(name) {
   document.getElementById("tripDetailDescription").textContent = trip.description;
   document.getElementById("tripDetailDuration").textContent = trip.duration;
   document.getElementById("tripDetailStart").textContent = trip.start || "A.A (Mexico, Wabi Shebelle)";
-  document.getElementById("tripDetailMeet").textContent = "መገናኛ 12:00 · መነሻ 12:30";
   document.getElementById("tripPriceNative").textContent = "4,000 ETB · 9,999 ETB";
   document.getElementById("tripPriceForeigner").textContent = "$60 · $120";
   document.getElementById("tripExpectList").innerHTML = (trip.expect || []).map(item => `<li>${item}</li>`).join("");
