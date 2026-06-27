@@ -77,11 +77,6 @@ function normalizeData(data) {
 // PERSISTENCE
 // ==============================
 function loadData() {
-  if (supabaseClient) return createEmptyData();
-  try {
-    var saved = localStorage.getItem('ereft_hiking_data');
-    if (saved) return normalizeData(JSON.parse(saved));
-  } catch(_) {}
   return createEmptyData();
 }
 
@@ -91,12 +86,6 @@ function saveData(options) {
     state.undoStack.push(JSON.parse(JSON.stringify(state.lastSavedData)));
     if (state.undoStack.length > 10) state.undoStack.shift();
   }
-
-  try {
-    localStorage.setItem('ereft_hiking_data', JSON.stringify(state.data));
-    // Timestamp lets the public site refresh local fallback content.
-    localStorage.setItem('ereft_hiking_updated', Date.now().toString());
-  } catch(_) {}
 
   if (supabaseClient) {
     var payload = cloneData();
@@ -626,7 +615,6 @@ async function handleLogin(e) {
   }
 
   state.user = adminUserFromAuth(login.data.user);
-  if (r) localStorage.setItem('ereft_admin_session', JSON.stringify(state.user));
   state.loginLoading = false;
   navigateTo('overview');
   await refreshDataFromSupabase().catch(function(err) {
@@ -643,7 +631,6 @@ async function restoreAdminSession() {
     var sessionUser = sessionRes.data && sessionRes.data.session && sessionRes.data.session.user;
     if (!sessionUser) {
       state.user = null;
-      localStorage.removeItem('ereft_admin_session');
       render();
       return;
     }
@@ -653,7 +640,6 @@ async function restoreAdminSession() {
       await supabaseClient.auth.signOut();
       state.user = null;
       state.loginError = 'This account is not allowed to access the admin dashboard.';
-      localStorage.removeItem('ereft_admin_session');
       navigateTo('login');
       render();
       return;
@@ -666,7 +652,6 @@ async function restoreAdminSession() {
     console.error('Could not restore admin session:', err);
     state.user = null;
     state.loginError = 'Could not verify admin access. Please sign in again.';
-    localStorage.removeItem('ereft_admin_session');
     render();
   }
 }
@@ -674,7 +659,6 @@ async function restoreAdminSession() {
 function handleLogout() {
   state.user = null;
   if (supabaseClient) supabaseClient.auth.signOut();
-  localStorage.removeItem('ereft_admin_session');
   navigateTo('login');
   render();
 }

@@ -523,3 +523,29 @@ end;
 $$;
 
 grant execute on function public.create_user_with_confirmed_email(text, text, text) to anon, authenticated;
+
+-- Function: create a profile for an existing auth user by email (bypasses RLS)
+-- Used when auth.signUp() creates a user but no session is returned
+create or replace function public.create_profile_for_email(
+  p_email text,
+  p_username text,
+  p_phone text default ''
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user_id uuid;
+begin
+  select id into v_user_id from auth.users where email = p_email;
+  if v_user_id is null then return false; end if;
+  insert into public.profiles (user_id, username, phone)
+  values (v_user_id, public.normalize_username(p_username), p_phone)
+  on conflict (user_id) do nothing;
+  return true;
+end;
+$$;
+
+grant execute on function public.create_profile_for_email(text, text, text) to anon, authenticated;
