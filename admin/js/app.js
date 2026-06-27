@@ -1621,6 +1621,10 @@ function renderRegDetail(id) {
 // SETTINGS PAGE
 // ==============================
 async function deleteUser(userId, username) {
+  if (state.user && state.user.id === userId) {
+    showToast('You cannot delete your own account', 'error');
+    return;
+  }
   var ok = await confirmAction({ title:'Delete User', message:'Permanently delete "' + username + '"? This removes their account and all their data.', confirmText:'Delete', danger:true });
   if (!ok) return;
   if (!supabaseClient) { showToast('Supabase required', 'error'); return; }
