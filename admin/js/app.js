@@ -1480,7 +1480,7 @@ function renderRegistrations() {
 function renderUsers() {
   var users = state.data.users || [];
   var rows = users.length === 0
-    ? '<tr><td colspan="5" class="table-empty">No users signed up yet.</td></tr>'
+    ? '<tr><td colspan="6" class="table-empty">No users signed up yet.</td></tr>'
     : users.map(function(u) {
         var lastLogin = u.last_login ? formatDateTime(u.last_login) : '-';
         return '<tr>' +
@@ -1489,12 +1489,13 @@ function renderUsers() {
           '<td class="td-userid">' + esc(u.user_id ? u.user_id.slice(0, 8) + '...' : '-') + '</td>' +
           '<td>' + formatDate(u.created_at || u.createdAt) + '</td>' +
           '<td>' + lastLogin + '</td>' +
+          '<td class="td-actions"><button class="btn btn-sm btn-danger" onclick="deleteUser(\'' + esc(u.user_id) + '\',\'' + esc(u.username) + '\')" title="Delete user">' + iconSvg('trash') + '</button></td>' +
         '</tr>';
       }).join('');
 
   return '<div class="page">' +
     '<div class="page-header"><div><h1 class="page-title">Users</h1><p class="page-subtitle">Website accounts created via signup</p></div><div class="page-header-actions"><span class="badge badge-info">Total: ' + users.length + '</span><button class="btn btn-sm btn-primary btn-icon-text" onclick="refreshRegistrationsFromSupabase(true)">' + iconSvg('refresh') + ' Refresh</button></div></div>' +
-    '<div class="table-wrapper"><table class="data-table"><thead><tr><th>Username</th><th>Phone</th><th>User ID</th><th>Signed Up</th><th>Last Login</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+    '<div class="table-wrapper"><table class="data-table"><thead><tr><th>Username</th><th>Phone</th><th>User ID</th><th>Signed Up</th><th>Last Login</th><th class="th-actions">Actions</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
   '</div>';
 }
 
@@ -1619,6 +1620,17 @@ function renderRegDetail(id) {
 // ==============================
 // SETTINGS PAGE
 // ==============================
+async function deleteUser(userId, username) {
+  var ok = await confirmAction({ title:'Delete User', message:'Permanently delete "' + username + '"? This removes their account and all their data.', confirmText:'Delete', danger:true });
+  if (!ok) return;
+  if (!supabaseClient) { showToast('Supabase required', 'error'); return; }
+  var res = await supabaseClient.rpc('delete_user', { p_user_id:userId });
+  if (res.error) { showToast(res.error.message || 'Delete failed', 'error'); return; }
+  state.data.users = state.data.users.filter(function(u){ return u.user_id !== userId });
+  render();
+  showToast('User deleted', 'success');
+}
+
 function renderSettings() {
   return '<div class="page">' +
     '<div class="page-header"><div><h1 class="page-title">Settings</h1><p class="page-subtitle">Admin profile and account</p></div></div>' +

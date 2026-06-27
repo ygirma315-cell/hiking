@@ -524,6 +524,24 @@ $$;
 
 grant execute on function public.create_user_with_confirmed_email(text, text, text) to anon, authenticated;
 
+-- Admin function: delete a user by their user_id (cascades to profiles, admin_users, etc.)
+create or replace function public.delete_user(p_user_id uuid)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not exists (select 1 from public.admin_users where user_id = auth.uid()) then
+    raise exception 'Only admins can delete users';
+  end if;
+  delete from auth.users where id = p_user_id;
+  return found;
+end;
+$$;
+
+grant execute on function public.delete_user(uuid) to authenticated;
+
 -- Backfill: create profiles for existing auth users who signed up before the trigger existed
 insert into public.profiles (user_id, username, phone)
 select
