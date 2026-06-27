@@ -424,8 +424,13 @@
       <div class="dashboard-actions">
         <button class="btn btn-orange" id="dashboardRefreshButton" type="button">Refresh Dashboard</button>
       </div>
-      <div class="dashboard-list" id="dashboardBookings"></div>
-      <div class="empty-dashboard" id="dashboardEmpty" hidden>
+      <div class="dashboard-table-wrap">
+      <table class="dashboard-table" id="dashboardTable">
+        <thead><tr><th>Hike ID</th><th>Trip / Package</th><th>Pax</th><th>Price</th><th>Trip Date</th><th>Payment</th><th>Receiving Account</th><th>Pay Status</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="dashboardBookings"></tbody>
+      </table>
+    </div>
+    <div class="empty-dashboard" id="dashboardEmpty" hidden>
         <div class="inbox-status-icon empty">0</div>
         <h3>No bookings yet</h3>
         <p>Choose a package and submit your first hiking registration.</p>

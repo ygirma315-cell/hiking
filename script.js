@@ -646,46 +646,47 @@ async function loadUserBookings() {
 }
 
 function renderDashboard() {
-  var list = document.getElementById("dashboardBookings");
+  var tbody = document.getElementById("dashboardBookings");
   var empty = document.getElementById("dashboardEmpty");
-  if (!list || !empty) return;
+  if (!tbody || !empty) return;
 
   if (!userBookings.length) {
-    list.innerHTML = "";
+    tbody.innerHTML = "";
     empty.hidden = false;
     return;
   }
 
   empty.hidden = true;
-  list.innerHTML = userBookings.map(function(booking) {
+  tbody.innerHTML = userBookings.map(function(booking) {
     var copy = statusCopy(booking.status);
     var price = formatBookingPrice(booking);
-    var adminMessage = booking.admin_message || copy.message;
     var paymentAccount = paymentAccountFor(booking.payment_method);
-    return '<article class="booking-card">' +
-      '<div class="booking-card-top">' +
-        '<div><span class="booking-label">Hike ID</span><div class="hike-id-inline"><strong id="hike-' + esc(booking.hike_id) + '">' + esc(booking.hike_id) + '</strong><button class="copy-btn" type="button" data-copy-value="' + esc(booking.hike_id) + '">Copy</button></div></div>' +
-        '<span class="status-badge ' + statusBadgeClass(booking.status) + '">' + esc(copy.label) + '</span>' +
-      '</div>' +
-      '<div class="booking-details">' +
-        '<div><span>Trip</span><strong>' + esc(booking.destination || booking.package_name) + '</strong></div>' +
-        '<div><span>Package</span><strong>' + esc(booking.package_name || '-') + '</strong></div>' +
-        '<div><span>People</span><strong>' + esc(booking.participants_count || 1) + '</strong></div>' +
-        '<div><span>Price</span><strong>' + esc(price) + '</strong></div>' +
-        '<div><span>Trip Date</span><strong>' + esc(booking.trip_date || 'Not set') + '</strong></div>' +
-        '<div><span>Payment Option</span><strong>' + esc(booking.payment_method || '-') + '</strong></div>' +
-        '<div><span>Payment Status</span><strong>' + esc(booking.payment_status || 'pending') + '</strong></div>' +
-        '<div><span>Your Transfer From</span><strong>' + esc(booking.sender_account || 'Not submitted yet') + '</strong></div>' +
-      '</div>' +
-      (paymentAccount ? '<div class="payment-guide-card compact">' + paymentGuideHtml(paymentAccount, booking.hike_id) + '</div>' : '') +
-      '<p class="payment-instruction">Your Hike ID is <strong>' + esc(booking.hike_id) + '</strong>. When sending the payment, write this exact Hike ID in the payment note. This helps us confirm your payment faster.</p>' +
-      '<div class="admin-message"><strong>Status message</strong><span>' + esc(adminMessage) + '</span></div>' +
-      '<form class="payment-update-form" data-hike-id="' + esc(booking.hike_id) + '">' +
+    var accountLine = paymentAccount ? esc(paymentAccount.accountLabel) + ': ' + esc(paymentAccount.accountNumber) : '-';
+    return '<tr>' +
+      '<td data-label="Hike ID"><div class="hike-id-cell"><strong>' + esc(booking.hike_id) + '</strong><button class="copy-btn-sm" type="button" data-copy-value="' + esc(booking.hike_id) + '" title="Copy Hike ID">Copy</button></div></td>' +
+      '<td data-label="Trip / Package">' + esc(booking.destination || booking.package_name) + '<br><small>' + esc(booking.package_name || '-') + '</small></td>' +
+      '<td data-label="Pax">' + esc(booking.participants_count || 1) + '</td>' +
+      '<td data-label="Price">' + esc(price) + '</td>' +
+      '<td data-label="Trip Date">' + esc(booking.trip_date || 'Not set') + '</td>' +
+      '<td data-label="Payment">' + esc(booking.payment_method || '-') + '</td>' +
+      '<td data-label="Receiving Account">' + accountLine + '</td>' +
+      '<td data-label="Pay Status">' + esc(booking.payment_status || 'pending') + '</td>' +
+      '<td data-label="Status"><span class="status-badge ' + statusBadgeClass(booking.status) + '">' + esc(copy.label) + '</span></td>' +
+      '<td data-label="Actions"><button class="btn btn-sm btn-soft" onclick="togglePayForm(\'' + esc(booking.hike_id) + '\')" title="Update payment">Pay</button></td>' +
+    '</tr>' +
+    '<tr class="pay-form-row" id="pay-form-' + esc(booking.hike_id) + '" hidden>' +
+      '<td colspan="10"><div class="pay-form-inline"><form class="payment-update-form" data-hike-id="' + esc(booking.hike_id) + '">' +
         '<label>Your transferring account / phone<input name="sender_account" value="' + esc(booking.sender_account || '') + '" placeholder="Account or phone you paid from"></label>' +
-        '<button class="btn btn-orange full" type="submit">Submit Payment Details</button>' +
-      '</form>' +
-    '</article>';
+        '<button class="btn btn-orange" type="submit">Submit Payment</button>' +
+        '<button class="btn btn-soft" type="button" onclick="togglePayForm(\'' + esc(booking.hike_id) + '\')">Cancel</button>' +
+      '</form></div></td>' +
+    '</tr>';
   }).join("");
+}
+
+function togglePayForm(hikeId) {
+  var row = document.getElementById('pay-form-' + hikeId);
+  if (row) row.hidden = !row.hidden;
 }
 
 async function openDashboard() {

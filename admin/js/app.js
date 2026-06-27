@@ -10,6 +10,14 @@ var ADMIN_SESSION_KEY = 'ereft_admin_session';
 var adminSessionToken = null;
 var adminLiveRefreshTimer = null;
 var PACKAGE_KEYS = ['nativeDay', 'nativeOvernight', 'foreignerDay', 'foreignerOvernight'];
+var PAYMENT_ACCOUNTS = {
+  cbe: { label:"Commercial Bank of Ethiopia (CBE)", accountName:"Ereft Hiking", accountLabel:"CBE account number", accountNumber:"1000123456789" },
+  telebirr: { label:"Telebirr", accountName:"Ereft Hiking", accountLabel:"Telebirr receiving phone", accountNumber:"+251911234567" },
+  boa: { label:"Bank of Abyssinia (BOA)", accountName:"Ereft Hiking", accountLabel:"BOA account number", accountNumber:"110012345678" },
+  awash: { label:"Awash Bank", accountName:"Ereft Hiking", accountLabel:"Awash account number", accountNumber:"0134123456789" },
+  dashen: { label:"Dashen Bank", accountName:"Ereft Hiking", accountLabel:"Dashen account number", accountNumber:"780012345678" },
+  cash: { label:"Cash", accountName:"Ereft Hiking", accountLabel:"Payment location", accountNumber:"Confirm with Ereft Hiking before the trip" }
+};
 
 function createEmptyPackage(currency) {
   return { name:'', sub:'', price:0, currency:currency || 'ETB', features:[] };
@@ -243,6 +251,16 @@ function registrationBadgeClass(status) {
   if (status === 'rejected') return 'badge-danger';
   if (status === 'needs_review') return 'badge-info';
   return 'badge-warning';
+}
+
+function paymentAccountFor(value) {
+  var raw = String(value || "").trim().toLowerCase();
+  if (!raw) return null;
+  if (PAYMENT_ACCOUNTS[raw]) return PAYMENT_ACCOUNTS[raw];
+  var key = Object.keys(PAYMENT_ACCOUNTS).find(function(id) {
+    return PAYMENT_ACCOUNTS[id].label.toLowerCase() === raw || raw.includes(id) || raw.includes(PAYMENT_ACCOUNTS[id].label.toLowerCase());
+  });
+  return key ? PAYMENT_ACCOUNTS[key] : null;
 }
 
 function formatAdminPrice(reg) {
@@ -1622,6 +1640,7 @@ function renderRegDetail(id) {
       '<div class="detail-item"><span class="detail-label">Fixed Price</span><span class="detail-value">' + esc(formatAdminPrice(r)) + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Currency</span><span class="detail-value">' + esc(r.currency || 'ETB') + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Payment Method</span><span class="detail-value">' + esc(r.paymentMethod || '-') + '</span></div>' +
+      '<div class="detail-item"><span class="detail-label">Receiving Account</span><span class="detail-value">' + esc(paymentAccountFor(r.paymentMethod) ? (paymentAccountFor(r.paymentMethod).accountLabel + ': ' + paymentAccountFor(r.paymentMethod).accountNumber) : '-') + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Transferring Account / Phone</span><span class="detail-value">' + esc(r.senderAccount || '-') + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Transaction ID</span><span class="detail-value">' + esc(r.transactionId || '-') + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Payment Status</span><span class="detail-value">' + esc(r.paymentStatus || 'pending') + '</span></div>' +

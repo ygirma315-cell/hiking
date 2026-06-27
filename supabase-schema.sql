@@ -708,20 +708,27 @@ begin
   v_currency := coalesce(nullif(v_package ->> 'currency', ''), nullif(p_currency, ''), 'ETB');
 
   return query
-  insert into public.registrations (
-    user_id, username, full_name, phone, age, participants_count,
-    gender, destination, package_name, trip_date, price, currency,
-    payment_method, sender_account, transaction_id, payment_status, status
-  ) values (
-    v_user.id, v_user.username, trim(p_full_name), trim(p_phone),
-    p_age, greatest(1, coalesce(p_participants_count, 1)),
-    p_gender, p_destination, p_package_name, coalesce(p_trip_date, ''),
-    v_price, v_currency,
-    coalesce(nullif(p_payment_method, ''), 'Not selected'),
-    coalesce(trim(p_sender_account), ''), '',
-    v_payment_status, 'pending'
+  with ins as (
+    insert into public.registrations (
+      user_id, username, full_name, phone, age, participants_count,
+      gender, destination, package_name, trip_date, price, currency,
+      payment_method, sender_account, transaction_id, payment_status, status
+    ) values (
+      v_user.id, v_user.username, trim(p_full_name), trim(p_phone),
+      p_age, greatest(1, coalesce(p_participants_count, 1)),
+      p_gender, p_destination, p_package_name, coalesce(p_trip_date, ''),
+      v_price, v_currency,
+      coalesce(nullif(p_payment_method, ''), 'Not selected'),
+      coalesce(trim(p_sender_account), ''), '',
+      v_payment_status, 'pending'
+    )
+    returning id
   )
-  returning *;
+  update public.registrations r
+  set hike_id = 'HIK-' || upper(substr(md5(ins.id::text), 1, 6))
+  from ins
+  where r.id = ins.id
+  returning r.*;
 end;
 $$;
 
