@@ -43,9 +43,22 @@
       </button>
 
       <div class="auth-actions">
-        <button class="auth-btn auth-btn-primary" id="loginOpenButton" type="button">Sign Up / Login</button>
-        <button class="auth-btn auth-btn-primary" id="dashboardOpenButton" type="button" hidden>Dashboard</button>
-        <button class="auth-btn auth-btn-ghost" id="logoutButton" type="button" hidden>Logout</button>
+        <button class="auth-btn auth-btn-primary" id="loginOpenButton" type="button">Login</button>
+        <div class="profile-dropdown" id="profileDropdown" hidden>
+          <button class="profile-trigger" id="profileTrigger" type="button" aria-label="Profile menu">
+            <span class="profile-avatar" id="profileAvatar">U</span>
+          </button>
+          <div class="profile-menu" id="profileMenu">
+            <div class="profile-head">
+              <span class="profile-name" id="profileName">User</span>
+              <span class="profile-user" id="profileUsername">@user</span>
+            </div>
+            <div class="profile-divr"></div>
+            <button class="profile-item" id="profileDashBtn">📋 My Bookings</button>
+            <button class="profile-item profile-item-danger" id="profileLogoutBtn">🚪 Logout</button>
+          </div>
+        </div>
+        <div class="profile-overlay" id="profileOverlay" hidden></div>
       </div>
     </div>
   </header>
@@ -255,10 +268,10 @@
       <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
       <span>About</span>
     </a>
-    <a href="#contact" class="mobile-nav-item">
-      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20 4H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h3.4l3.9 3.25c.4.33 1 .05 1-.47V18H20a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 12h-9.7v2.65L8.1 16H4V6h16v10Z"/></svg>
-      <span>Contact</span>
-    </a>
+    <button class="mobile-nav-item" id="mobileProfileBtn" type="button">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+      <span id="mobileProfileLabel">Profile</span>
+    </button>
   </nav>
 
   <footer class="site-footer">
@@ -408,6 +421,13 @@
     <button class="lightbox-close" aria-label="Close image preview">&times;</button>
     <img src="" alt="Gallery preview" id="lightboxImage">
     <p id="lightboxCaption"></p>
+  </div>
+
+  <div id="successToast" class="success-toast" hidden>
+    <div class="success-toast-icon">
+      <svg class="checkmark" viewBox="0 0 52 52"><circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/><path class="checkmark-check" fill="none" d="M14 27l7 7 16-16"/></svg>
+    </div>
+    <span class="success-toast-text" id="successToastText">Logged in!</span>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

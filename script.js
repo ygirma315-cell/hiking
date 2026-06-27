@@ -260,11 +260,45 @@ function updatePaymentGuide(hikeId) {
 function updateAuthUI() {
   var loggedIn = !!currentUser;
   var loginButton = document.getElementById("loginOpenButton");
-  var dashboardButton = document.getElementById("dashboardOpenButton");
-  var logoutButton = document.getElementById("logoutButton");
+  var profileDropdown = document.getElementById("profileDropdown");
+  var profileName = document.getElementById("profileName");
+  var profileUsername = document.getElementById("profileUsername");
+  var profileAvatar = document.getElementById("profileAvatar");
+  var mobileLabel = document.getElementById("mobileProfileLabel");
+
   if (loginButton) loginButton.hidden = loggedIn;
-  if (dashboardButton) dashboardButton.hidden = true;
-  if (logoutButton) logoutButton.hidden = !loggedIn;
+  if (profileDropdown) profileDropdown.hidden = !loggedIn;
+  if (mobileLabel) mobileLabel.textContent = loggedIn ? "Profile" : "Profile";
+
+  if (loggedIn && currentUser) {
+    var name = currentUser.user_metadata?.username || (currentUser.email || "").split("@")[0] || "User";
+    var initial = name.charAt(0).toUpperCase();
+    if (profileName) profileName.textContent = name;
+    if (profileUsername) profileUsername.textContent = "@" + name;
+    if (profileAvatar) profileAvatar.textContent = initial;
+  }
+}
+
+function showSuccessToast(text) {
+  var toast = document.getElementById("successToast");
+  var textEl = document.getElementById("successToastText");
+  if (!toast) return;
+  textEl.textContent = text || "Logged in!";
+  toast.hidden = false;
+  toast.classList.remove("hide");
+  setTimeout(function() {
+    toast.classList.add("hide");
+    setTimeout(function() { toast.hidden = true; }, 400);
+  }, 2500);
+}
+
+function toggleProfileMenu(show) {
+  var menu = document.getElementById("profileMenu");
+  var overlay = document.getElementById("profileOverlay");
+  if (!menu) return;
+  var isVisible = show !== undefined ? show : menu.hidden;
+  menu.hidden = !isVisible;
+  if (overlay) overlay.hidden = !isVisible;
 }
 
 function switchAuthTab(mode) {
@@ -361,6 +395,7 @@ async function signInUser(form) {
       currentProfile = { username:username, phone:"" };
     }
     form.reset();
+    showSuccessToast("Logged in!");
     await handleSignedIn(pendingAuthAction);
     pendingAuthAction = null;
   } catch (error) {
@@ -405,40 +440,44 @@ async function signUpUser(form) {
       throw new Error("Username already exists.");
     }
 
-    var result = await supabaseClient.auth.signUp({
-      email: usernameToEmail(username),
-      password: password,
-      options: { data:{ username:username, phone:phone } }
+    var createdUser = null;
+    var rpcResult = await supabaseClient.rpc("create_user_with_confirmed_email", {
+      p_username: username, p_password: password, p_phone: phone
     });
 
-    var user = null;
-    if (result.error) {
-      var errMsg = (result.error.message || result.error.name || "").toLowerCase();
-      if (errMsg.includes("rate") || errMsg.includes("limit") || errMsg.includes("email") || errMsg.includes("too many")) {
-        console.warn("SignUp rate limited, trying to sign in instead");
-      } else {
-        throw result.error;
-      }
-    } else {
-      user = result.data.user;
-      if (result.data.session) {
-        currentUser = user;
-      }
+    if (rpcResult.error) {
+      console.warn("RPC signup not available, falling back to regular signup:", rpcResult.error);
+      var result = await supabaseClient.auth.signUp({
+        email: usernameToEmail(username),
+        password: password,
+        options: { data:{ username:username, phone:phone } }
+      });
+      if (result.error) throw result.error;
+      if (result.data.session) createdUser = result.data.user;
+    } else if (rpcResult.data && rpcResult.data.success) {
+      createdUser = true;
     }
 
-    if (!currentUser) {
+    if (!createdUser) {
       var login = await supabaseClient.auth.signInWithPassword({
         email: usernameToEmail(username),
         password: password
       });
       if (login.error) {
         var loginMsg = (login.error.message || login.error.name || "").toLowerCase();
-        if (loginMsg.includes("invalid login") || loginMsg.includes("invalid_login") || loginMsg.includes("invalid credential")) {
-          showSiteNotice("Could not log you in after signup. This is because your Supabase project requires email confirmation. To fix: go to Supabase Dashboard > Authentication > Settings > turn OFF 'Confirm email', then try again.", "error");
+        if (loginMsg.includes("invalid login") || loginMsg.includes("invalid credential")) {
+          showSiteNotice("Signup works but auto-login failed. This happens if the SQL function was not created. Run the SQL script first. See instructions.", "error");
           return;
         }
         throw login.error;
       }
+      currentUser = login.data.user;
+    } else if (createdUser === true) {
+      var login = await supabaseClient.auth.signInWithPassword({
+        email: usernameToEmail(username),
+        password: password
+      });
+      if (login.error) throw login.error;
       currentUser = login.data.user;
     }
 
@@ -449,6 +488,7 @@ async function signUpUser(form) {
       currentProfile = { username:username, phone:phone };
     }
     form.reset();
+    showSuccessToast("Account created!");
     await handleSignedIn(pendingAuthAction);
     pendingAuthAction = null;
   } catch (error) {
@@ -461,9 +501,7 @@ async function signUpUser(form) {
     } else if (msg.includes("network") || msg.includes("fetch")) {
       showSiteNotice("Network error. Check your connection and try again.", "error");
     } else if (msg.toLowerCase().includes("rate") || msg.toLowerCase().includes("limit") || msg.toLowerCase().includes("too many")) {
-      showSiteNotice("Too many signup attempts. Please wait a minute and try again, or try logging in if you already have an account.", "error");
-    } else if (msg.toLowerCase().includes("invalid login") || msg.toLowerCase().includes("invalid credential")) {
-      showSiteNotice("Could not create account. Your Supabase project has email confirmation enabled. To fix: go to Supabase Dashboard > Authentication > Settings > turn OFF 'Confirm email', then try again.", "error");
+      showSiteNotice("Too many signup attempts. Please wait a minute and try again.", "error");
     } else {
       showSiteNotice(msg || "Could not create account. Please try again.", "error");
     }
@@ -978,8 +1016,16 @@ function setupNavSmoothScroll() {
 
 function setupFormsAndModals() {
   document.getElementById("loginOpenButton").addEventListener("click", () => openAuthModal("signup"));
-  document.getElementById("dashboardOpenButton").addEventListener("click", openDashboard);
-  document.getElementById("logoutButton").addEventListener("click", signOutUser);
+  document.getElementById("profileTrigger").addEventListener("click", function(e) {
+    e.stopPropagation();
+    toggleProfileMenu();
+  });
+  document.getElementById("profileOverlay").addEventListener("click", function() { toggleProfileMenu(false); });
+  document.getElementById("profileDashBtn").addEventListener("click", function() { toggleProfileMenu(false); openDashboard(); });
+  document.getElementById("profileLogoutBtn").addEventListener("click", function() { toggleProfileMenu(false); signOutUser(); });
+  document.getElementById("mobileProfileBtn").addEventListener("click", function() {
+    if (currentUser) { openDashboard(); } else { openAuthModal("signup"); }
+  });
   document.getElementById("dashboardRefreshButton").addEventListener("click", () => refreshDashboard(false));
   document.getElementById("successViewDashboardButton").addEventListener("click", function() {
     closeModals();
@@ -1019,6 +1065,9 @@ function setupFormsAndModals() {
       value = target ? target.textContent.trim() : "";
     }
     copyText(value);
+  });
+  document.addEventListener("click", function(e) {
+    if (!e.target.closest(".profile-dropdown")) toggleProfileMenu(false);
   });
   document.querySelectorAll("[data-close-modal]").forEach(btn => btn.addEventListener("click", closeModals));
   document.querySelectorAll(".modal").forEach(modal => modal.addEventListener("click", (e) => {
