@@ -1479,9 +1479,9 @@ function renderRegistrations() {
   if (state.viewRegId != null) modalHtml = renderRegDetail(state.viewRegId);
 
   return '<div class="page">' +
-    '<div class="page-header"><div><h1 class="page-title">Registrations</h1><p class="page-subtitle">Match payments using Hike ID, transaction ID, sender account, amount, and name.</p></div><div class="page-header-actions"><div class="page-header-badges"><span class="badge badge-warning">Pending: ' + pending + '</span><span class="badge badge-info">Review: ' + needsReview + '</span><span class="badge badge-success">Accepted: ' + accepted + '</span><span class="badge badge-danger">Rejected: ' + rejected + '</span></div><div class="refresh-control"><button class="btn btn-sm btn-primary btn-icon-text" onclick="refreshRegistrationsFromSupabase(true)"' + refreshDisabled + ' title="Check for new registrations">' + refreshIcon + ' ' + refreshText + '</button>' + refreshMeta + '</div></div></div>' +
+    '<div class="page-header"><div><h1 class="page-title">Registrations</h1><p class="page-subtitle">Match payments using Hike ID, transferring account, amount, and name.</p></div><div class="page-header-actions"><div class="page-header-badges"><span class="badge badge-warning">Pending: ' + pending + '</span><span class="badge badge-info">Review: ' + needsReview + '</span><span class="badge badge-success">Accepted: ' + accepted + '</span><span class="badge badge-danger">Rejected: ' + rejected + '</span></div><div class="refresh-control"><button class="btn btn-sm btn-primary btn-icon-text" onclick="refreshRegistrationsFromSupabase(true)"' + refreshDisabled + ' title="Check for new registrations">' + refreshIcon + ' ' + refreshText + '</button>' + refreshMeta + '</div></div></div>' +
     renderRegFilters() +
-    '<div class="admin-note">Never approve only by name, phone, or sender account. The strongest match is Hike ID + transaction/reference ID + sender account/phone + amount.</div>' +
+    '<div class="admin-note">Never approve only by name, phone, or sender account. Match the Hike ID, transferring account/phone, amount, and customer name before accepting.</div>' +
     '<div class="table-wrapper"><table class="data-table reg-table"><thead><tr><th>ID</th><th>Name</th><th>Destination</th><th>Package</th><th>Phone</th><th>Pax</th><th>Price</th><th>Payment</th><th>Status</th><th>Date</th><th class="th-actions">Actions</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
     modalHtml +
   '</div>';
@@ -1612,7 +1612,6 @@ function renderRegDetail(id) {
       '<div class="detail-item"><span class="detail-label">Full Name</span><span class="detail-value">' + esc(r.fullName) + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Username</span><span class="detail-value">' + esc(r.username || '-') + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Phone</span><span class="detail-value">' + esc(r.phone || '-') + '</span></div>' +
-      '<div class="detail-item"><span class="detail-label">Age</span><span class="detail-value">' + (r.age || '-') + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Gender</span><span class="detail-value">' + esc(r.gender || '-') + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Number of People</span><span class="detail-value">' + esc(r.participantsCount || 1) + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Destination</span><span class="detail-value">' + esc(r.destination) + '</span></div>' +
@@ -1620,13 +1619,12 @@ function renderRegDetail(id) {
       '<div class="detail-item"><span class="detail-label">Fixed Price</span><span class="detail-value">' + esc(formatAdminPrice(r)) + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Currency</span><span class="detail-value">' + esc(r.currency || 'ETB') + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Payment Method</span><span class="detail-value">' + esc(r.paymentMethod || '-') + '</span></div>' +
-      '<div class="detail-item"><span class="detail-label">Sender Account / Phone</span><span class="detail-value">' + esc(r.senderAccount || '-') + '</span></div>' +
-      '<div class="detail-item"><span class="detail-label">Transaction ID</span><span class="detail-value">' + esc(r.transactionId || '-') + '</span></div>' +
+      '<div class="detail-item"><span class="detail-label">Transferring Account / Phone</span><span class="detail-value">' + esc(r.senderAccount || '-') + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Payment Status</span><span class="detail-value">' + esc(r.paymentStatus || 'pending') + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Status</span><span class="badge ' + badge + '">' + esc((r.status || 'pending').replace('_', ' ')) + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Admin Notes</span><span class="detail-value">' + esc(r.notes || 'None') + '</span></div>' +
     '</div>' +
-    '<div class="admin-note" style="margin-top:16px">Manual match priority: Hike ID + transaction/reference ID + sender account/phone + amount. If anything looks duplicated or suspicious, mark Needs Review.</div>' +
+    '<div class="admin-note" style="margin-top:16px">Manual match priority: Hike ID + transferring account/phone + amount + customer name. If anything looks duplicated or suspicious, mark Needs Review.</div>' +
     '<div class="detail-section"><h3>Message to user</h3><textarea class="form-input" id="admin-message-input" rows="3" placeholder="Optional message shown in user dashboard">' + esc(r.adminMessage || '') + '</textarea><div class="form-actions" style="margin-top:10px"><button class="btn btn-secondary" onclick="saveRegMessage(' + r.id + ')">Save Message</button></div></div>' +
     '<div class="detail-section"><h3>Notification Preview</h3><div class="notification-preview"><div class="notification-icon">' + notify.split(' ')[0] + '</div><div class="notification-text">' + esc(r.adminMessage || notify) + '</div></div></div>' +
     '<div class="modal-actions"><button class="btn btn-success" onclick="acceptReg(' + r.id + ');closeViewReg()">Accept</button><button class="btn btn-secondary" onclick="needsReviewReg(' + r.id + ');closeViewReg()">Needs Review</button><button class="btn btn-danger" onclick="rejectReg(' + r.id + ');closeViewReg()">Reject</button></div>' +

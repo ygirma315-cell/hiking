@@ -357,13 +357,12 @@
       <form class="simple-form" id="registrationForm">
         <div class="form-grid">
           <label>Full Name<input id="fullName" type="text" required placeholder="Full name"></label>
-          <label>Age<input id="age" type="number" min="1" max="120" required placeholder="Age"></label>
           <label>Phone Number<input id="phone" type="tel" required placeholder="+251..."></label>
           <label>Number of People<input id="participantsCount" type="number" min="1" max="100" required value="1" placeholder="1"></label>
           <label>Gender<select id="gender" required><option value="">Select gender</option><option>Female</option><option>Male</option><option>Prefer not to say</option></select></label>
           <label>Selected Destination<select id="destinationSelect" required></select></label>
           <label>Selected Package<input id="packageInput" type="text" readonly></label>
-          <label>Fixed Price<input id="packagePriceInput" type="text" readonly></label>
+          <label>Total Price<input id="packagePriceInput" type="text" readonly></label>
           <label>Payment Option<select id="paymentMethod" required>
             <option value="">Choose payment option</option>
             <option value="cbe">Commercial Bank of Ethiopia (CBE)</option>
@@ -375,11 +374,9 @@
             <option value="cash">Cash</option>
           </select></label>
           <label id="otherPaymentWrap" hidden>Other Bank / Wallet Name<input id="otherPaymentName" type="text" placeholder="Bank or wallet name"></label>
-          <label>Sender Account / Phone<input id="senderAccount" type="text" placeholder="Account or phone used to pay"></label>
-          <label>Transaction ID <span class="label-note">optional after payment</span><input id="transactionId" type="text" placeholder="Payment reference"></label>
+          <label>Your Transferring Account / Phone<input id="senderAccount" type="text" placeholder="Account or phone you paid from"></label>
         </div>
         <div class="payment-guide-card" id="paymentReceiverGuide" hidden></div>
-        <p class="payment-warning">If you pay without writing your Hike ID in the payment note, your confirmation may be delayed. You may need to contact us manually.</p>
         <button class="btn btn-orange full" id="registrationSubmitButton" type="submit">Submit Booking</button>
       </form>
     </div>
@@ -395,7 +392,6 @@
         <button class="copy-btn" type="button" data-copy-target="successHikeId">Copy</button>
       </div>
       <div class="payment-guide-card success-payment-guide" id="successPaymentGuide" hidden></div>
-      <p class="payment-warning small">When sending payment, copy this exact Hike ID and write it in the payment note/description/reference.</p>
       <button class="btn btn-soft full" id="successViewDashboardButton" type="button">View My Booking</button>
       <button class="btn btn-orange full" data-close-modal>Done</button>
     </div>

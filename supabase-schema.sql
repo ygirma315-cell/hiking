@@ -679,7 +679,7 @@ begin
   end if;
 
   v_payment_status := case
-    when coalesce(nullif(trim(p_sender_account), ''), nullif(trim(p_transaction_id), '')) is not null then 'submitted'
+    when nullif(trim(p_sender_account), '') is not null then 'submitted'
     else 'pending'
   end;
 
@@ -699,7 +699,12 @@ begin
     limit 1;
   end if;
 
-  v_price := coalesce(nullif(v_package ->> 'price', '')::numeric, p_price, 0);
+  v_price := nullif(v_package ->> 'price', '')::numeric;
+  if v_price is not null then
+    v_price := v_price * greatest(1, coalesce(p_participants_count, 1));
+  else
+    v_price := coalesce(p_price, 0);
+  end if;
   v_currency := coalesce(nullif(v_package ->> 'currency', ''), nullif(p_currency, ''), 'ETB');
 
   return query
@@ -713,7 +718,7 @@ begin
     p_gender, p_destination, p_package_name, coalesce(p_trip_date, ''),
     v_price, v_currency,
     coalesce(nullif(p_payment_method, ''), 'Not selected'),
-    coalesce(trim(p_sender_account), ''), coalesce(trim(p_transaction_id), ''),
+    coalesce(trim(p_sender_account), ''), '',
     v_payment_status, 'pending'
   )
   returning *;
@@ -756,9 +761,9 @@ begin
   update public.registrations
   set
     sender_account = coalesce(trim(p_sender_account), ''),
-    transaction_id = coalesce(trim(p_transaction_id), ''),
+    transaction_id = '',
     payment_status = case
-      when coalesce(nullif(trim(p_sender_account), ''), nullif(trim(p_transaction_id), '')) is not null then 'submitted'
+      when nullif(trim(p_sender_account), '') is not null then 'submitted'
       else payment_status
     end
   where user_id = v_user_id

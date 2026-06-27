@@ -84,12 +84,39 @@ function esc(value) {
     .replace(/'/g, "&#039;");
 }
 
+function formatPriceAmount(price, currency) {
+  var numeric = Number(price);
+  var amount = Number.isFinite(numeric) ? numeric.toLocaleString() : String(price || 0);
+  if (currency === "USD") return "$" + amount;
+  return amount + " " + (currency || "ETB");
+}
+
 function formatPackagePrice(pkg) {
   if (!pkg || pkg.price == null || pkg.price === "") return "";
-  var price = Number(pkg.price);
-  var amount = Number.isFinite(price) ? price.toLocaleString() : String(pkg.price);
-  if (pkg.currency === "USD") return "$" + amount;
-  return amount + " " + (pkg.currency || "ETB");
+  return formatPriceAmount(pkg.price, pkg.currency || "ETB");
+}
+
+function getPackageTotalPrice(pkg, count) {
+  if (!pkg || pkg.price == null || pkg.price === "") return 0;
+  var unit = Number(pkg.price);
+  if (!Number.isFinite(unit)) return 0;
+  return unit * cleanPeopleCount(count || 1);
+}
+
+function formatPackageTotalPrice(pkg, count) {
+  if (!pkg) return "";
+  var people = cleanPeopleCount(count || 1);
+  var total = getPackageTotalPrice(pkg, people);
+  var suffix = people === 1 ? " total" : " total (" + people + " people)";
+  return formatPriceAmount(total, pkg.currency || "ETB") + suffix;
+}
+
+function updatePackagePriceDisplay() {
+  if (!packagePriceInput) return;
+  selectedPackageMeta = selectedPackageMeta || getPackageByName(packageInput ? packageInput.value : "");
+  packagePriceInput.value = selectedPackageMeta
+    ? formatPackageTotalPrice(selectedPackageMeta, participantsCountInput ? participantsCountInput.value : 1)
+    : "";
 }
 
 function normalizeUsername(value) {
@@ -226,20 +253,18 @@ function paymentGuideHtml(account, hikeId) {
   var hasAccount = !!String(account.accountNumber || "").trim();
   var accountLine = hasAccount
     ? '<div><span>' + esc(account.accountLabel) + '</span><strong>' + esc(account.accountNumber) + '</strong><button class="copy-btn" type="button" data-copy-value="' + esc(account.accountNumber) + '">Copy</button></div>'
-    : '<div><span>' + esc(account.accountLabel) + '</span><strong>Account number not added yet</strong></div>';
+    : '<div><span>' + esc(account.accountLabel) + '</span><strong>Contact Ereft Hiking for this account</strong></div>';
   var hikeLine = hikeId
-    ? '<p>Your Hike ID is <strong>' + esc(hikeId) + '</strong>. Write this exact ID in the payment note/description/reference.</p>'
-    : '<p>After booking, copy your Hike ID and write it in the payment note/description/reference.</p>';
+    ? '<p class="payment-guide-warning">Your Hike ID is <strong>' + esc(hikeId) + '</strong>. If you pay without writing your Hike ID in the payment note, your confirmation may be delayed. You may need to contact us manually.</p>'
+    : '<p class="payment-guide-warning">If you pay without writing your Hike ID in the payment note, your confirmation may be delayed. You may need to contact us manually.</p>';
   return '<div class="payment-guide-title">' +
-      '<span>Pay with</span><strong>' + esc(account.label) + '</strong>' +
+      '<span>Payment method</span><strong>' + esc(account.label) + '</strong>' +
     '</div>' +
     '<div class="payment-guide-details">' +
-      '<div><span>Account name</span><strong>' + esc(account.accountName || "Ereft Hiking") + '</strong></div>' +
+      '<div><span>Deposit account name</span><strong>' + esc(account.accountName || "Ereft Hiking") + '</strong></div>' +
       accountLine +
     '</div>' +
-    hikeLine +
-    '<p class="payment-guide-note">Demo receiving account for setup. Replace this with the real Ereft Hiking deposit account before launch.</p>' +
-    '<p class="payment-guide-note">After paying, enter your sender account/phone and transaction/reference ID so admin can match Hike ID + reference + sender + amount.</p>';
+    hikeLine;
 }
 
 function updatePaymentGuide(hikeId) {
@@ -542,16 +567,14 @@ function renderDashboard() {
         '<div><span>Trip Date</span><strong>' + esc(booking.trip_date || 'Not set') + '</strong></div>' +
         '<div><span>Payment Option</span><strong>' + esc(booking.payment_method || '-') + '</strong></div>' +
         '<div><span>Payment Status</span><strong>' + esc(booking.payment_status || 'pending') + '</strong></div>' +
-        '<div><span>Your Sender</span><strong>' + esc(booking.sender_account || 'Not submitted yet') + '</strong></div>' +
-        '<div><span>Transaction ID</span><strong>' + esc(booking.transaction_id || 'Not submitted yet') + '</strong></div>' +
+        '<div><span>Your Transfer From</span><strong>' + esc(booking.sender_account || 'Not submitted yet') + '</strong></div>' +
       '</div>' +
       (paymentAccount ? '<div class="payment-guide-card compact">' + paymentGuideHtml(paymentAccount, booking.hike_id) + '</div>' : '') +
-      '<p class="payment-instruction">Your Hike ID is <strong>' + esc(booking.hike_id) + '</strong>. When sending the payment, copy this exact Hike ID and write it in the payment note/description/reference. This helps us confirm your payment faster.</p>' +
+      '<p class="payment-instruction">Your Hike ID is <strong>' + esc(booking.hike_id) + '</strong>. When sending the payment, write this exact Hike ID in the payment note. This helps us confirm your payment faster.</p>' +
       '<p class="payment-warning small">If you pay without writing your Hike ID in the payment note, your confirmation may be delayed. You may need to contact us manually.</p>' +
       '<div class="admin-message"><strong>Status message</strong><span>' + esc(adminMessage) + '</span></div>' +
       '<form class="payment-update-form" data-hike-id="' + esc(booking.hike_id) + '">' +
-        '<label>Sender account / phone<input name="sender_account" value="' + esc(booking.sender_account || '') + '" placeholder="Account or phone used to pay"></label>' +
-        '<label>Transaction ID / reference<input name="transaction_id" value="' + esc(booking.transaction_id || '') + '" placeholder="Payment reference"></label>' +
+        '<label>Your transferring account / phone<input name="sender_account" value="' + esc(booking.sender_account || '') + '" placeholder="Account or phone you paid from"></label>' +
         '<button class="btn btn-orange full" type="submit">Submit Payment Details</button>' +
       '</form>' +
     '</article>';
@@ -614,9 +637,9 @@ async function submitPaymentDetails(form) {
   if (!supabaseClient || !currentUser) return;
   var hikeId = form.dataset.hikeId;
   var sender = form.elements.sender_account.value.trim();
-  var tx = form.elements.transaction_id.value.trim();
-  if (!sender && !tx) {
-    showSiteNotice("Add sender account/phone or transaction ID first.", "error");
+  var tx = "";
+  if (!sender) {
+    showSiteNotice("Add the account or phone you paid from first.", "error");
     return;
   }
   var button = form.querySelector("button");
@@ -649,7 +672,7 @@ function renderSuccessBooking(booking) {
   var idEl = document.getElementById("successHikeId");
   var guide = document.getElementById("successPaymentGuide");
   if (instruction) instruction.textContent = id
-    ? "Your Hike ID is " + id + ". When sending the payment, copy this exact Hike ID and write it in the payment note/description/reference. This helps us confirm your payment faster."
+    ? "Your Hike ID is " + id + ". When sending the payment, write this exact Hike ID in the payment note. This helps us confirm your payment faster."
     : "Your booking was created. Use your Hike ID when sending payment.";
   if (wrap && idEl) {
     wrap.hidden = !id;
@@ -895,7 +918,7 @@ function openRegistrationModal() {
   destinationSelect.value = selectedDestination;
   packageInput.value = selectedPackage;
   selectedPackageMeta = getPackageByName(selectedPackage);
-  if (packagePriceInput) packagePriceInput.value = selectedPackageMeta ? formatPackagePrice(selectedPackageMeta) : "";
+  updatePackagePriceDisplay();
   updatePaymentGuide();
   openModal("registrationModal");
 }
@@ -1007,6 +1030,7 @@ function setupFormsAndModals() {
   });
   if (paymentMethodSelect) paymentMethodSelect.addEventListener("change", () => updatePaymentGuide());
   if (otherPaymentNameInput) otherPaymentNameInput.addEventListener("input", () => updatePaymentGuide());
+  if (participantsCountInput) participantsCountInput.addEventListener("input", updatePackagePriceDisplay);
   document.getElementById("menuToggle").addEventListener("click", function() {
     var nav = document.querySelector(".main-nav");
     var open = nav.classList.toggle("open");
@@ -1189,21 +1213,21 @@ async function submitRegistration(form) {
 
   selectedPackageMeta = getPackageByName(packageInput.value);
   var trip = findTrip(destinationSelect.value);
-  var localHikeId = buildLocalHikeId();
+  var peopleCount = cleanPeopleCount(participantsCountInput ? participantsCountInput.value : 1);
   var payload = {
     full_name: document.getElementById("fullName").value.trim(),
-    age: Number(document.getElementById("age").value),
+    age: null,
     phone: document.getElementById("phone").value.trim(),
-    participants_count: cleanPeopleCount(participantsCountInput ? participantsCountInput.value : 1),
+    participants_count: peopleCount,
     gender: document.getElementById("gender").value,
     destination: destinationSelect.value,
     package_name: packageInput.value,
     trip_date: trip ? trip.date || "" : "",
-    price: selectedPackageMeta ? Number(selectedPackageMeta.price || 0) : 0,
+    price: getPackageTotalPrice(selectedPackageMeta, peopleCount),
     currency: selectedPackageMeta ? selectedPackageMeta.currency || "ETB" : "ETB",
     payment_method: selectedPaymentLabel(),
     sender_account: document.getElementById("senderAccount").value.trim(),
-    transaction_id: document.getElementById("transactionId").value.trim(),
+    transaction_id: "",
     payment_status: "pending",
     status: "pending"
   };
