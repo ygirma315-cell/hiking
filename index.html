@@ -288,7 +288,7 @@
         <h3>Login</h3>
         <p class="modal-subtitle">Login is only needed to register or view your dashboard.</p>
         <label>Username<input id="signinUsername" type="text" required autocomplete="username" placeholder="yourusername"></label>
-        <label>Password<input id="signinPassword" type="password" required autocomplete="current-password" placeholder="Password"></label>
+        <label>Password<span class="password-wrapper"><input id="signinPassword" type="password" required autocomplete="current-password" placeholder="Password"><button type="button" class="password-toggle" onclick="togglePasswordVisibility('signinPassword',this)" aria-label="Show password" tabindex="-1"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg></button></span></label>
         <button class="btn btn-orange full" id="signinSubmit" type="submit">Login</button>
       </form>
 
@@ -297,8 +297,8 @@
         <p class="modal-subtitle">Use a username and password. No Google login is used.</p>
         <label>Username<input id="signupUsername" type="text" required autocomplete="username" placeholder="yourusername" minlength="3" maxlength="30"></label>
         <label>Phone Number <span class="label-note">optional but recommended</span><input id="signupPhone" type="tel" autocomplete="tel" placeholder="+251..."></label>
-        <label>Password<input id="signupPassword" type="password" required autocomplete="new-password" placeholder="At least 6 characters" minlength="6"></label>
-        <label>Confirm Password<input id="signupConfirmPassword" type="password" required autocomplete="new-password" placeholder="Repeat password" minlength="6"></label>
+        <label>Password<span class="password-wrapper"><input id="signupPassword" type="password" required autocomplete="new-password" placeholder="At least 6 characters" minlength="6"><button type="button" class="password-toggle" onclick="togglePasswordVisibility('signupPassword',this)" aria-label="Show password" tabindex="-1"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg></button></span></label>
+        <label>Confirm Password<span class="password-wrapper"><input id="signupConfirmPassword" type="password" required autocomplete="new-password" placeholder="Repeat password" minlength="6"><button type="button" class="password-toggle" onclick="togglePasswordVisibility('signupConfirmPassword',this)" aria-label="Show password" tabindex="-1"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg></button></span></label>
         <button class="btn btn-orange full" id="signupSubmit" type="submit">Create Account</button>
       </form>
     </div>
