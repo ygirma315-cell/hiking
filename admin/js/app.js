@@ -445,7 +445,8 @@ function iconSvg(name) {
     eye:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>',
     check:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>',
     x:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>',
-    refresh:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 1-15.4 6.36L3 16"/><path d="M3 21v-5h5"/><path d="M3 12A9 9 0 0 1 18.4 5.64L21 8"/><path d="M21 3v5h-5"/></svg>'
+    refresh:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 1-15.4 6.36L3 16"/><path d="M3 21v-5h5"/><path d="M3 12A9 9 0 0 1 18.4 5.64L21 8"/><path d="M21 3v5h-5"/></svg>',
+    zoom:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M8 11h6"/><path d="M11 8v6"/></svg>'
   };
   return icons[name] || '';
 }
@@ -762,7 +763,7 @@ function renderSidebar(page) {
     return '<button class="sidebar-link' + a + '" data-nav="' + it.id + '"><span class="sidebar-link-icon">' + it.icon + '</span><span class="sidebar-link-label">' + it.label + '</span></button>';
   }).join('');
   return '<aside class="sidebar' + (state.sidebarOpen ? ' open' : '') + '">' +
-    '<div class="sidebar-brand"><div class="sidebar-brand-icon">\u26F0\uFE0F</div><div class="sidebar-brand-text"><span class="sidebar-brand-name">Ereft Hiking</span><span class="sidebar-brand-role">Admin Panel</span></div></div>' +
+    '<div class="sidebar-brand"><div class="sidebar-brand-icon"><img src="../assets/logo/logo.webp" alt="Ereft Hiking" style="width:36px;height:36px;border-radius:8px"></div><div class="sidebar-brand-text"><span class="sidebar-brand-name">Ereft Hiking</span><span class="sidebar-brand-role">Admin Panel</span></div></div>' +
     '<nav class="sidebar-nav">' + items + '</nav>' +
     '<div class="sidebar-footer"><button class="sidebar-link sidebar-logout" onclick="handleLogout()"><span class="sidebar-link-icon">\uD83D\uDEAA</span><span class="sidebar-link-label">Logout</span></button></div>' +
   '</aside>';
@@ -1475,7 +1476,7 @@ function renderRegistrations() {
           '<td class="td-actions">' +
             '<button class="btn btn-sm btn-secondary" onclick="viewReg(' + r.id + ')" title="View">' + iconSvg('eye') + '</button>' +
             (r.status !== 'accepted' ? '<button class="btn btn-sm btn-success" onclick="acceptReg(' + r.id + ')" title="Accept">' + iconSvg('check') + '</button>' : '') +
-            (r.status !== 'needs_review' ? '<button class="btn btn-sm btn-secondary" onclick="needsReviewReg(' + r.id + ')" title="Review">' + iconSvg('eye') + '</button>' : '') +
+            (r.status !== 'needs_review' ? '<button class="btn btn-sm btn-secondary" onclick="needsReviewReg(' + r.id + ')" title="Review">' + iconSvg('zoom') + '</button>' : '') +
             (r.status !== 'rejected' ? '<button class="btn btn-sm btn-danger" onclick="rejectReg(' + r.id + ')" title="Reject">' + iconSvg('x') + '</button>' : '') +
           '</td></tr>';
       }).join('');
@@ -1497,18 +1498,19 @@ function renderUsers() {
   var rows = users.length === 0
     ? '<tr><td colspan="5" class="table-empty">No users signed up yet.</td></tr>'
     : users.map(function(u) {
+        var lastLogin = u.last_login ? formatDateTime(u.last_login) : '-';
         return '<tr>' +
           '<td><strong>' + esc(u.username || '-') + '</strong></td>' +
           '<td>' + esc(u.phone || '-') + '</td>' +
           '<td class="td-userid">' + esc(u.user_id ? u.user_id.slice(0, 8) + '...' : '-') + '</td>' +
           '<td>' + formatDate(u.created_at || u.createdAt) + '</td>' +
-          '<td>' + formatTime(u.created_at || u.createdAt) + '</td>' +
+          '<td>' + lastLogin + '</td>' +
         '</tr>';
       }).join('');
 
   return '<div class="page">' +
-    '<div class="page-header"><div><h1 class="page-title">Users</h1><p class="page-subtitle">Website accounts created via signup</p></div><div class="page-actions"><span class="badge badge-info">Total: ' + users.length + '</span></div></div>' +
-    '<div class="table-wrapper"><table class="data-table"><thead><tr><th>Username</th><th>Phone</th><th>User ID</th><th>Date</th><th>Time</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+    '<div class="page-header"><div><h1 class="page-title">Users</h1><p class="page-subtitle">Website accounts created via signup</p></div><div class="page-header-actions"><span class="badge badge-info">Total: ' + users.length + '</span><button class="btn btn-sm btn-primary btn-icon-text" onclick="refreshRegistrationsFromSupabase(true)">' + iconSvg('refresh') + ' Refresh</button></div></div>' +
+    '<div class="table-wrapper"><table class="data-table"><thead><tr><th>Username</th><th>Phone</th><th>User ID</th><th>Signed Up</th><th>Last Login</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
   '</div>';
 }
 
@@ -1614,16 +1616,13 @@ function renderRegDetail(id) {
       '<div class="detail-item"><span class="detail-label">Number of People</span><span class="detail-value">' + esc(r.participantsCount || 1) + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Destination</span><span class="detail-value">' + esc(r.destination) + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Package</span><span class="detail-value">' + esc(r.package) + '</span></div>' +
-      '<div class="detail-item"><span class="detail-label">Trip Date</span><span class="detail-value">' + esc(r.tripDate || '-') + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Fixed Price</span><span class="detail-value">' + esc(formatAdminPrice(r)) + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Currency</span><span class="detail-value">' + esc(r.currency || 'ETB') + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Payment Method</span><span class="detail-value">' + esc(r.paymentMethod || '-') + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Sender Account / Phone</span><span class="detail-value">' + esc(r.senderAccount || '-') + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Transaction ID</span><span class="detail-value">' + esc(r.transactionId || '-') + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Payment Status</span><span class="detail-value">' + esc(r.paymentStatus || 'pending') + '</span></div>' +
-      '<div class="detail-item"><span class="detail-label">Registration Status</span><span class="badge ' + badge + '">' + esc((r.status || 'pending').replace('_', ' ')) + '</span></div>' +
-      '<div class="detail-item"><span class="detail-label">Submitted Date</span><span class="detail-value">' + formatDate(r.submittedDate) + '</span></div>' +
-      '<div class="detail-item"><span class="detail-label">Submitted Time</span><span class="detail-value">' + formatDateTime(r.createdAt || r.submittedDate) + '</span></div>' +
+      '<div class="detail-item"><span class="detail-label">Status</span><span class="badge ' + badge + '">' + esc((r.status || 'pending').replace('_', ' ')) + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Admin Notes</span><span class="detail-value">' + esc(r.notes || 'None') + '</span></div>' +
     '</div>' +
     '<div class="admin-note" style="margin-top:16px">Manual match priority: Hike ID + transaction/reference ID + sender account/phone + amount. If anything looks duplicated or suspicious, mark Needs Review.</div>' +

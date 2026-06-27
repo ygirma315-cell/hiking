@@ -390,12 +390,13 @@ async function signInUser(form) {
     currentUser = result.data.user;
     try {
       currentProfile = await ensureProfile(currentUser, username);
+      await supabaseClient.from('profiles').update({ last_login: new Date().toISOString() }).eq('user_id', currentUser.id);
     } catch (profileError) {
       console.warn("Profile setup failed:", profileError);
       currentProfile = { username:username, phone:"" };
     }
     form.reset();
-    showSuccessToast("Logged in!");
+    showSuccessToast("✓ Welcome back!");
     await handleSignedIn(pendingAuthAction);
     pendingAuthAction = null;
   } catch (error) {
@@ -459,36 +460,41 @@ async function signUpUser(form) {
     }
 
     if (!createdUser) {
-      var login = await supabaseClient.auth.signInWithPassword({
+      var loginRes = await supabaseClient.auth.signInWithPassword({
         email: usernameToEmail(username),
         password: password
       });
-      if (login.error) {
-        var loginMsg = (login.error.message || login.error.name || "").toLowerCase();
+      if (loginRes.error) {
+        var loginMsg = (loginRes.error.message || loginRes.error.name || "").toLowerCase();
         if (loginMsg.includes("invalid login") || loginMsg.includes("invalid credential")) {
           showSiteNotice("Signup works but auto-login failed. This happens if the SQL function was not created. Run the SQL script first. See instructions.", "error");
           return;
         }
-        throw login.error;
+        throw loginRes.error;
       }
-      currentUser = login.data.user;
+      currentUser = loginRes.data.user;
     } else if (createdUser === true) {
-      var login = await supabaseClient.auth.signInWithPassword({
+      var loginRes = await supabaseClient.auth.signInWithPassword({
         email: usernameToEmail(username),
         password: password
       });
-      if (login.error) throw login.error;
-      currentUser = login.data.user;
+      if (loginRes.error) throw loginRes.error;
+      currentUser = loginRes.data.user;
+    } else {
+      currentUser = createdUser;
     }
 
     try {
       currentProfile = await ensureProfile(currentUser, username, phone);
+      if (currentProfile) {
+        await supabaseClient.from('profiles').update({ last_login: new Date().toISOString() }).eq('user_id', currentUser.id);
+      }
     } catch (profileError) {
       console.warn("Profile setup failed:", profileError);
       currentProfile = { username:username, phone:phone };
     }
     form.reset();
-    showSuccessToast("Account created!");
+    showSuccessToast("✓ Account created!");
     await handleSignedIn(pendingAuthAction);
     pendingAuthAction = null;
   } catch (error) {
@@ -1200,11 +1206,7 @@ async function loadSharedData() {
     if (response.data && response.data.payload && Object.keys(response.data.payload).length) {
       applySharedData(response.data.payload);
     }
-    return;
   }
-
-  var sharedRaw = localStorage.getItem('ereft_hiking_data');
-  if (sharedRaw) applySharedData(JSON.parse(sharedRaw));
 }
 
 async function submitRegistration(form) {
@@ -1276,16 +1278,7 @@ async function submitRegistration(form) {
         throw rpcResponse.error || new Error("Booking could not be created.");
       }
     } else {
-      booking = normalizeBooking(Object.assign({}, payload, {
-        id: Date.now(),
-        hike_id: localHikeId,
-        user_id: "local",
-        username: currentProfile?.username || "",
-        created_at: new Date().toISOString()
-      }));
-      var saved = JSON.parse(localStorage.getItem('ereft_hiking_bookings') || '[]');
-      saved.unshift(booking);
-      localStorage.setItem('ereft_hiking_bookings', JSON.stringify(saved));
+      throw new Error("Could not connect to database. Please try again later.");
     }
 
     userBookings.unshift(booking);

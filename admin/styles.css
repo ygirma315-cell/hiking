@@ -1,15 +1,15 @@
 /* ==============================
    Ereft Hiking Admin Dashboard
-   Theme: Green / Nature / Hiking
+   Theme: Orange / White / Green / Blue
    ============================== */
 
 :root {
-  --primary: #0f8f6f;
-  --primary-dark: #08745d;
-  --primary-darker: #075f4d;
-  --primary-light: #ccefe5;
-  --primary-very-light: #eefaf6;
-  --primary-hover: #12a982;
+  --primary: #f97316;
+  --primary-dark: #ea580c;
+  --primary-darker: #c2410c;
+  --primary-light: #fed7aa;
+  --primary-very-light: #fff7ed;
+  --primary-hover: #fb923c;
 
   --success: #22c55e;
   --success-light: #dcfce7;
@@ -20,11 +20,11 @@
   --info: #3b82f6;
   --info-light: #dbeafe;
 
-  --dark: #0c1f1a;
-  --dark-sidebar: #0c1f1a;
-  --dark-sidebar-hover: #14362e;
+  --dark: #1c1917;
+  --dark-sidebar: #1c1917;
+  --dark-sidebar-hover: #292524;
 
-  --bg: #f5f7f4;
+  --bg: #f8f6f3;
   --card-bg: #ffffff;
   --text: #1e293b;
   --text-light: #64748b;
@@ -515,7 +515,7 @@ input, select, textarea {
 /* ===== Stats Grid ===== */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
   margin-bottom: 28px;
 }
@@ -525,21 +525,21 @@ input, select, textarea {
   border-radius: var(--radius-md);
   padding: 20px;
   border: 1px solid var(--border);
+  border-left: 4px solid var(--border);
   transition: var(--transition);
   animation: fadeInUp 0.4s ease both;
 }
 
-.stat-card:nth-child(1) { animation-delay: 0.05s; }
-.stat-card:nth-child(2) { animation-delay: 0.1s; }
-.stat-card:nth-child(3) { animation-delay: 0.15s; }
-.stat-card:nth-child(4) { animation-delay: 0.2s; }
-.stat-card:nth-child(5) { animation-delay: 0.25s; }
-.stat-card:nth-child(6) { animation-delay: 0.3s; }
+.stat-card:nth-child(1) { border-left-color: var(--primary); }
+.stat-card:nth-child(2) { border-left-color: var(--success); }
+.stat-card:nth-child(3) { border-left-color: var(--info); }
+.stat-card:nth-child(4) { border-left-color: var(--warning); }
+.stat-card:nth-child(5) { border-left-color: var(--danger); }
+.stat-card:nth-child(6) { border-left-color: var(--primary); }
 
 .stat-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
   box-shadow: var(--shadow-lg);
-  border-color: var(--primary-light);
 }
 
 .stat-card-top {
@@ -1441,7 +1441,7 @@ select.form-input {
   align-items: center;
   justify-content: center;
   position: relative;
-  background: linear-gradient(135deg, var(--primary-very-light) 0%, #f0fdf4 50%, #ecfdf5 100%);
+  background: linear-gradient(135deg, var(--primary-very-light) 0%, #f8f6f3 50%, #fff7ed 100%);
   overflow: hidden;
 }
 
@@ -1505,7 +1505,7 @@ select.form-input {
   border-radius: var(--radius-xl);
   padding: 40px 36px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
-  border: 1px solid rgba(5, 150, 105, 0.08);
+  border: 1px solid rgba(249, 115, 22, 0.1);
   animation: fadeInUp 0.6s ease;
 }
 
@@ -2334,7 +2334,7 @@ code {
   }
 
   .stats-grid {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: 12px;
   }
 

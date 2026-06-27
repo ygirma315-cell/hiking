@@ -456,3 +456,70 @@ grant execute on function public.get_registration_status(uuid) to anon, authenti
 insert into public.site_content (id, payload)
 values ('main', '{}'::jsonb)
 on conflict (id) do nothing;
+
+-- Add last_login column to profiles for tracking user activity
+alter table public.profiles add column if not exists last_login timestamptz;
+
+-- Function: create a user with confirmed email (bypass email verification)
+create or replace function public.create_user_with_confirmed_email(
+  p_username text,
+  p_password text,
+  p_phone text default ''
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user_id uuid;
+  v_email text;
+  v_username text;
+begin
+  v_username := public.normalize_username(p_username);
+  v_email := v_username || '@ereft.local';
+
+  -- Create user in auth.users with email auto-confirmed
+  insert into auth.users (
+    email,
+    encrypted_password,
+    email_confirmed_at,
+    raw_user_meta_data,
+    created_at,
+    updated_at,
+    confirmation_token,
+    confirmation_sent_at,
+    recovery_token,
+    email_change,
+    email_change_token_new,
+    email_change_token_current
+  ) values (
+    v_email,
+    crypt(p_password, gen_salt('bf')),
+    now(),
+    jsonb_build_object('username', v_username, 'phone', p_phone),
+    now(),
+    now(),
+    '',
+    now(),
+    '',
+    '',
+    '',
+    ''
+  ) returning id into v_user_id;
+
+  -- Create profile
+  insert into public.profiles (user_id, username, phone)
+  values (v_user_id, v_username, p_phone)
+  on conflict (user_id) do nothing;
+
+  return jsonb_build_object('success', true, 'user_id', v_user_id::text);
+exception
+  when unique_violation then
+    return jsonb_build_object('success', false, 'error', 'Username or email already exists');
+  when others then
+    return jsonb_build_object('success', false, 'error', SQLERRM);
+end;
+$$;
+
+grant execute on function public.create_user_with_confirmed_email(text, text, text) to anon, authenticated;

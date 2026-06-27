@@ -68,6 +68,7 @@ a{color:inherit;text-decoration:none}img{max-width:100%;display:block}
 .profile-trigger{width:36px;height:36px;border-radius:50%;border:2px solid var(--orange);background:var(--cream);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:all .2s;overflow:hidden}
 .profile-trigger:hover{border-color:var(--orange-2);box-shadow:0 0 0 3px rgba(244,122,32,.15)}
 .profile-avatar{font-weight:900;font-size:.9rem;color:var(--orange);text-transform:uppercase;line-height:1}
+.profile-label{font-size:.6rem;color:var(--text-light);text-transform:uppercase;letter-spacing:.04em;line-height:1;margin-top:2px}
 .profile-menu{position:absolute;right:0;top:calc(100% + 8px);background:white;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-lg);min-width:200px;padding:6px;z-index:100;animation:fadeIn .15s ease}
 .profile-menu .profile-head{padding:10px 10px 6px;display:flex;flex-direction:column;gap:1px}
 .profile-menu .profile-name{font-weight:800;font-size:.85rem;color:var(--text)}
