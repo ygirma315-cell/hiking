@@ -170,14 +170,20 @@ a{color:inherit;text-decoration:none}img{max-width:100%;display:block}
 .selected-strip{display:flex;align-items:center;justify-content:center;gap:8px;margin:8px 0 16px;}
 .selected-strip span{color:var(--muted)}
 .pricing-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
-.pricing-card{position:relative;background:white;color:var(--text);border-radius:26px;padding:22px;box-shadow:0 20px 50px rgba(0,0,0,.2);overflow:hidden;transition:transform .3s,box-shadow .3s}
-.pricing-card:hover{transform:translateY(-3px);box-shadow:0 26px 60px rgba(0,0,0,.25)}
-.pricing-card.featured{border:2px solid var(--orange)}
-.pricing-card.featured::before{content:"Popular";position:absolute;right:-30px;top:18px;transform:rotate(35deg);background:var(--orange);color:white;font-weight:900;font-size:.74rem;padding:8px 38px}
-.pricing-card h3{margin:0 0 6px;font-size:1.3rem;color:var(--green-2)}
-.pricing-card .price{font-size:2.2rem;line-height:1;font-weight:900;color:var(--green);margin:12px 0}
-.pricing-card .price small{font-size:.9rem;color:var(--muted);font-weight:800}
-.pricing-card p{color:var(--muted);margin:0 0 16px;font-size:.93rem}
+.pricing-card{position:relative;background:linear-gradient(135deg,var(--orange),var(--orange-2));color:white;border-radius:26px;padding:22px;box-shadow:0 20px 50px rgba(244,122,32,.25);overflow:hidden;transition:transform .3s,box-shadow .3s}
+.pricing-card:hover{transform:translateY(-3px);box-shadow:0 26px 60px rgba(244,122,32,.35)}
+.pricing-card h3{color:white!important}
+.pricing-card .price{color:white!important}
+.pricing-card .price small{color:rgba(255,255,255,.7)!important}
+.pricing-card p{color:rgba(255,255,255,.8)!important}
+.pricing-card .check-list li{color:rgba(255,255,255,.95)!important}
+.pricing-card .check-list li::before{filter:brightness(0) invert(1)}
+.pricing-card.featured{border:2px solid rgba(255,255,255,.5)}
+.pricing-card.featured::before{content:"Popular";position:absolute;right:-30px;top:18px;transform:rotate(35deg);background:var(--primary-darker);color:white;font-weight:900;font-size:.74rem;padding:8px 38px}
+.pricing-card h3{margin:0 0 6px;font-size:1.3rem}
+.pricing-card .price{font-size:2.2rem;line-height:1;font-weight:900;margin:12px 0}
+.pricing-card .price small{font-size:.9rem;font-weight:800}
+.pricing-card p{margin:0 0 16px;font-size:.93rem}
 .check-list{list-style:none;margin:0 0 18px;padding:0;display:grid;gap:8px}
 .check-list li{position:relative;padding-left:24px;font-size:.92rem;color:var(--text)}
 .check-list li::before{content:"";position:absolute;left:0;top:5px;width:16px;height:16px;background:url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill="%230b4d24" d="M13.3 4.3a1 1 0 0 1 0 1.4l-6 6a1 1 0 0 1-1.4 0l-3-3a1 1 0 0 1 1.4-1.4L6.6 9.9l5.3-5.6a1 1 0 0 1 1.4 0"/></svg>') center/contain no-repeat}
@@ -315,12 +321,18 @@ a{color:inherit;text-decoration:none}img{max-width:100%;display:block}
 .status-accepted{background:#dcfce7;color:#166534}
 .status-rejected{background:#fee2e2;color:#991b1b}
 .status-review{background:#dbeafe;color:#1e40af}
-.submitted-info{display:flex;flex-wrap:wrap;gap:2px 10px;font-size:.7rem;color:var(--muted);align-items:center}
-.submitted-info b{color:var(--green-2)}
-.pending-pay-info{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:.7rem;color:var(--muted);align-items:center}
-.pending-pay-info b{color:var(--green-2)}
-.rejected-info{display:flex;flex-wrap:wrap;gap:3px 10px;font-size:.7rem;color:var(--muted);align-items:center}
-.rejected-info b{color:var(--green-2)}
+.submitted-info{display:flex;flex-wrap:wrap;gap:4px;font-size:.7rem;align-items:center}
+.submitted-info .tag{display:inline-flex;align-items:center;gap:3px;background:#f3efe3;border-radius:999px;padding:3px 8px;font-size:.64rem;font-weight:700;color:var(--green-2);white-space:nowrap}
+.submitted-info .tag .emo{font-size:.72rem;line-height:1}
+.submitted-info .tag b{color:var(--text);font-weight:800}
+.pending-pay-info{display:flex;flex-wrap:wrap;gap:4px;font-size:.7rem;align-items:center}
+.pending-pay-info .tag{display:inline-flex;align-items:center;gap:3px;background:#fef3c7;border-radius:999px;padding:3px 8px;font-size:.64rem;font-weight:700;color:#b45309;white-space:nowrap}
+.pending-pay-info .tag .emo{font-size:.72rem;line-height:1}
+.pending-pay-info .tag b{color:var(--text);font-weight:800}
+.rejected-info{display:flex;flex-wrap:wrap;gap:4px;font-size:.7rem;align-items:center}
+.rejected-info .tag{display:inline-flex;align-items:center;gap:3px;background:#fee2e2;border-radius:999px;padding:3px 8px;font-size:.64rem;font-weight:700;color:#dc2626;white-space:nowrap}
+.rejected-info .tag .emo{font-size:.72rem;line-height:1}
+.rejected-info .tag b{color:var(--text);font-weight:800}
 .rejected-msg{width:100%;font-size:.68rem;color:#991b1b;font-weight:800;padding:3px 7px;background:#fee2e2;border-radius:5px}
 .pay-form-wrap{padding:4px 0 2px}
 .payment-update-form{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
@@ -358,6 +370,7 @@ a{color:inherit;text-decoration:none}img{max-width:100%;display:block}
 .inbox-msg{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fffdf9;text-align:left}
 .inbox-msg-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px}
 .inbox-msg-head strong{font-size:.74rem;color:var(--green-2)}
+.inbox-notice-badge{display:inline-flex;align-items:center;gap:3px;background:#dbeafe;border-radius:999px;padding:1px 6px;font-size:.6rem;font-weight:900;color:#1d4ed8;text-transform:uppercase;letter-spacing:.04em}
 .inbox-msg-date{font-size:.64rem;color:var(--muted)}
 .inbox-msg-body{font-size:.78rem;color:var(--green-2);line-height:1.5;white-space:pre-wrap}
 .inbox-status-icon{width:66px;height:66px;margin:8px auto 12px;border-radius:20px;display:grid;place-items:center;background:#fff1e6;color:var(--orange);font-size:1.9rem;font-weight:900}
@@ -718,7 +731,7 @@ body.modal-open{overflow:hidden;}
   .dashboard-table,.dashboard-table tbody,.dashboard-table tr,.dashboard-table td{display:block}
   .dashboard-table tr{margin-bottom:8px;border:1px solid var(--line);border-radius:10px;padding:6px;background:#fffdf9}
   .dashboard-table td{padding:3px 6px;border:none}
-  .submitted-info,.pending-pay-info,.rejected-info{flex-direction:column;align-items:flex-start;gap:3px;font-size:.7rem}
+  .submitted-info,.pending-pay-info,.rejected-info{flex-direction:row;flex-wrap:wrap;gap:3px;font-size:.7rem}
   .payment-update-form{flex-direction:column;align-items:stretch}
   .payment-update-form label{width:auto}
   .payment-update-form input{width:100%}

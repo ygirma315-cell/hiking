@@ -7,6 +7,7 @@ const foreignerFeatures = [];
 const foreignerOvernightFeatures = [];
 
 let selectedDestination = "";
+var tripNotices = [];
 // Populated from saved website content when available.
 var sharedPkgData = null;
 let selectedPackage = "";
@@ -241,6 +242,11 @@ function togglePasswordVisibility(inputId, btn) {
   btn.innerHTML = isPassword
     ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
     : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>';
+}
+
+function formatDate(d) {
+  if (!d) return '-';
+  try { return new Date(d).toLocaleDateString(); } catch(e) { return String(d).slice(0, 10); }
 }
 
 function buildLocalHikeId(seed) {
@@ -663,14 +669,18 @@ function renderDashboard() {
     var hasSender = !!booking.sender_account;
     var isRejected = booking.status === 'rejected';
 
+    function tag(emo, label, val) {
+      return '<span class="tag"><span class="emo">' + emo + '</span>' + esc(label) + ': <b>' + esc(val) + '</b></span>';
+    }
+
     if (isRejected) {
       return '<tr>' +
         '<td data-label="Hike ID"><div class="hike-id-cell"><strong>' + esc(booking.hike_id) + '</strong><button class="copy-btn-sm" type="button" data-copy-value="' + esc(booking.hike_id) + '" title="Copy Hike ID">Copy</button></div></td>' +
         '<td colspan="9"><div class="rejected-info">' +
           '<span class="rejected-msg">Rejected — make sure you paid to the correct account and wrote your Hike ID in the payment note.</span>' +
-          '<span>Paid from: <b>' + esc(booking.sender_account || '-') + '</b></span>' +
-          '<span>Via: <b>' + esc(booking.payment_method || '-') + '</b></span>' +
-          '<span>Pay to: <b>' + accountLine + '</b></span>' +
+          tag('\uD83D\uDCB0', 'Paid from', booking.sender_account || '-') +
+          tag('\uD83C\uDFE6', 'Via', booking.payment_method || '-') +
+          tag('\uD83C\uDFE5', 'Pay to', accountLine) +
           '<button class="btn btn-sm btn-orange" onclick="togglePayForm(\'' + esc(booking.hike_id) + '\')">Resubmit</button>' +
         '</div>' +
         '<div class="pay-form-wrap" id="pay-form-' + esc(booking.hike_id) + '" hidden>' +
@@ -685,16 +695,25 @@ function renderDashboard() {
     if (hasSender) {
       return '<tr>' +
         '<td data-label="Hike ID"><div class="hike-id-cell"><strong>' + esc(booking.hike_id) + '</strong><button class="copy-btn-sm" type="button" data-copy-value="' + esc(booking.hike_id) + '" title="Copy Hike ID">Copy</button></div></td>' +
-        '<td colspan="9"><div class="submitted-info"><span>Name: <b>' + esc(booking.full_name) + '</b></span><span>Phone: <b>' + esc(booking.phone) + '</b></span><span>Pax: <b>' + esc(booking.participants_count || 1) + '</b></span><span>Price: <b>' + esc(price) + '</b></span><span>Paid from: <b>' + esc(booking.sender_account) + '</b></span><span>Via: <b>' + esc(booking.payment_method || '-') + '</b></span><span class="status-badge ' + statusBadgeClass(booking.status) + '">' + esc(copy.label) + '</span></div></td>' +
+        '<td colspan="9"><div class="submitted-info">' +
+          tag('\uD83D\uDC64', 'Name', booking.full_name) +
+          tag('\uD83D\uDCDE', 'Phone', booking.phone) +
+          tag('\uD83D\uDC65', 'Pax', booking.participants_count || 1) +
+          tag('\uD83D\uDCB5', 'Price', price) +
+          tag('\uD83D\uDCB0', 'Paid from', booking.sender_account) +
+          tag('\uD83C\uDFE6', 'Via', booking.payment_method || '-') +
+          tag('\uD83D\uDCC5', 'Registered', formatDate(booking.created_at || booking.submitted_date)) +
+          '<span class="status-badge ' + statusBadgeClass(booking.status) + '">' + esc(copy.label) + '</span>' +
+        '</div></td>' +
       '</tr>';
     }
 
     return '<tr>' +
       '<td data-label="Hike ID"><div class="hike-id-cell"><strong>' + esc(booking.hike_id) + '</strong><button class="copy-btn-sm" type="button" data-copy-value="' + esc(booking.hike_id) + '" title="Copy Hike ID">Copy</button></div></td>' +
       '<td colspan="9"><div class="pending-pay-info">' +
-        '<span>Trip: <b>' + esc(booking.destination || booking.package_name) + '</b></span>' +
-        '<span>Price: <b>' + esc(price) + '</b></span>' +
-        '<span>Pay to: <b>' + accountLine + '</b></span>' +
+        tag('\uD83C\uDFD4\uFE0F', 'Trip', booking.destination || booking.package_name) +
+        tag('\uD83D\uDCB5', 'Price', price) +
+        tag('\uD83C\uDFE5', 'Pay to', accountLine) +
         '<button class="btn btn-sm btn-orange" onclick="togglePayForm(\'' + esc(booking.hike_id) + '\')">I\'ve Paid</button>' +
       '</div>' +
       '<div class="pay-form-wrap" id="pay-form-' + esc(booking.hike_id) + '" hidden>' +
@@ -715,12 +734,16 @@ function togglePayForm(hikeId) {
 function inboxKey() { return 'ereft_inbox_read_' + (currentUser ? currentUser.id : 'anon'); }
 
 function countUnread() {
-  if (!userBookings.length) return 0;
   var lastRead = localStorage.getItem(inboxKey());
   var ts = lastRead ? new Date(lastRead).getTime() : 0;
-  return userBookings.filter(function(b) {
-    return b.admin_message && new Date(b.updated_at || b.created_at).getTime() > ts;
-  }).length;
+  var n = 0;
+  (userBookings || []).forEach(function(b) {
+    if (b.admin_message && new Date(b.updated_at || b.created_at).getTime() > ts) n++;
+  });
+  (tripNotices || []).forEach(function(nn) {
+    if (nn.created_at && new Date(nn.created_at).getTime() > ts) n++;
+  });
+  return n;
 }
 
 function updateInboxBadge() {
@@ -735,21 +758,53 @@ function renderInbox() {
   var list = document.getElementById('inboxList');
   var empty = document.getElementById('inboxEmpty');
   if (!list || !empty) return;
-  var msgs = userBookings.filter(function(b) { return b.admin_message; });
-  if (!msgs.length) {
+  var bookingMsgs = userBookings.filter(function(b) { return b.admin_message; });
+  var allMsgs = [];
+  bookingMsgs.forEach(function(b) {
+    var ts = b.updated_at || b.created_at;
+    allMsgs.push({
+      type:'booking',
+      hike_id: b.hike_id,
+      message: b.admin_message,
+      time: ts ? new Date(ts).toLocaleString() : '',
+      sortTime: ts ? new Date(ts).getTime() : 0
+    });
+  });
+  tripNotices.forEach(function(n) {
+    allMsgs.push({
+      type:'notice',
+      trip_name: n.trip_name,
+      message: n.message,
+      time: n.created_at ? new Date(n.created_at).toLocaleString() : '',
+      sortTime: n.created_at ? new Date(n.created_at).getTime() : 0
+    });
+  });
+  if (!allMsgs.length) {
     list.innerHTML = '';
     empty.hidden = false;
     return;
   }
   empty.hidden = true;
-  list.innerHTML = msgs.map(function(b) {
-    var ts = b.updated_at || b.created_at;
-    var time = ts ? new Date(ts).toLocaleString() : '';
+  allMsgs.sort(function(a, b) { return b.sortTime - a.sortTime; });
+  list.innerHTML = allMsgs.map(function(m) {
+    var label = m.type === 'notice' ? '<span class="inbox-notice-badge">Notice</span> ' + esc(m.trip_name) : esc(m.hike_id);
     return '<div class="inbox-msg">' +
-      '<div class="inbox-msg-head"><strong>' + esc(b.hike_id) + '</strong><span class="inbox-msg-date">' + esc(time) + '</span></div>' +
-      '<div class="inbox-msg-body">' + esc(b.admin_message) + '</div>' +
+      '<div class="inbox-msg-head"><strong>' + label + '</strong><span class="inbox-msg-date">' + esc(m.time) + '</span></div>' +
+      '<div class="inbox-msg-body">' + esc(m.message) + '</div>' +
     '</div>';
   }).join('');
+}
+
+async function fetchTripNotices() {
+  if (!supabaseClient || !currentSessionToken) { tripNotices = []; return; }
+  try {
+    var res = await supabaseClient.rpc('get_trip_notices', { p_session_token: currentSessionToken });
+    if (res.error) throw res.error;
+    tripNotices = res.data || [];
+  } catch(e) {
+    console.error('Failed to fetch trip notices:', e);
+    tripNotices = [];
+  }
 }
 
 async function openInbox() {
@@ -758,7 +813,7 @@ async function openInbox() {
     return;
   }
   openModal('inboxModal');
-  await loadUserBookings();
+  await Promise.all([loadUserBookings(), fetchTripNotices()]);
   renderInbox();
   localStorage.setItem(inboxKey(), new Date().toISOString());
   updateInboxBadge();

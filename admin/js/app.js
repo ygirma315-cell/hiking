@@ -324,6 +324,7 @@ var NAV_ITEMS = [
   { id:'registrations', label:'Registrations', icon:'\uD83D\uDCCB' },
   { id:'users', label:'Users', icon:'\uD83D\uDC65' },
   { id:'admins', label:'Admins', icon:'\uD83D\uDD11' },
+  { id:'notices', label:'Notices', icon:'\uD83D\uDCE2' },
   { id:'settings', label:'Settings', icon:'\u2699\uFE0F' }
 ];
 
@@ -784,6 +785,7 @@ function renderPage(page) {
     case 'registrations': return renderRegistrations();
     case 'users': return renderUsers();
     case 'admins': return renderAdmins();
+    case 'notices': return renderNotices();
     case 'settings': return renderSettings();
     default: return renderOverview();
   }
@@ -791,6 +793,94 @@ function renderPage(page) {
 
 function toggleSidebar() { state.sidebarOpen = !state.sidebarOpen; render(); }
 function closeSidebar() { state.sidebarOpen = false; render(); }
+
+// ==============================
+// NOTICES PAGE
+// ==============================
+function renderNotices() {
+  var d = state.data;
+  var trips = d.trips.filter(function(t){ return t.status === 'active' });
+  var tripOpts = '<option value="">-- Select trip --</option>' + trips.map(function(t){
+    return '<option value="' + esc(t.destination) + '">' + esc(t.destination) + ' (' + esc(t.date) + ')</option>';
+  }).join('');
+
+  var templates = [
+    { label:'Trip Reminder – Tomorrow', msg:'Hello everyone! This is a reminder that your trip to {destination} is tomorrow. Please meet at {meetingPoint} at {meetingTime}. Departure is at {departureTime}. Don\'t forget to bring comfortable hiking shoes, a jacket, and sunscreen. See you there!' },
+    { label:'Trip Reminder – Today', msg:'Hello everyone! Your trip to {destination} is today. Please be at {meetingPoint} by {meetingTime}. Departure: {departureTime}. Bring your essentials and get ready for an amazing adventure!' },
+    { label:'Custom Message', msg:'' }
+  ];
+  var tplOpts = templates.map(function(t, i){
+    return '<option value="' + i + '">' + esc(t.label) + '</option>';
+  }).join('');
+
+  return '<div class="page">' +
+    '<div class="page-header"><h1>Send Trip Notice</h1><p>Send a message to all users registered for a specific trip.</p></div>' +
+    '<div class="card" style="max-width:700px;margin:0 auto">' +
+      '<div class="card-body">' +
+        '<div class="form-group"><label>Trip</label><select id="notice-trip-select" class="form-input" onchange="updateNoticeTemplate()">' + tripOpts + '</select></div>' +
+        '<div class="form-group"><label>Message Template</label><select id="notice-template-select" class="form-input" onchange="updateNoticeTemplate()">' + tplOpts + '</select></div>' +
+        '<div class="form-group"><label>Message <span class="text-muted">(supports {destination}, {meetingPoint}, {meetingTime}, {departureTime})</span></label><textarea id="notice-message" class="form-input" rows="6" placeholder="Write your notice message here..."></textarea></div>' +
+        '<div class="form-actions"><button class="btn btn-primary" onclick="sendNotice()">Send Notice</button></div>' +
+        '<div id="notice-status"></div>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+function updateNoticeTemplate() {
+  var tripSelect = document.getElementById('notice-trip-select');
+  var tplSelect = document.getElementById('notice-template-select');
+  var msgArea = document.getElementById('notice-message');
+  if (!tripSelect || !tplSelect || !msgArea) return;
+  var tripName = tripSelect.value;
+  var tplIdx = parseInt(tplSelect.value);
+  var templates = [
+    'Hello everyone! This is a reminder that your trip to {destination} is tomorrow. Please meet at {meetingPoint} at {meetingTime}. Departure is at {departureTime}. Don\'t forget to bring comfortable hiking shoes, a jacket, and sunscreen. See you there!',
+    'Hello everyone! Your trip to {destination} is today. Please be at {meetingPoint} by {meetingTime}. Departure: {departureTime}. Bring your essentials and get ready for an amazing adventure!',
+    ''
+  ];
+  if (isNaN(tplIdx) || tplIdx < 0 || tplIdx >= templates.length) return;
+  var msg = templates[tplIdx];
+  if (msg) {
+    var site = state.data.website;
+    msg = msg.replace(/\{destination\}/g, tripName || '{destination}');
+    msg = msg.replace(/\{meetingPoint\}/g, site.meetingPoint || '{meetingPoint}');
+    msg = msg.replace(/\{meetingTime\}/g, site.meetingTime || '{meetingTime}');
+    msg = msg.replace(/\{departureTime\}/g, site.departureTime || '{departureTime}');
+    msgArea.value = msg;
+  } else {
+    msgArea.value = '';
+  }
+}
+
+function sendNotice() {
+  var tripSelect = document.getElementById('notice-trip-select');
+  var msgArea = document.getElementById('notice-message');
+  var statusDiv = document.getElementById('notice-status');
+  if (!tripSelect || !msgArea || !statusDiv) return;
+  var tripName = tripSelect.value;
+  var message = msgArea.value.trim();
+  if (!tripName) { statusDiv.innerHTML = '<div class="alert alert-warning">Please select a trip.</div>'; return; }
+  if (!message) { statusDiv.innerHTML = '<div class="alert alert-warning">Please write a message.</div>'; return; }
+  if (!supabaseClient || !adminSessionToken) { statusDiv.innerHTML = '<div class="alert alert-danger">Not authenticated.</div>'; return; }
+  statusDiv.innerHTML = '<div class="alert alert-info">Sending...</div>';
+  supabaseClient.rpc('admin_send_trip_notice', {
+    p_admin_token: adminSessionToken,
+    p_trip_name: tripName,
+    p_message: message
+  }).then(function(res) {
+    if (res.error) throw res.error;
+    if (res.data && res.data.success) {
+      statusDiv.innerHTML = '<div class="alert alert-success">Notice sent successfully!</div>';
+      msgArea.value = '';
+    } else {
+      statusDiv.innerHTML = '<div class="alert alert-danger">' + esc((res.data && res.data.error) || 'Failed to send.') + '</div>';
+    }
+  }).catch(function(err) {
+    console.error(err);
+    statusDiv.innerHTML = '<div class="alert alert-danger">Error: ' + esc(err.message || String(err)) + '</div>';
+  });
+}
 
 // ==============================
 // OVERVIEW PAGE
@@ -999,35 +1089,48 @@ function renderPackages() {
   var pkgs = state.data.packages;
   var keys = Object.keys(pkgs);
   var labels = { nativeDay:'Native Day Trip', nativeOvernight:'Native Overnight', foreignerDay:'Foreigner Day Trip', foreignerOvernight:'Foreigner Overnight' };
-  var editing = state.editingPackages;
-  var disabled = editing ? '' : ' disabled';
+  var editKey = state.editingPackageKey || '';
 
   var cards = keys.map(function(key) {
+    var isEditing = editKey === key;
+    var disabled = isEditing ? '' : ' disabled';
     var p = pkgs[key];
     var feats = (p.features || []).map(function(f, fi) {
-      return '<div class="pkg-feature-row"><input class="form-input" value="' + esc(f) + '" onchange="updatePackageFeature(\'' + key + '\',' + fi + ',this.value)" maxlength="120"' + disabled + '>' + (editing ? '<button class="btn btn-sm btn-danger" onclick="removePackageFeature(\'' + key + '\',' + fi + ')" style="padding:6px 8px">' + iconSvg('x') + '</button>' : '') + '</div>';
+      return '<div class="pkg-feature-row"><input class="form-input" value="' + esc(f) + '" onchange="updatePackageFeature(\'' + key + '\',' + fi + ',this.value)" maxlength="120"' + disabled + '>' + (isEditing ? '<button class="btn btn-sm btn-danger" onclick="removePackageFeature(\'' + key + '\',' + fi + ')" style="padding:6px 8px">' + iconSvg('x') + '</button>' : '') + '</div>';
     }).join('');
-    return '<div class="card pkg-card ' + (editing ? 'editor-active' : 'editor-locked') + '">' +
-      '<div class="pkg-header"><h3>' + esc(labels[key] || key) + '</h3><span class="badge badge-info">' + key + '</span></div>' +
+    return '<div class="card pkg-card ' + (isEditing ? 'editor-active' : 'editor-locked') + '">' +
+      '<div class="pkg-header"><h3>' + esc(labels[key] || key) + '</h3>' +
+        '<div style="display:flex;align-items:center;gap:6px">' +
+          '<span class="badge badge-info">' + key + '</span>' +
+          '<button class="btn btn-sm ' + (isEditing ? 'btn-secondary' : 'btn-soft') + '" onclick="togglePackageEdit(\'' + key + '\')" title="' + (isEditing ? 'Close' : 'Edit') + ' package">' + (isEditing ? iconSvg('x') : iconSvg('edit')) + '</button>' +
+        '</div>' +
+      '</div>' +
       '<div class="form-row-2">' +
         '<div class="form-group"><label class="form-label">Package Name</label><input class="form-input" value="' + esc(p.name || '') + '" onchange="updatePackageField(\'' + key + '\',\'name\',this.value)" maxlength="80"' + disabled + '></div>' +
         '<div class="form-row-2" style="gap:8px"><div class="form-group"><label class="form-label">Price</label><input type="number" class="form-input" value="' + (p.price || '') + '" onchange="updatePackageField(\'' + key + '\',\'price\',parseFloat(this.value)||0)" min="0"' + disabled + '></div>' +
         '<div class="form-group"><label class="form-label">Currency</label><select class="form-input" onchange="updatePackageField(\'' + key + '\',\'currency\',this.value)"' + disabled + '><option value="ETB"' + (p.currency === 'ETB' ? ' selected' : '') + '>ETB</option><option value="USD"' + (p.currency === 'USD' ? ' selected' : '') + '>USD</option></select></div></div>' +
       '</div>' +
-      '<div class="form-group"><label class="form-label">Features ' + (editing ? '<button class="btn btn-sm btn-secondary" onclick="addPackageFeature(\'' + key + '\')" style="margin-left:8px">+ Add</button>' : '') + '</label><div class="pkg-features-list">' + feats + '</div></div>' +
+      '<div class="form-group"><label class="form-label">Features ' + (isEditing ? '<button class="btn btn-sm btn-secondary" onclick="addPackageFeature(\'' + key + '\')" style="margin-left:8px">+ Add</button>' : '') + '</label><div class="pkg-features-list">' + feats + '</div></div>' +
     '</div>';
   }).join('');
 
   return '<div class="page">' +
-    '<div class="page-header"><div><h1 class="page-title">Packages</h1><p class="page-subtitle">Global pricing and features for all 4 package types. Changes affect all trips on the user site.</p></div><div class="page-actions">' + (editing ? '<button class="btn btn-secondary" onclick="cancelPackageEdit()">' + iconSvg('x') + ' Cancel</button><button class="btn btn-primary" onclick="savePackageChanges()">' + iconSvg('check') + ' Save Packages</button>' : '<button class="btn btn-primary" onclick="startPackageEdit()">' + iconSvg('edit') + ' Edit Packages</button>') + '</div></div>' +
+    '<div class="page-header"><div><h1 class="page-title">Packages</h1><p class="page-subtitle">Global pricing and features for all 4 package types. Changes affect all trips on the user site.</p></div><div class="page-actions">' + (editKey ? '<button class="btn btn-secondary" onclick="cancelPackageEdit()">' + iconSvg('x') + ' Cancel</button>' : '') + '<button class="btn btn-primary" onclick="savePackageChanges()">' + iconSvg('check') + ' Save Packages</button></div></div>' +
     '<div class="packages-grid">' + cards + '</div>' +
   '</div>';
 }
 
-function startPackageEdit() { state.editingPackages = true; render(); }
+function togglePackageEdit(key) {
+  if (state.editingPackageKey === key) {
+    state.editingPackageKey = '';
+  } else {
+    state.editingPackageKey = key;
+  }
+  render();
+}
 
 function cancelPackageEdit() {
-  state.editingPackages = false;
+  state.editingPackageKey = '';
   discardUnsavedChanges();
 }
 
@@ -1051,14 +1154,14 @@ function removePackageFeature(key, idx) {
 
 function savePackageChanges() {
   saveData();
-  state.editingPackages = false;
+  state.editingPackageKey = '';
   showToast('All package changes saved. User site will reflect on refresh.', 'success');
   render();
 }
 
 async function discardUnsavedChanges() {
   try {
-    state.editingPackages = false;
+    state.editingPackageKey = '';
     state.editingWebsite = false;
     if (supabaseClient) {
       await refreshDataFromSupabase();
@@ -1515,10 +1618,11 @@ function renderUsers() {
 
 function acceptReg(id) {
   state.data.registrations = state.data.registrations.map(function(r){
+    var msg = r.adminMessage || 'Congratulations! You\'re accepted to ' + (r.destination || 'the trip') + '. Trip date: ' + (r.tripDate || 'Not set') + '.';
     return r.id === id ? Object.assign({}, r, {
       status:'accepted',
       paymentStatus:'confirmed',
-      adminMessage:r.adminMessage || 'Congratulations, your payment has been confirmed. You are accepted for this trip.'
+      adminMessage:msg
     }) : r;
   });
   var reg = state.data.registrations.find(function(r){ return r.id === id });
