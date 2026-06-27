@@ -8,6 +8,7 @@
 var supabaseClient = window.ereftSupabaseClient ? window.ereftSupabaseClient() : null;
 var ADMIN_SESSION_KEY = 'ereft_admin_session';
 var adminSessionToken = null;
+var adminLiveRefreshTimer = null;
 var PACKAGE_KEYS = ['nativeDay', 'nativeOvernight', 'foreignerDay', 'foreignerOvernight'];
 
 function createEmptyPackage(currency) {
@@ -186,7 +187,7 @@ async function refreshRegistrationsFromSupabase(showMessage) {
   if (state.refreshingRegistrations) return;
 
   state.refreshingRegistrations = true;
-  if (getCurrentPage() === 'registrations') render();
+  if (isLiveRefreshPage()) render();
 
   try {
     state.data.registrations = await fetchRegistrationsFromSupabase();
@@ -195,14 +196,40 @@ async function refreshRegistrationsFromSupabase(showMessage) {
     if (state.viewRegId != null && !state.data.registrations.some(function(r){ return r.id === state.viewRegId; })) {
       state.viewRegId = null;
     }
-    if (showMessage) showToast('Registrations refreshed', 'success');
+    if (showMessage) {
+      showToast(getCurrentPage() === 'users' ? 'Users refreshed' : 'Registrations refreshed', 'success');
+    }
   } catch (err) {
     console.error('Could not refresh registrations:', err);
     if (showMessage) showToast('Could not refresh registrations', 'error');
   } finally {
     state.refreshingRegistrations = false;
-    if (getCurrentPage() === 'registrations' || getCurrentPage() === 'overview') render();
+    if (isLiveRefreshPage()) render();
   }
+}
+
+function isLiveRefreshPage() {
+  var page = getCurrentPage();
+  return page === 'registrations' || page === 'overview' || page === 'users';
+}
+
+function shouldAutoRefreshAdmin() {
+  if (!state.user || state.refreshingRegistrations) return false;
+  if (!isLiveRefreshPage()) return false;
+  return state.viewRegId == null && state.editingTripIdx < 0 && !state.editingPackages && !state.editingWebsite && !state.addingGalleryItem;
+}
+
+function startAdminLiveRefresh() {
+  if (adminLiveRefreshTimer) return;
+  adminLiveRefreshTimer = setInterval(function() {
+    if (shouldAutoRefreshAdmin()) refreshRegistrationsFromSupabase(false);
+  }, 15000);
+}
+
+function stopAdminLiveRefresh() {
+  if (!adminLiveRefreshTimer) return;
+  clearInterval(adminLiveRefreshTimer);
+  adminLiveRefreshTimer = null;
 }
 
 function paymentStatusForBookingStatus(status) {
@@ -555,6 +582,7 @@ function saveAdminSession(payload) {
 function clearAdminSession() {
   adminSessionToken = null;
   state.user = null;
+  stopAdminLiveRefresh();
   localStorage.removeItem(ADMIN_SESSION_KEY);
 }
 
@@ -670,6 +698,8 @@ function injectTripForm() {
 
 function render() {
   removeTripFormOverlay();
+  if (state.user) startAdminLiveRefresh();
+  else stopAdminLiveRefresh();
   document.getElementById('app').innerHTML = state.user ? renderDashboard() : renderLogin();
 }
 
@@ -1459,6 +1489,9 @@ function renderRegistrations() {
 
 function renderUsers() {
   var users = state.data.users || [];
+  var refreshIcon = '<span class="' + (state.refreshingRegistrations ? 'spin-icon' : '') + '">' + iconSvg('refresh') + '</span>';
+  var refreshText = state.refreshingRegistrations ? 'Refreshing' : 'Refresh';
+  var refreshDisabled = state.refreshingRegistrations ? ' disabled' : '';
   var rows = users.length === 0
     ? '<tr><td colspan="6" class="table-empty">No users signed up yet.</td></tr>'
     : users.map(function(u) {
@@ -1474,7 +1507,7 @@ function renderUsers() {
       }).join('');
 
   return '<div class="page">' +
-    '<div class="page-header"><div><h1 class="page-title">Users</h1><p class="page-subtitle">Website accounts created via signup</p></div><div class="page-header-actions"><span class="badge badge-info">Total: ' + users.length + '</span><button class="btn btn-sm btn-primary btn-icon-text" onclick="refreshRegistrationsFromSupabase(true)">' + iconSvg('refresh') + ' Refresh</button></div></div>' +
+    '<div class="page-header"><div><h1 class="page-title">Users</h1><p class="page-subtitle">Website accounts created via signup</p></div><div class="page-header-actions"><span class="badge badge-info">Total: ' + users.length + '</span><button class="btn btn-sm btn-primary btn-icon-text" onclick="refreshRegistrationsFromSupabase(true)"' + refreshDisabled + '>' + refreshIcon + ' ' + refreshText + '</button></div></div>' +
     '<div class="table-wrapper"><table class="data-table"><thead><tr><th>Username</th><th>Phone</th><th>User ID</th><th>Signed Up</th><th>Last Login</th><th class="th-actions">Actions</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
   '</div>';
 }
