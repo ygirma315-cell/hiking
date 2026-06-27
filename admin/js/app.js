@@ -188,6 +188,11 @@ async function refreshDataFromSupabase() {
 
   state.data.registrations = await fetchRegistrationsFromSupabase();
   try { state.data.users = await fetchProfilesFromSupabase(); } catch(_) {}
+  try {
+    var adminRes = await supabaseClient.from('admin_users').select('user_id');
+    state.adminUserIds = {};
+    (adminRes.data || []).forEach(function(a){ state.adminUserIds[a.user_id] = true });
+  } catch(_) { state.adminUserIds = {}; }
   state.lastSavedData = cloneData();
   render();
 }
@@ -793,7 +798,8 @@ function renderOverview() {
   var totalImages = d.galleryImages.length;
   var now = new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
 
-  var totalUsers = d.users.length;
+  var adminIds = state.adminUserIds || {};
+  var totalUsers = d.users.filter(function(u){ return !adminIds[u.user_id] }).length;
   var stats = [
     { label:'Total Trips', value:totalTrips, icon:'\uD83C\uDFD4\uFE0F', change:activeTrips + ' active', cls:'up' },
     { label:'Active Trips', value:activeTrips, icon:'\u2705', change:Math.round(activeTrips/totalTrips*100)+'%', cls:'up' },
@@ -1478,7 +1484,9 @@ function renderRegistrations() {
 }
 
 function renderUsers() {
-  var users = state.data.users || [];
+  var allUsers = state.data.users || [];
+  var adminIds = state.adminUserIds || {};
+  var users = allUsers.filter(function(u){ return !adminIds[u.user_id] });
   var rows = users.length === 0
     ? '<tr><td colspan="6" class="table-empty">No users signed up yet.</td></tr>'
     : users.map(function(u) {
