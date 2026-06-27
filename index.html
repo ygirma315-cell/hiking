@@ -59,6 +59,7 @@
             <div class="profile-divr"></div>
             <button class="profile-item" id="profileInboxBtn">✉️ Inbox <span class="inbox-badge" id="inboxBadge" hidden></span></button>
             <button class="profile-item" id="profileDashBtn">📋 My Bookings</button>
+            <button class="profile-item" id="profileSettingsBtn">⚙️ Settings</button>
             <button class="profile-item profile-item-danger" id="profileLogoutBtn">🚪 Logout</button>
           </div>
         </div>
@@ -453,6 +454,24 @@
         <p>When the admin sends you a message, it will appear here.</p>
         <button class="btn btn-soft full" data-close-modal>Close</button>
       </div>
+    </div>
+  </div>
+
+  <div class="modal" id="userSettingsModal" aria-hidden="true">
+    <div class="modal-panel" style="max-width:420px">
+      <button class="modal-close" data-close-modal aria-label="Close">&times;</button>
+      <span class="eyebrow">Account</span>
+      <h3>Settings</h3>
+      <form class="simple-form" id="userSettingsForm">
+        <label>Username<input type="text" id="settingsUsername" required minlength="3"></label>
+        <label>Current Password<input type="password" id="settingsCurrPass" placeholder="Enter current password" required></label>
+        <label>New Password <small style="font-weight:400;color:var(--muted)">(8+ chars, uppercase, lowercase, digit, special)</small><input type="password" id="settingsNewPass" placeholder="Leave blank to keep current"></label>
+        <label>Confirm New Password<input type="password" id="settingsConfirmPass" placeholder="Confirm new password"></label>
+        <div class="modal-actions-row">
+          <button class="btn btn-soft" type="button" data-close-modal>Cancel</button>
+          <button class="btn btn-orange" type="submit">Save</button>
+        </div>
+      </form>
     </div>
   </div>
 

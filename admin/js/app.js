@@ -91,13 +91,7 @@ function loadData() {
   return createEmptyData();
 }
 
-function saveData(options) {
-  options = options || {};
-  if (!options.skipUndo && state.lastSavedData) {
-    state.undoStack.push(JSON.parse(JSON.stringify(state.lastSavedData)));
-    if (state.undoStack.length > 10) state.undoStack.shift();
-  }
-
+function saveData() {
   if (supabaseClient && adminSessionToken) {
     var payload = cloneData();
     delete payload.registrations;
@@ -285,18 +279,6 @@ function updateRegistrationStatus(id, status, message) {
     });
 }
 
-function undoLastSave() {
-  if (!state.undoStack.length) {
-    showToast('Nothing to undo', 'error');
-    return;
-  }
-
-  state.data = state.undoStack.pop();
-  saveData({ skipUndo:true });
-  showToast('Last saved content change was undone', 'success');
-  render();
-}
-
 // ==============================
 // STATE
 // ==============================
@@ -306,7 +288,7 @@ var state = {
   loginError: '',
   loginLoading: false,
   data: loadData(),
-  undoStack: [],
+
   lastSavedData: null,
   // UI state
   editingTripIdx: -1,
@@ -341,6 +323,7 @@ var NAV_ITEMS = [
   { id:'website', label:'Website Content', icon:'\uD83C\uDF10' },
   { id:'registrations', label:'Registrations', icon:'\uD83D\uDCCB' },
   { id:'users', label:'Users', icon:'\uD83D\uDC65' },
+  { id:'admins', label:'Admins', icon:'\uD83D\uDD11' },
   { id:'settings', label:'Settings', icon:'\u2699\uFE0F' }
 ];
 
@@ -733,7 +716,6 @@ function renderLogin() {
         '<form class="login-form" onsubmit="handleLogin(event)">' +
           '<div class="form-group"><label class="form-label">Username</label><div class="input-wrapper"><svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><input id="login-user" type="text" class="form-input" placeholder="admin" autofocus autocomplete="off"></div></div>' +
           '<div class="form-group"><label class="form-label">Password</label><div class="input-wrapper"><svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><input id="login-pass" type="password" class="form-input" placeholder="Enter password"><button type="button" class="input-toggle" onclick="togglePass()" aria-label="Toggle"><svg id="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>' +
-          '<p style="font-size:12px;color:var(--text-muted);margin:-8px 0 16px">Default: username <strong>admin</strong>, password <strong>admin123</strong></p>' +
           (state.loginError ? '<div class="login-error"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg><span>' + state.loginError + '</span></div>' : '') +
           '<button type="submit" class="btn btn-primary btn-block"' + (state.loginLoading ? ' disabled' : '') + '>' + (state.loginLoading ? '<span class="spinner"></span> Signing in...' : 'Sign In') + '</button>' +
         '</form>' +
@@ -786,7 +768,7 @@ function renderHeader() {
     '<button class="header-menu-btn" onclick="toggleSidebar()" aria-label="Menu"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>' +
     '<div class="header-search"><svg class="header-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" placeholder="Search..." class="header-search-input"></div>' +
     '<div class="header-right">' +
-      '<button class="btn btn-sm btn-secondary btn-icon-text" onclick="undoLastSave()" title="Undo last saved content change">' + iconSvg('x') + ' Undo Last Save</button>' +
+
       '<div class="header-user"><div class="header-avatar">A</div><div class="header-user-info"><span class="header-user-name">' + esc(state.user?.name || 'Admin') + '</span><span class="header-user-role">Administrator</span></div></div>' +
     '</div>' +
   '</header>';
@@ -801,6 +783,7 @@ function renderPage(page) {
     case 'website': return renderWebsite();
     case 'registrations': return renderRegistrations();
     case 'users': return renderUsers();
+    case 'admins': return renderAdmins();
     case 'settings': return renderSettings();
     default: return renderOverview();
   }
@@ -1681,6 +1664,107 @@ async function deleteUser(userId, username) {
   showToast('User deleted', 'success');
 }
 
+async function loadAdmins() {
+  if (!supabaseClient || !adminSessionToken) return [];
+  var res = await supabaseClient.rpc('admin_list_admins', { p_admin_token: adminSessionToken });
+  if (res.error) { showToast(res.error.message || 'Could not load admins', 'error'); return []; }
+  return res.data || [];
+}
+
+function renderAdmins() {
+  var isManager = state.user && Number(state.user.id) === 1;
+  var admins = state._admins || [];
+  var rows = admins.length === 0
+    ? '<tr><td colspan="6" class="table-empty">No admins found.</td></tr>'
+    : admins.map(function(a) {
+        var lastLogin = a.last_login ? formatDateTime(a.last_login) : '-';
+        var created = a.created_at ? formatDate(a.created_at) : '-';
+        var isSelf = state.user && Number(state.user.id) === Number(a.id);
+        return '<tr>' +
+          '<td data-label="Username"><strong>' + esc(a.username || '-') + '</strong>' + (Number(a.id) === 1 ? ' <span class="badge badge-info">Manager</span>' : '') + '</td>' +
+          '<td data-label="Name">' + esc(a.display_name || '-') + '</td>' +
+          '<td data-label="ID">' + esc(a.id) + '</td>' +
+          '<td data-label="Last Login">' + lastLogin + '</td>' +
+          '<td data-label="Created">' + created + '</td>' +
+          '<td class="td-actions" data-label="Actions">' +
+            (isManager && Number(a.id) !== 1
+              ? '<button class="btn btn-sm btn-danger" onclick="deleteAdmin(' + a.id + ',\'' + esc(a.username) + '\')" title="Delete admin">' + iconSvg('trash') + '</button>'
+              : '') +
+          '</td></tr>';
+      }).join('');
+
+  var addForm = isManager
+    ? '<div class="card" style="margin-top:16px"><h2 class="card-title">Add New Admin</h2>' +
+      '<div class="form-group"><label class="form-label">Username</label><input type="text" class="form-input" id="new-admin-user" placeholder="choose a username"></div>' +
+      '<div class="form-group"><label class="form-label">Password <small style="color:var(--text-muted);font-weight:400">(8+ chars, uppercase, lowercase, digit, special)</small></label><input type="password" class="form-input" id="new-admin-pass" placeholder="strong password"></div>' +
+      '<div class="form-group"><label class="form-label">Display Name</label><input type="text" class="form-input" id="new-admin-name" placeholder="optional display name"></div>' +
+      '<div class="form-actions"><button class="btn btn-primary" onclick="addAdminFromPage()">Add Admin</button></div></div>'
+    : '';
+
+  return '<div class="page">' +
+    '<div class="page-header"><div><h1 class="page-title">Admins</h1><p class="page-subtitle">' + (isManager ? 'You are the manager. You can add and remove admins.' : 'You are an admin. Only the manager can add or remove admins.') + '</p></div><div class="page-header-actions"><span class="badge badge-info">Total: ' + admins.length + '</span><button class="btn btn-sm btn-primary" onclick="refreshAdmins()">Refresh</button></div></div>' +
+    '<div class="table-wrapper"><table class="data-table"><thead><tr><th>Username</th><th>Name</th><th>ID</th><th>Last Login</th><th>Created</th><th class="th-actions">Actions</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+    addForm +
+  '</div>';
+}
+
+function refreshAdmins() {
+  loadAdmins().then(function(list) {
+    state._admins = list;
+    render();
+  });
+}
+
+function addAdminFromPage() {
+  var user = (document.getElementById('new-admin-user')?.value || '').trim();
+  var pass = document.getElementById('new-admin-pass')?.value || '';
+  var name = (document.getElementById('new-admin-name')?.value || '').trim() || user;
+  if (!user || !pass) { showToast('Enter username and password', 'error'); return; }
+  if (!isStrongPass(pass)) { showToast('Must be 8+ chars with uppercase, lowercase, digit, and special character.', 'error'); return; }
+  if (!supabaseClient || !adminSessionToken) { showToast('Supabase admin session required', 'error'); return; }
+
+  supabaseClient.rpc('admin_add_admin', {
+    p_admin_token: adminSessionToken,
+    p_username: user,
+    p_password: pass,
+    p_display_name: name
+  }).then(function(res) {
+    if (res.error) { showToast(res.error.message || 'Could not add admin', 'error'); return; }
+    if (!res.data || !res.data.success) {
+      showToast((res.data && res.data.error) || 'Could not add admin', 'error');
+      return;
+    }
+    showToast('Admin "' + user + '" added.', 'success');
+    document.getElementById('new-admin-user').value = '';
+    document.getElementById('new-admin-pass').value = '';
+    document.getElementById('new-admin-name').value = '';
+    refreshAdmins();
+  });
+}
+
+async function deleteAdmin(id, username) {
+  var ok = await confirmAction({
+    title:'Delete Admin',
+    message:'Permanently delete admin "' + username + '"?',
+    details:'They will lose access immediately.',
+    confirmText:'Delete',
+    tone:'danger'
+  });
+  if (!ok) return;
+  if (!supabaseClient || !adminSessionToken) { showToast('Supabase admin session required', 'error'); return; }
+  var res = await supabaseClient.rpc('admin_delete_admin', {
+    p_admin_token: adminSessionToken,
+    p_admin_id: id
+  });
+  if (res.error) { showToast(res.error.message || 'Delete failed', 'error'); return; }
+  if (!res.data || !res.data.success) {
+    showToast((res.data && res.data.error) || 'Delete failed', 'error');
+    return;
+  }
+  showToast('Admin deleted', 'success');
+  refreshAdmins();
+}
+
 function renderSettings() {
   return '<div class="page">' +
     '<div class="page-header"><div><h1 class="page-title">Settings</h1><p class="page-subtitle">Admin profile and account</p></div></div>' +
@@ -1692,43 +1776,15 @@ function renderSettings() {
       '</div>' +
       '<div class="card"><h2 class="card-title">Change Password</h2>' +
         '<div class="form-group"><label class="form-label">Current Password</label><input type="password" class="form-input" id="pw-old" placeholder="Enter current"></div>' +
-        '<div class="form-group"><label class="form-label">New Password</label><input type="password" class="form-input" id="pw-new" placeholder="Enter new"></div>' +
+        '<div class="form-group"><label class="form-label">New Password <small style="color:var(--text-muted);font-weight:400">(8+ chars, uppercase, lowercase, digit, special)</small></label><input type="password" class="form-input" id="pw-new" placeholder="Enter new"></div>' +
         '<div class="form-group"><label class="form-label">Confirm</label><input type="password" class="form-input" id="pw-conf" placeholder="Confirm new"></div>' +
         '<div class="form-actions"><button class="btn btn-primary" onclick="changePassword()">Change Password</button></div>' +
-      '</div>' +
-      '<div class="card"><h2 class="card-title">Add Admin Login</h2>' +
-        '<div class="form-group"><label class="form-label">Username</label><input type="text" class="form-input" id="new-admin-user" placeholder="choose a username"></div>' +
-        '<div class="form-group"><label class="form-label">Password</label><input type="password" class="form-input" id="new-admin-pass" placeholder="choose a password"></div>' +
-        '<div class="form-group"><label class="form-label">Display Name</label><input type="text" class="form-input" id="new-admin-name" placeholder="optional display name"></div>' +
-        '<div class="form-actions"><button class="btn btn-primary" onclick="addAdminCred()">Add Admin</button></div>' +
       '</div>' +
     '</div></div>';
 }
 
-function addAdminCred() {
-  var user = (document.getElementById('new-admin-user')?.value || '').trim();
-  var pass = document.getElementById('new-admin-pass')?.value || '';
-  var name = (document.getElementById('new-admin-name')?.value || '').trim() || user;
-  if (!user || !pass) { showToast('Enter username and password', 'error'); return; }
-  if (pass.length < 6) { showToast('Password must be at least 6 characters', 'error'); return; }
-  if (!supabaseClient || !adminSessionToken) { showToast('Supabase admin session required', 'error'); return; }
-
-  supabaseClient.rpc('admin_add_admin', {
-    p_admin_token:adminSessionToken,
-    p_username:user,
-    p_password:pass,
-    p_display_name:name
-  }).then(function(res) {
-    if (res.error) { showToast(res.error.message || 'Could not add admin', 'error'); return; }
-    if (!res.data || !res.data.success) {
-      showToast((res.data && res.data.error) || 'Could not add admin', 'error');
-      return;
-    }
-    showToast('Admin "' + user + '" added. They can login with that username and password.', 'success');
-    document.getElementById('new-admin-user').value = '';
-    document.getElementById('new-admin-pass').value = '';
-    document.getElementById('new-admin-name').value = '';
-  });
+function isStrongPass(p) {
+  return p.length >= 8 && /[A-Z]/.test(p) && /[a-z]/.test(p) && /[0-9]/.test(p) && /[^a-zA-Z0-9]/.test(p);
 }
 
 function saveProfile() {
@@ -1757,7 +1813,7 @@ function changePassword() {
   var c = document.getElementById('pw-conf')?.value;
   if (!o || !n || !c) { showToast('Fill all fields', 'error'); return; }
   if (n !== c) { showToast('Passwords mismatch', 'error'); return; }
-  if (n.length < 6) { showToast('Min 6 characters', 'error'); return; }
+  if (!isStrongPass(n)) { showToast('Must be 8+ chars with uppercase, lowercase, digit, and special character.', 'error'); return; }
 
   if (!supabaseClient || !adminSessionToken) {
     showToast('Supabase admin session required', 'error');
@@ -1819,11 +1875,17 @@ document.addEventListener('click', function(e) {
 // ==============================
 // HASH CHANGE
 // ==============================
-window.addEventListener('hashchange', function() { render(); });
+window.addEventListener('hashchange', function() {
+  var page = getCurrentPage();
+  if (page === 'admins') refreshAdmins();
+  render();
+});
 
 // ==============================
 // INIT
 // ==============================
 initAuth();
 render();
-restoreAdminSession();
+restoreAdminSession().then(function() {
+  if (getCurrentPage() === 'admins') refreshAdmins();
+});

@@ -314,6 +314,18 @@ begin
 end;
 $$;
 
+create or replace function public.is_strong_password(p_password text)
+returns boolean
+language sql
+immutable
+as $$
+  select length(coalesce(p_password, '')) >= 8
+    and p_password ~ '[A-Z]'
+    and p_password ~ '[a-z]'
+    and p_password ~ '[0-9]'
+    and p_password ~ '[^a-zA-Z0-9]';
+$$;
+
 create or replace function public.admin_add_admin(
   p_admin_token uuid,
   p_username text,
@@ -326,15 +338,19 @@ security definer
 set search_path = public, extensions
 as $$
 declare
+  v_admin_id bigint;
   v_username text := public.normalize_login_name(p_username);
 begin
-  perform public.valid_admin(p_admin_token);
+  v_admin_id := public.valid_admin(p_admin_token);
+  if v_admin_id <> 1 then
+    return jsonb_build_object('success', false, 'error', 'Only the manager can add new admins.');
+  end if;
 
   if length(v_username) < 3 then
     return jsonb_build_object('success', false, 'error', 'Username must be at least 3 characters.');
   end if;
-  if length(coalesce(p_password, '')) < 6 then
-    return jsonb_build_object('success', false, 'error', 'Password must be at least 6 characters.');
+  if not public.is_strong_password(p_password) then
+    return jsonb_build_object('success', false, 'error', 'Password must be at least 8 characters with uppercase, lowercase, digit, and special character.');
   end if;
 
   insert into public.admins (username, password_hash, display_name)
@@ -393,8 +409,8 @@ begin
   if v_admin.password_hash <> extensions.crypt(coalesce(p_current_password, ''), v_admin.password_hash) then
     return jsonb_build_object('success', false, 'error', 'Current password is incorrect.');
   end if;
-  if length(coalesce(p_new_password, '')) < 6 then
-    return jsonb_build_object('success', false, 'error', 'New password must be at least 6 characters.');
+  if not public.is_strong_password(p_new_password) then
+    return jsonb_build_object('success', false, 'error', 'New password must be at least 8 characters with uppercase, lowercase, digit, and special character.');
   end if;
 
   update public.admins
@@ -402,6 +418,151 @@ begin
   where id = v_admin_id;
 
   return jsonb_build_object('success', true);
+end;
+$$;
+
+create or replace function public.admin_list_admins(p_admin_token uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+declare
+  v_result jsonb;
+begin
+  perform public.valid_admin(p_admin_token);
+  select jsonb_agg(jsonb_build_object(
+    'id', a.id,
+    'username', a.username,
+    'display_name', a.display_name,
+    'last_login', a.last_login,
+    'created_at', a.created_at
+  ) order by a.id)
+  into v_result
+  from public.admins a;
+  return coalesce(v_result, '[]'::jsonb);
+end;
+$$;
+
+create or replace function public.admin_delete_admin(p_admin_token uuid, p_admin_id bigint)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+declare
+  v_admin_id bigint;
+begin
+  v_admin_id := public.valid_admin(p_admin_token);
+  if v_admin_id <> 1 then
+    return jsonb_build_object('success', false, 'error', 'Only the manager can delete admins.');
+  end if;
+  if p_admin_id = 1 then
+    return jsonb_build_object('success', false, 'error', 'Cannot delete the manager.');
+  end if;
+  delete from public.admins where id = p_admin_id;
+  if not found then
+    return jsonb_build_object('success', false, 'error', 'Admin not found.');
+  end if;
+  return jsonb_build_object('success', true);
+end;
+$$;
+
+create or replace function public.admin_update_username(
+  p_admin_token uuid,
+  p_target_admin_id bigint,
+  p_new_username text
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+declare
+  v_admin_id bigint;
+  v_username text := public.normalize_login_name(p_new_username);
+begin
+  v_admin_id := public.valid_admin(p_admin_token);
+  if v_admin_id <> 1 and v_admin_id <> p_target_admin_id then
+    return jsonb_build_object('success', false, 'error', 'Only the manager can change another admin username.');
+  end if;
+  if v_admin_id <> 1 and v_admin_id = p_target_admin_id then
+    return jsonb_build_object('success', false, 'error', 'Only the manager can change usernames.');
+  end if;
+  if length(v_username) < 3 then
+    return jsonb_build_object('success', false, 'error', 'Username must be at least 3 characters.');
+  end if;
+  update public.admins set username = v_username where id = p_target_admin_id;
+  if not found then
+    return jsonb_build_object('success', false, 'error', 'Admin not found.');
+  end if;
+  return jsonb_build_object('success', true);
+exception when unique_violation then
+  return jsonb_build_object('success', false, 'error', 'Username already exists.');
+end;
+$$;
+
+-- Site user functions
+create or replace function public.user_change_password(
+  p_session_token uuid,
+  p_current_password text,
+  p_new_password text
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+declare
+  v_user_id bigint;
+  v_user public.site_users%rowtype;
+begin
+  v_user_id := public.valid_site_user(p_session_token);
+  select * into v_user from public.site_users where id = v_user_id;
+
+  if v_user.password_hash <> extensions.crypt(coalesce(p_current_password, ''), v_user.password_hash) then
+    return jsonb_build_object('success', false, 'error', 'Current password is incorrect.');
+  end if;
+  if not public.is_strong_password(p_new_password) then
+    return jsonb_build_object('success', false, 'error', 'New password must be at least 8 characters with uppercase, lowercase, digit, and special character.');
+  end if;
+
+  update public.site_users
+  set password_hash = extensions.crypt(p_new_password, extensions.gen_salt('bf'))
+  where id = v_user_id;
+
+  return jsonb_build_object('success', true);
+end;
+$$;
+
+create or replace function public.user_change_username(
+  p_session_token uuid,
+  p_new_username text
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+declare
+  v_user_id bigint;
+  v_username text := public.normalize_login_name(p_new_username);
+  v_user public.site_users%rowtype;
+begin
+  v_user_id := public.valid_site_user(p_session_token);
+  if length(v_username) < 3 then
+    return jsonb_build_object('success', false, 'error', 'Username must be at least 3 characters.');
+  end if;
+  update public.site_users
+  set username = v_username
+  where id = v_user_id
+  returning * into v_user;
+  if not found then
+    return jsonb_build_object('success', false, 'error', 'User not found.');
+  end if;
+  return jsonb_build_object('success', true, 'user', jsonb_build_object('id', v_user.id, 'username', v_user.username, 'phone', v_user.phone));
+exception when unique_violation then
+  return jsonb_build_object('success', false, 'error', 'Username already exists.');
 end;
 $$;
 
@@ -804,10 +965,15 @@ grant execute on function public.admin_get_registrations(uuid) to anon, authenti
 grant execute on function public.admin_get_site_users(uuid) to anon, authenticated;
 grant execute on function public.admin_delete_site_user(uuid, bigint) to anon, authenticated;
 grant execute on function public.admin_update_registration(uuid, bigint, text, text) to anon, authenticated;
+grant execute on function public.admin_list_admins(uuid) to anon, authenticated;
+grant execute on function public.admin_delete_admin(uuid, bigint) to anon, authenticated;
+grant execute on function public.admin_update_username(uuid, bigint, text) to anon, authenticated;
 grant execute on function public.user_signup(text, text, text) to anon, authenticated;
 grant execute on function public.user_login(text, text) to anon, authenticated;
 grant execute on function public.get_current_user(uuid) to anon, authenticated;
 grant execute on function public.user_logout(uuid) to anon, authenticated;
+grant execute on function public.user_change_password(uuid, text, text) to anon, authenticated;
+grant execute on function public.user_change_username(uuid, text) to anon, authenticated;
 grant execute on function public.create_booking(uuid, text, text, int, int, text, text, text, text, numeric, text, text, text, text) to anon, authenticated;
 grant execute on function public.get_user_bookings(uuid) to anon, authenticated;
 grant execute on function public.submit_booking_payment(uuid, text, text, text) to anon, authenticated;

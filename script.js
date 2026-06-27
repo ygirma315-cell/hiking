@@ -764,6 +764,65 @@ async function openInbox() {
   updateInboxBadge();
 }
 
+function isStrongPass(p) {
+  return p.length >= 8 && /[A-Z]/.test(p) && /[a-z]/.test(p) && /[0-9]/.test(p) && /[^a-zA-Z0-9]/.test(p);
+}
+
+function openUserSettings() {
+  if (!currentUser) { openAuthModal("signin"); return; }
+  document.getElementById("settingsUsername").value = currentUser.username || "";
+  document.getElementById("settingsCurrPass").value = "";
+  document.getElementById("settingsNewPass").value = "";
+  document.getElementById("settingsConfirmPass").value = "";
+  openModal("userSettingsModal");
+}
+
+async function saveUserSettings(form) {
+  if (!supabaseClient || !currentUser || !currentSessionToken) { showSiteNotice("Please log in first.", "error"); return; }
+  var username = document.getElementById("settingsUsername").value.trim();
+  var currPass = document.getElementById("settingsCurrPass").value;
+  var newPass = document.getElementById("settingsNewPass").value;
+  var confirmPass = document.getElementById("settingsConfirmPass").value;
+  if (!username || username.length < 3) { showSiteNotice("Username must be at least 3 characters.", "error"); return; }
+  if (!currPass) { showSiteNotice("Enter your current password.", "error"); return; }
+  if (newPass && newPass !== confirmPass) { showSiteNotice("New passwords do not match.", "error"); return; }
+  if (newPass && !isStrongPass(newPass)) { showSiteNotice("New password must be 8+ chars with uppercase, lowercase, digit, and special character.", "error"); return; }
+
+  var btn = form.querySelector("button[type=submit]");
+  btn.disabled = true;
+  btn.textContent = "Saving...";
+  try {
+    if (username !== currentUser.username) {
+      var userRes = await supabaseClient.rpc("user_change_username", {
+        p_session_token: currentSessionToken,
+        p_new_username: username
+      });
+      if (userRes.error) throw userRes.error;
+      if (!userRes.data || !userRes.data.success) throw new Error((userRes.data && userRes.data.error) || "Could not change username.");
+      saveSiteSession({ session_token: currentSessionToken, user: { id: currentUser.id, username: username, phone: currentUser.phone } });
+      currentUser.username = username;
+      updateAuthUI();
+    }
+    if (newPass) {
+      var passRes = await supabaseClient.rpc("user_change_password", {
+        p_session_token: currentSessionToken,
+        p_current_password: currPass,
+        p_new_password: newPass
+      });
+      if (passRes.error) throw passRes.error;
+      if (!passRes.data || !passRes.data.success) throw new Error((passRes.data && passRes.data.error) || "Could not change password.");
+    }
+    showSiteNotice("Settings saved.", "success");
+    closeModals();
+  } catch (err) {
+    console.error("Settings save failed:", err);
+    showSiteNotice(err.message || "Could not save settings.", "error");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Save";
+  }
+}
+
 async function openDashboard() {
   if (!currentUser) {
     openAuthModal("signin", "dashboard");
@@ -1204,6 +1263,7 @@ function setupFormsAndModals() {
   document.getElementById("profileOverlay").addEventListener("click", function() { toggleProfileMenu(false); });
   document.getElementById("profileInboxBtn").addEventListener("click", function() { toggleProfileMenu(false); openInbox(); });
   document.getElementById("profileDashBtn").addEventListener("click", function() { toggleProfileMenu(false); openDashboard(); });
+  document.getElementById("profileSettingsBtn").addEventListener("click", function() { toggleProfileMenu(false); openUserSettings(); });
   document.getElementById("profileLogoutBtn").addEventListener("click", function() { toggleProfileMenu(false); signOutUser(); });
   document.getElementById("dashboardRefreshButton").addEventListener("click", () => refreshDashboard(false));
   document.getElementById("successViewDashboardButton").addEventListener("click", function() {
@@ -1277,6 +1337,10 @@ function setupFormsAndModals() {
   document.getElementById("registrationForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     await submitRegistration(e.currentTarget);
+  });
+  document.getElementById("userSettingsForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    await saveUserSettings(e.currentTarget);
   });
 
   document.querySelectorAll(".toggle-option").forEach(button => {
