@@ -218,7 +218,7 @@ function isLiveRefreshPage() {
 function shouldAutoRefreshAdmin() {
   if (!state.user || state.refreshingRegistrations) return false;
   if (!isLiveRefreshPage()) return false;
-  return state.viewRegId == null && state.editingTripIdx < 0 && !state.editingPackages && !state.editingWebsite && !state.addingGalleryItem;
+  return state.viewRegId == null && state.editingTripIdx < 0 && !state.editingPackageKey && !state.editingWebsite && !state.addingGalleryItem;
 }
 
 function startAdminLiveRefresh() {
