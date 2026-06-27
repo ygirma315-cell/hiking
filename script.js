@@ -1354,7 +1354,7 @@ async function submitRegistration(form) {
   }
   var payload = {
     full_name: document.getElementById("fullName").value.trim(),
-    age: null,
+    age: parseInt(document.getElementById("age").value) || null,
     phone: getNormalizedPhoneValue(),
     participants_count: peopleCount,
     gender: document.getElementById("gender").value,

@@ -1608,20 +1608,26 @@ function renderRegDetail(id) {
   return '<div class="modal-overlay" onclick="closeViewReg()"><div class="modal modal-xl" onclick="event.stopPropagation()">' +
     '<div class="modal-header"><h2>Registration Details</h2><button class="modal-close" onclick="closeViewReg()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>' +
     '<div class="modal-body"><div class="detail-grid reg-detail-grid">' +
+    '<div class="detail-item"><span class="detail-label">ID</span><span class="detail-value">' + esc(r.id || '-') + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Hike ID</span><span class="detail-value">' + esc(r.hikeId || '-') + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Full Name</span><span class="detail-value">' + esc(r.fullName) + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Username</span><span class="detail-value">' + esc(r.username || '-') + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Phone</span><span class="detail-value">' + esc(r.phone || '-') + '</span></div>' +
+      '<div class="detail-item"><span class="detail-label">Age</span><span class="detail-value">' + esc(r.age || '-') + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Gender</span><span class="detail-value">' + esc(r.gender || '-') + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Number of People</span><span class="detail-value">' + esc(r.participantsCount || 1) + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Destination</span><span class="detail-value">' + esc(r.destination) + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Package</span><span class="detail-value">' + esc(r.package) + '</span></div>' +
+      '<div class="detail-item"><span class="detail-label">Trip Date</span><span class="detail-value">' + esc(r.tripDate || 'Not set') + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Fixed Price</span><span class="detail-value">' + esc(formatAdminPrice(r)) + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Currency</span><span class="detail-value">' + esc(r.currency || 'ETB') + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Payment Method</span><span class="detail-value">' + esc(r.paymentMethod || '-') + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Transferring Account / Phone</span><span class="detail-value">' + esc(r.senderAccount || '-') + '</span></div>' +
+      '<div class="detail-item"><span class="detail-label">Transaction ID</span><span class="detail-value">' + esc(r.transactionId || '-') + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Payment Status</span><span class="detail-value">' + esc(r.paymentStatus || 'pending') + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Status</span><span class="badge ' + badge + '">' + esc((r.status || 'pending').replace('_', ' ')) + '</span></div>' +
+      '<div class="detail-item"><span class="detail-label">Submitted Date</span><span class="detail-value">' + esc(r.submittedDate || '-') + '</span></div>' +
+      '<div class="detail-item"><span class="detail-label">Created At</span><span class="detail-value">' + esc(r.createdAt || '-') + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Admin Notes</span><span class="detail-value">' + esc(r.notes || 'None') + '</span></div>' +
     '</div>' +
     '<div class="admin-note" style="margin-top:16px">Manual match priority: Hike ID + transferring account/phone + amount + customer name. If anything looks duplicated or suspicious, mark Needs Review.</div>' +
