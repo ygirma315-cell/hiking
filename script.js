@@ -639,6 +639,7 @@ async function loadUserBookings() {
 
   if (response.error) throw response.error;
   userBookings = (response.data || []).map(normalizeBooking);
+  updateInboxBadge();
   return userBookings;
 }
 
@@ -709,6 +710,58 @@ function renderDashboard() {
 function togglePayForm(hikeId) {
   var wrap = document.getElementById('pay-form-' + hikeId);
   if (wrap) wrap.hidden = !wrap.hidden;
+}
+
+function inboxKey() { return 'ereft_inbox_read_' + (currentUser ? currentUser.id : 'anon'); }
+
+function countUnread() {
+  if (!userBookings.length) return 0;
+  var lastRead = localStorage.getItem(inboxKey());
+  var ts = lastRead ? new Date(lastRead).getTime() : 0;
+  return userBookings.filter(function(b) {
+    return b.admin_message && new Date(b.updated_at || b.created_at).getTime() > ts;
+  }).length;
+}
+
+function updateInboxBadge() {
+  var badge = document.getElementById('inboxBadge');
+  if (!badge) return;
+  var n = countUnread();
+  badge.hidden = n === 0;
+  badge.textContent = n > 9 ? '9+' : n;
+}
+
+function renderInbox() {
+  var list = document.getElementById('inboxList');
+  var empty = document.getElementById('inboxEmpty');
+  if (!list || !empty) return;
+  var msgs = userBookings.filter(function(b) { return b.admin_message; });
+  if (!msgs.length) {
+    list.innerHTML = '';
+    empty.hidden = false;
+    return;
+  }
+  empty.hidden = true;
+  list.innerHTML = msgs.map(function(b) {
+    var ts = b.updated_at || b.created_at;
+    var time = ts ? new Date(ts).toLocaleString() : '';
+    return '<div class="inbox-msg">' +
+      '<div class="inbox-msg-head"><strong>' + esc(b.hike_id) + '</strong><span class="inbox-msg-date">' + esc(time) + '</span></div>' +
+      '<div class="inbox-msg-body">' + esc(b.admin_message) + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+async function openInbox() {
+  if (!currentUser) {
+    openAuthModal('signin', 'inbox');
+    return;
+  }
+  openModal('inboxModal');
+  await loadUserBookings();
+  renderInbox();
+  localStorage.setItem(inboxKey(), new Date().toISOString());
+  updateInboxBadge();
 }
 
 async function openDashboard() {
@@ -1149,6 +1202,7 @@ function setupFormsAndModals() {
     toggleProfileMenu();
   });
   document.getElementById("profileOverlay").addEventListener("click", function() { toggleProfileMenu(false); });
+  document.getElementById("profileInboxBtn").addEventListener("click", function() { toggleProfileMenu(false); openInbox(); });
   document.getElementById("profileDashBtn").addEventListener("click", function() { toggleProfileMenu(false); openDashboard(); });
   document.getElementById("profileLogoutBtn").addEventListener("click", function() { toggleProfileMenu(false); signOutUser(); });
   document.getElementById("dashboardRefreshButton").addEventListener("click", () => refreshDashboard(false));

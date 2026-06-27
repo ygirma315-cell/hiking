@@ -57,6 +57,7 @@
               <span class="profile-user" id="profileUsername">@user</span>
             </div>
             <div class="profile-divr"></div>
+            <button class="profile-item" id="profileInboxBtn">✉️ Inbox <span class="inbox-badge" id="inboxBadge" hidden></span></button>
             <button class="profile-item" id="profileDashBtn">📋 My Bookings</button>
             <button class="profile-item profile-item-danger" id="profileLogoutBtn">🚪 Logout</button>
           </div>
@@ -435,6 +436,22 @@
         <h3>No bookings yet</h3>
         <p>Choose a package and submit your first hiking registration.</p>
         <a class="btn btn-orange full" href="#register" data-close-modal>Choose a Package</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="inboxModal" aria-hidden="true">
+    <div class="modal-panel inbox-panel">
+      <button class="modal-close" data-close-modal aria-label="Close">&times;</button>
+      <span class="eyebrow">Messages</span>
+      <h3>Inbox</h3>
+      <p class="modal-subtitle">Messages from the admin about your bookings.</p>
+      <div class="inbox-list" id="inboxList"></div>
+      <div class="inbox-empty" id="inboxEmpty" hidden>
+        <div class="inbox-status-icon empty">0</div>
+        <h3>No messages</h3>
+        <p>When the admin sends you a message, it will appear here.</p>
+        <button class="btn btn-soft full" data-close-modal>Close</button>
       </div>
     </div>
   </div>

@@ -349,7 +349,17 @@ a{color:inherit;text-decoration:none}img{max-width:100%;display:block}
 .inbox-dot[hidden]{display:none}
 .inbox-dot.accepted{background:#16a34a}
 .inbox-dot.rejected{background:#dc2626}
-.inbox-panel{text-align:center}
+.inbox-badge{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;border-radius:999px;background:var(--orange);color:white;font-size:.6rem;font-weight:900;padding:0 4px;margin-left:auto}
+.inbox-badge[hidden]{display:none}
+.inbox-panel{text-align:left;width:min(520px,100%)}
+.inbox-panel h3{text-align:center}
+.inbox-panel .modal-subtitle{text-align:center}
+.inbox-list{display:grid;gap:8px;margin-top:12px}
+.inbox-msg{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fffdf9;text-align:left}
+.inbox-msg-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px}
+.inbox-msg-head strong{font-size:.74rem;color:var(--green-2)}
+.inbox-msg-date{font-size:.64rem;color:var(--muted)}
+.inbox-msg-body{font-size:.78rem;color:var(--green-2);line-height:1.5;white-space:pre-wrap}
 .inbox-status-icon{width:66px;height:66px;margin:8px auto 12px;border-radius:20px;display:grid;place-items:center;background:#fff1e6;color:var(--orange);font-size:1.9rem;font-weight:900}
 .inbox-status-icon.empty{background:#e9f6ec;color:var(--green)}
 .inbox-status-icon.accepted{background:#dcfce7;color:#15803d}
