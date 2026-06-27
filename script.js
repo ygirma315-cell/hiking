@@ -888,7 +888,7 @@ function setupNavigation() {
 
 function setupActiveNavOnScroll() {
   const sections = document.querySelectorAll(".section-anchor");
-  const navLinks = document.querySelectorAll(".main-nav a");
+  const navLinks = document.querySelectorAll(".main-nav a, .mobile-nav-item");
   if (!sections.length) return;
 
   const observer = new IntersectionObserver((entries) => {
@@ -934,7 +934,7 @@ function setupNavSmoothScroll() {
 }
 
 function setupFormsAndModals() {
-  document.getElementById("loginOpenButton").addEventListener("click", () => openAuthModal("signin"));
+  document.getElementById("loginOpenButton").addEventListener("click", () => openAuthModal("signup"));
   document.getElementById("dashboardOpenButton").addEventListener("click", openDashboard);
   document.getElementById("logoutButton").addEventListener("click", signOutUser);
   document.getElementById("dashboardRefreshButton").addEventListener("click", () => refreshDashboard(false));
