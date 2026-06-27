@@ -22,10 +22,16 @@ const destinationSelect = document.getElementById("destinationSelect");
 const packageInput = document.getElementById("packageInput");
 const packagePriceInput = document.getElementById("packagePriceInput");
 const participantsCountInput = document.getElementById("participantsCount");
+const phoneInput = document.getElementById("phone");
+const phoneHelp = document.getElementById("phoneHelp");
 const paymentMethodSelect = document.getElementById("paymentMethod");
 const otherPaymentWrap = document.getElementById("otherPaymentWrap");
 const otherPaymentNameInput = document.getElementById("otherPaymentName");
 const paymentReceiverGuide = document.getElementById("paymentReceiverGuide");
+const bookingPaymentSummary = document.getElementById("bookingPaymentSummary");
+const senderAccountInput = document.getElementById("senderAccount");
+const senderAccountLabel = document.getElementById("senderAccountLabel");
+const senderAccountHelp = document.getElementById("senderAccountHelp");
 const supabaseClient = window.ereftSupabaseClient ? window.ereftSupabaseClient() : null;
 const SITE_SESSION_KEY = "ereft_site_session";
 var currentUser = null;
@@ -35,6 +41,7 @@ var userBookings = [];
 var dashboardRefreshTimer = null;
 var pendingAuthAction = null;
 var selectedPackageMeta = null;
+var registrationStep = 1;
 
 const PAYMENT_ACCOUNTS = {
   cbe: {
@@ -117,6 +124,108 @@ function updatePackagePriceDisplay() {
   packagePriceInput.value = selectedPackageMeta
     ? formatPackageTotalPrice(selectedPackageMeta, participantsCountInput ? participantsCountInput.value : 1)
     : "";
+  updateBookingPaymentSummary();
+}
+
+function normalizeEthiopianPhone(showNotice) {
+  if (!phoneInput) return "";
+  var raw = phoneInput.value || "";
+  var digits = raw.replace(/\D/g, "");
+  if (digits.startsWith("251")) digits = digits.slice(3);
+  if (digits.startsWith("0")) digits = digits.slice(1);
+  var trimmed = digits.length > 9;
+  if (trimmed) digits = digits.slice(0, 9);
+  phoneInput.value = digits;
+
+  if (phoneHelp) {
+    phoneHelp.classList.toggle("field-help-error", trimmed || (digits.length > 0 && digits.length < 9));
+    if (trimmed) {
+      phoneHelp.textContent = "Phone number should be 9 digits after +251. Extra digits were removed.";
+    } else if (digits.length === 9) {
+      phoneHelp.textContent = "Saved as +251" + digits + ".";
+    } else {
+      phoneHelp.textContent = "Enter 9 digits after +251. If you type 09..., we remove the 0.";
+    }
+  }
+
+  if (trimmed && showNotice) {
+    showSiteNotice("Phone number should be 9 digits after +251. Extra digits were removed.", "error");
+  }
+  return digits;
+}
+
+function getNormalizedPhoneValue() {
+  var digits = normalizeEthiopianPhone(false);
+  return digits.length === 9 ? "+251" + digits : "";
+}
+
+function updateSenderAccountPrompt() {
+  if (!senderAccountLabel || !senderAccountInput || !senderAccountHelp) return;
+  var method = paymentMethodSelect ? paymentMethodSelect.value : "";
+  if (method === "telebirr") {
+    senderAccountLabel.textContent = "Your Telebirr Account Phone";
+    senderAccountInput.placeholder = "Example: +2519XXXXXXXX";
+    senderAccountHelp.textContent = "Enter the Telebirr phone number you will pay from.";
+  } else if (method === "cash") {
+    senderAccountLabel.textContent = "Payment Note";
+    senderAccountInput.placeholder = "Optional note for cash payment";
+    senderAccountHelp.textContent = "For cash, you can leave this empty or write a short note.";
+  } else {
+    senderAccountLabel.textContent = "Your Transferring Account / Phone";
+    senderAccountInput.placeholder = "Account or phone you paid from";
+    senderAccountHelp.textContent = "Enter the bank account or phone number you will pay from.";
+  }
+}
+
+function updateBookingPaymentSummary() {
+  if (!bookingPaymentSummary) return;
+  var people = cleanPeopleCount(participantsCountInput ? participantsCountInput.value : 1);
+  var phoneDigits = phoneInput ? normalizeEthiopianPhone(false) : "";
+  var phone = phoneDigits ? "+251" + phoneDigits : "-";
+  bookingPaymentSummary.innerHTML =
+    '<div><span>Name</span><strong>' + esc(document.getElementById("fullName")?.value.trim() || "-") + '</strong></div>' +
+    '<div><span>Phone</span><strong>' + esc(phone) + '</strong></div>' +
+    '<div><span>People</span><strong>' + esc(people) + '</strong></div>' +
+    '<div><span>Trip</span><strong>' + esc(destinationSelect ? destinationSelect.value || "-" : "-") + '</strong></div>' +
+    '<div><span>Package</span><strong>' + esc(packageInput ? packageInput.value || "-" : "-") + '</strong></div>' +
+    '<div><span>Total Price</span><strong>' + esc(packagePriceInput ? packagePriceInput.value || "-" : "-") + '</strong></div>';
+}
+
+function showRegistrationStep(step) {
+  registrationStep = step === 2 ? 2 : 1;
+  document.querySelectorAll("[data-registration-step]").forEach(function(panel) {
+    panel.hidden = panel.dataset.registrationStep !== String(registrationStep);
+  });
+  document.querySelectorAll("[data-step-indicator]").forEach(function(indicator) {
+    indicator.classList.toggle("active", indicator.dataset.stepIndicator === String(registrationStep));
+  });
+  if (registrationStep === 2) {
+    updateBookingPaymentSummary();
+    updatePaymentGuide();
+    updateSenderAccountPrompt();
+  }
+}
+
+function validateRegistrationDetails(showMessages) {
+  var fullName = document.getElementById("fullName");
+  var gender = document.getElementById("gender");
+  var people = participantsCountInput;
+  var phone = getNormalizedPhoneValue();
+  var missing = !fullName?.value.trim() || !phone || !people?.value || !gender?.value || !destinationSelect?.value || !packageInput?.value;
+  if (missing && showMessages) {
+    if (!phoneInput?.value || !phone) {
+      showSiteNotice("Enter a valid phone number: +251 plus 9 digits.", "error");
+      phoneInput?.focus();
+    } else {
+      showSiteNotice("Please complete the required booking details before continuing.", "error");
+    }
+  }
+  return !missing;
+}
+
+function goToPaymentStep() {
+  if (!validateRegistrationDetails(true)) return;
+  showRegistrationStep(2);
 }
 
 function normalizeUsername(value) {
@@ -277,6 +386,7 @@ function updatePaymentGuide(hikeId) {
   if (otherPaymentWrap) otherPaymentWrap.hidden = value !== "other";
   paymentReceiverGuide.hidden = !account;
   paymentReceiverGuide.innerHTML = account ? paymentGuideHtml(account, hikeId) : "";
+  updateSenderAccountPrompt();
 }
 
 function updateAuthUI() {
@@ -917,6 +1027,7 @@ function openRegistrationModal() {
   selectedPackageMeta = getPackageByName(selectedPackage);
   updatePackagePriceDisplay();
   updatePaymentGuide();
+  showRegistrationStep(1);
   openModal("registrationModal");
 }
 
@@ -1022,9 +1133,18 @@ function setupFormsAndModals() {
     closeModals();
     openDashboard();
   });
+  document.getElementById("registrationNextButton").addEventListener("click", goToPaymentStep);
+  document.getElementById("registrationBackButton").addEventListener("click", function() { showRegistrationStep(1); });
   if (paymentMethodSelect) paymentMethodSelect.addEventListener("change", () => updatePaymentGuide());
   if (otherPaymentNameInput) otherPaymentNameInput.addEventListener("input", () => updatePaymentGuide());
   if (participantsCountInput) participantsCountInput.addEventListener("input", updatePackagePriceDisplay);
+  if (phoneInput) phoneInput.addEventListener("input", function() { normalizeEthiopianPhone(true); updateBookingPaymentSummary(); });
+  ["fullName", "gender"].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener("input", updateBookingPaymentSummary);
+    if (el) el.addEventListener("change", updateBookingPaymentSummary);
+  });
+  if (destinationSelect) destinationSelect.addEventListener("change", updateBookingPaymentSummary);
   document.getElementById("menuToggle").addEventListener("click", function() {
     var nav = document.querySelector(".main-nav");
     var open = nav.classList.toggle("open");
@@ -1200,6 +1320,10 @@ async function submitRegistration(form) {
     openAuthModal("signup", "register");
     return;
   }
+  if (!validateRegistrationDetails(true)) {
+    showRegistrationStep(1);
+    return;
+  }
   if (!destinationSelect.value || !packageInput.value) {
     showSiteNotice("Choose a destination and package before submitting.", "error");
     return;
@@ -1208,10 +1332,30 @@ async function submitRegistration(form) {
   selectedPackageMeta = getPackageByName(packageInput.value);
   var trip = findTrip(destinationSelect.value);
   var peopleCount = cleanPeopleCount(participantsCountInput ? participantsCountInput.value : 1);
+  var paymentMethod = selectedPaymentLabel();
+  var senderAccount = senderAccountInput ? senderAccountInput.value.trim() : "";
+  if (!paymentMethod) {
+    showRegistrationStep(2);
+    showSiteNotice("Choose how you will pay before submitting.", "error");
+    paymentMethodSelect?.focus();
+    return;
+  }
+  if (paymentMethodSelect && paymentMethodSelect.value === "other" && !otherPaymentNameInput?.value.trim()) {
+    showRegistrationStep(2);
+    showSiteNotice("Write the bank or wallet name you will use.", "error");
+    otherPaymentNameInput?.focus();
+    return;
+  }
+  if (paymentMethodSelect && paymentMethodSelect.value !== "cash" && !senderAccount) {
+    showRegistrationStep(2);
+    showSiteNotice("Enter the account or phone number you will pay from.", "error");
+    senderAccountInput?.focus();
+    return;
+  }
   var payload = {
     full_name: document.getElementById("fullName").value.trim(),
     age: null,
-    phone: document.getElementById("phone").value.trim(),
+    phone: getNormalizedPhoneValue(),
     participants_count: peopleCount,
     gender: document.getElementById("gender").value,
     destination: destinationSelect.value,
@@ -1219,8 +1363,8 @@ async function submitRegistration(form) {
     trip_date: trip ? trip.date || "" : "",
     price: getPackageTotalPrice(selectedPackageMeta, peopleCount),
     currency: selectedPackageMeta ? selectedPackageMeta.currency || "ETB" : "ETB",
-    payment_method: selectedPaymentLabel(),
-    sender_account: document.getElementById("senderAccount").value.trim(),
+    payment_method: paymentMethod,
+    sender_account: senderAccount,
     transaction_id: "",
     payment_status: "pending",
     status: "pending"
@@ -1268,6 +1412,8 @@ async function submitRegistration(form) {
     renderSuccessBooking(booking);
     openModal("successModal");
     form.reset();
+    showRegistrationStep(1);
+    normalizeEthiopianPhone(false);
     await refreshDashboard(true).catch(function(){});
   } catch (error) {
     console.error('Booking failed:', error);

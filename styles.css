@@ -257,6 +257,22 @@ a{color:inherit;text-decoration:none}img{max-width:100%;display:block}
 .password-toggle{position:absolute;right:4px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;color:var(--muted);background:none;border:none;cursor:pointer;transition:color .2s,background .2s;padding:0;z-index:1}
 .password-toggle:hover{color:var(--text);background:rgba(0,0,0,.04)}
 .form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.registration-steps{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 4px}
+.registration-steps span{display:flex;align-items:center;justify-content:center;min-height:34px;border-radius:999px;background:#f6f1e6;border:1px solid var(--line);color:var(--muted);font-size:.78rem;font-weight:900}
+.registration-steps span.active{background:var(--green);border-color:var(--green);color:white;box-shadow:0 8px 18px rgba(11,77,36,.16)}
+.registration-step{display:grid;gap:12px}
+.phone-input-wrap{display:flex;align-items:center;border:1px solid var(--line);border-radius:12px;background:#fffdf9;overflow:hidden;transition:border-color .2s,box-shadow .2s}
+.phone-input-wrap:focus-within{border-color:var(--orange);box-shadow:0 0 0 3px rgba(244,122,32,.12)}
+.phone-input-wrap span{align-self:stretch;display:grid;place-items:center;padding:0 11px;background:#f6f1e6;color:var(--green-2);font-weight:900;border-right:1px solid var(--line)}
+.simple-form .phone-input-wrap input{border:0;border-radius:0;box-shadow:none;padding-left:10px}
+.field-help{font-size:.68rem;line-height:1.35;color:var(--muted);font-weight:700}
+.field-help-error{color:#b45309}
+.booking-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:10px;border-radius:16px;background:#fbf8f1;border:1px solid var(--line)}
+.booking-summary div{display:grid;gap:2px;padding:8px 9px;border-radius:11px;background:white;border:1px solid rgba(11,77,36,.08)}
+.booking-summary span{font-size:.65rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:900}
+.booking-summary strong{font-size:.82rem;color:var(--green-2);word-break:break-word}
+.modal-actions-row{display:grid;grid-template-columns:minmax(110px,.45fr) 1fr;gap:10px}
+.modal-actions-row .btn{justify-content:center}
 .auth-panel h3{margin-top:8px}
 .auth-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:4px;border-radius:14px;background:var(--cream-2);margin-bottom:12px}
 .auth-tab{border:0;border-radius:11px;background:transparent;color:var(--muted);font-weight:900;padding:10px;cursor:pointer}
@@ -678,6 +694,9 @@ body.modal-open{overflow:hidden;}
   .simple-form{gap:9px}
   .simple-form label{font-size:.74rem}
   .simple-form input,.simple-form select{min-height:42px;font-size:.84rem;padding:9px 10px}
+  .registration-steps span{min-height:32px;font-size:.72rem}
+  .booking-summary{grid-template-columns:1fr;padding:8px}
+  .modal-actions-row{grid-template-columns:1fr}
   .dashboard-panel{width:calc(100vw - 24px)}
   .dashboard-actions{justify-content:stretch}
   .dashboard-actions .btn{width:100%}

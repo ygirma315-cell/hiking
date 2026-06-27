@@ -350,15 +350,32 @@
       <span class="eyebrow">Final step</span>
       <h3>Hiking Registration</h3>
       <p class="modal-subtitle">Submit your booking, then pay manually using your Hike ID in the payment note.</p>
-      <form class="simple-form" id="registrationForm">
+      <form class="simple-form" id="registrationForm" novalidate>
+        <div class="registration-steps" aria-label="Registration steps">
+          <span class="active" data-step-indicator="1">1. Details</span>
+          <span data-step-indicator="2">2. Payment</span>
+        </div>
+        <div class="registration-step" data-registration-step="1">
         <div class="form-grid">
           <label>Full Name<input id="fullName" type="text" required placeholder="Full name"></label>
-          <label>Phone Number<input id="phone" type="tel" required placeholder="+251..."></label>
+          <label>Phone Number
+            <div class="phone-input-wrap">
+              <span>+251</span>
+              <input id="phone" type="tel" inputmode="numeric" maxlength="10" required placeholder="9XXXXXXXX">
+            </div>
+            <small class="field-help" id="phoneHelp">Enter 9 digits after +251. If you type 09..., we remove the 0.</small>
+          </label>
           <label>Number of People<input id="participantsCount" type="number" min="1" max="100" required value="1" placeholder="1"></label>
           <label>Gender<select id="gender" required><option value="">Select gender</option><option>Female</option><option>Male</option><option>Prefer not to say</option></select></label>
           <label>Selected Destination<select id="destinationSelect" required></select></label>
           <label>Selected Package<input id="packageInput" type="text" readonly></label>
           <label>Total Price<input id="packagePriceInput" type="text" readonly></label>
+        </div>
+        <button class="btn btn-orange full" id="registrationNextButton" type="button">Next: Payment</button>
+        </div>
+        <div class="registration-step" data-registration-step="2" hidden>
+          <div class="booking-summary" id="bookingPaymentSummary"></div>
+          <div class="form-grid">
           <label>Payment Option<select id="paymentMethod" required>
             <option value="">Choose payment option</option>
             <option value="cbe">Commercial Bank of Ethiopia (CBE)</option>
@@ -370,10 +387,14 @@
             <option value="cash">Cash</option>
           </select></label>
           <label id="otherPaymentWrap" hidden>Other Bank / Wallet Name<input id="otherPaymentName" type="text" placeholder="Bank or wallet name"></label>
-          <label>Your Transferring Account / Phone<input id="senderAccount" type="text" placeholder="Account or phone you paid from"></label>
+          <label><span id="senderAccountLabel">Your Transferring Account / Phone</span><input id="senderAccount" type="text" placeholder="Account or phone you paid from"><small class="field-help" id="senderAccountHelp">Enter the account or phone number you will pay from.</small></label>
         </div>
         <div class="payment-guide-card" id="paymentReceiverGuide" hidden></div>
-        <button class="btn btn-orange full" id="registrationSubmitButton" type="submit">Submit Booking</button>
+          <div class="modal-actions-row">
+            <button class="btn btn-soft" id="registrationBackButton" type="button">Back</button>
+            <button class="btn btn-orange" id="registrationSubmitButton" type="submit">Submit Booking</button>
+          </div>
+        </div>
       </form>
     </div>
   </div>
