@@ -38,7 +38,11 @@
         </a>
       </nav>
 
-      <button class="btn btn-small btn-orange signup-open">Sign Up</button>
+      <button class="inbox-nav-button" id="registrationInboxButton" type="button" aria-label="Open registration inbox">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h3.4l3.9 3.25c.4.33 1 .05 1-.47V18H20a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 12h-9.7v2.65L8.1 16H4V6h16v10Z"/></svg>
+        <span>Inbox</span>
+        <span class="inbox-dot" aria-hidden="true" hidden></span>
+      </button>
     </div>
   </header>
 
@@ -197,8 +201,6 @@
           <h2>Contact Us</h2>
         </div>
         <div class="contact-actions">
-          <a class="contact-phone" href="tel:+251966752720">+251 966 752 720</a>
-          <a class="contact-phone" href="tel:+251927928407">+251 927 928 407</a>
           <div class="footer-social contact-social">
             <a href="https://www.instagram.com/ereft_ethiopia?igsh=MWxqY2Z3MjZldW94NA==" target="_blank" rel="noopener" aria-label="Instagram" class="social-instagram">
               <svg class="social-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.75 2h8.5A5.76 5.76 0 0 1 22 7.75v8.5A5.76 5.76 0 0 1 16.25 22h-8.5A5.76 5.76 0 0 1 2 16.25v-8.5A5.76 5.76 0 0 1 7.75 2Zm0 2A3.75 3.75 0 0 0 4 7.75v8.5A3.75 3.75 0 0 0 7.75 20h8.5A3.75 3.75 0 0 0 20 16.25v-8.5A3.75 3.75 0 0 0 16.25 4h-8.5ZM12 7.35A4.65 4.65 0 1 1 7.35 12 4.65 4.65 0 0 1 12 7.35Zm0 2A2.65 2.65 0 1 0 14.65 12 2.65 2.65 0 0 0 12 9.35Zm5.1-2.2a1.1 1.1 0 1 1-1.1 1.1 1.1 1.1 0 0 1 1.1-1.1Z"/></svg>
@@ -211,6 +213,16 @@
             <a href="https://t.me/ereft_hiking" target="_blank" rel="noopener" aria-label="Telegram" class="social-telegram">
               <svg class="social-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.78 15.66 9.4 20.8c.54 0 .78-.23 1.06-.51l2.54-2.43 5.27 3.86c.97.53 1.65.25 1.91-.9l3.46-16.2h.01c.31-1.43-.52-1.99-1.46-1.64L1.85 10.78c-1.39.54-1.37 1.31-.24 1.66l5.2 1.62L18.9 6.5c.57-.38 1.09-.17.66.21l-9.78 8.95Z"/></svg>
               Telegram
+            </a>
+          </div>
+          <div class="contact-phone-row" aria-label="Phone numbers">
+            <a class="contact-phone" href="tel:+251966752720">
+              <svg class="phone-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.62 10.79c1.44 2.83 3.76 5.15 6.59 6.59l2.2-2.2c.28-.28.68-.37 1.04-.25 1.15.38 2.39.58 3.55.58.55 0 1 .45 1 1V20c0 .55-.45 1-1 1C10.61 21 3 13.39 3 4c0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.16.2 2.4.58 3.55.11.36.03.76-.25 1.04l-2.21 2.2Z"/></svg>
+              +251 966 752 720
+            </a>
+            <a class="contact-phone" href="tel:+251927928407">
+              <svg class="phone-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.62 10.79c1.44 2.83 3.76 5.15 6.59 6.59l2.2-2.2c.28-.28.68-.37 1.04-.25 1.15.38 2.39.58 3.55.58.55 0 1 .45 1 1V20c0 .55-.45 1-1 1C10.61 21 3 13.39 3 4c0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.16.2 2.4.58 3.55.11.36.03.76-.25 1.04l-2.21 2.2Z"/></svg>
+              +251 927 928 407
             </a>
           </div>
         </div>
@@ -245,11 +257,6 @@
     </a>
   </nav>
 
-  <button class="inbox-fab" id="registrationInboxButton" type="button" hidden aria-label="Open registration inbox">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h3.4l3.9 3.25c.4.33 1 .05 1-.47V18H20a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 12h-9.7v2.65L8.1 16H4V6h16v10Z"/></svg>
-    <span class="inbox-dot" aria-hidden="true"></span>
-  </button>
-
   <footer class="site-footer">
     <div class="container">
       <div class="footer-grid">
@@ -264,20 +271,6 @@
       <div class="footer-bottom">&copy; 2026 Ereft Hiking. All rights reserved.</div>
     </div>
   </footer>
-
-  <div class="modal" id="signupModal" aria-hidden="true">
-    <div class="modal-panel small-panel">
-      <button class="modal-close" data-close-modal aria-label="Close">&times;</button>
-      <h3>Sign Up</h3>
-      <p>Create a simple front-end interest profile. This is optional and does not block registration.</p>
-      <form class="simple-form" id="signupForm">
-        <label>Full Name<input type="text" required placeholder="Your name"></label>
-        <label>Email<input type="email" required placeholder="you@gmail.com"></label>
-        <button class="btn btn-orange full" type="submit">Continue</button>
-      </form>
-    </div>
-  </div>
-
 
   <div class="modal" id="tripDetailsModal" aria-hidden="true">
     <div class="modal-panel trip-panel">
@@ -342,19 +335,31 @@
     <div class="modal-panel inbox-panel small-panel">
       <button class="modal-close" data-close-modal aria-label="Close">&times;</button>
       <span class="eyebrow">Registration Inbox</span>
-      <div class="inbox-status-icon" id="inboxStatusIcon"></div>
-      <h3 id="inboxStatusTitle">Registration status</h3>
-      <p id="inboxStatusMessage">Your registration status will appear here.</p>
-      <div class="inbox-detail-list">
-        <div><span>Reference ID</span><strong id="inboxReference">-</strong></div>
-        <div><span>Destination</span><strong id="inboxDestination">-</strong></div>
-        <div><span>Package</span><strong id="inboxPackage">-</strong></div>
-        <div><span>Payment</span><strong id="inboxPayment">-</strong></div>
+      <div class="inbox-empty" id="inboxEmpty" hidden>
+        <div class="inbox-status-icon empty">0</div>
+        <h3>No registrations yet</h3>
+        <p>After you submit a hiking registration on this device, your status and reference ID will appear here.</p>
+        <a class="btn btn-orange full" href="#register" data-close-modal>Choose a Package</a>
       </div>
-      <p class="inbox-note" id="inboxRefreshNote"></p>
-      <div class="inbox-actions">
-        <button class="btn btn-orange full" id="inboxRefreshButton" type="button" onclick="refreshInboxStatus(true)">Refresh Status</button>
-        <button class="inbox-clear" type="button" onclick="clearInbox()">Clear inbox from this device</button>
+      <div class="inbox-content" id="inboxContent">
+        <div class="inbox-status-icon" id="inboxStatusIcon"></div>
+        <h3 id="inboxStatusTitle">Registration status</h3>
+        <p id="inboxStatusMessage">Your registration status will appear here.</p>
+        <div class="inbox-detail-list">
+          <div><span>Reference ID</span><strong id="inboxReference">-</strong></div>
+          <div><span>Destination</span><strong id="inboxDestination">-</strong></div>
+          <div><span>Package</span><strong id="inboxPackage">-</strong></div>
+          <div><span>Payment</span><strong id="inboxPayment">-</strong></div>
+        </div>
+        <div class="inbox-history" id="inboxHistory" hidden>
+          <h4>Previous registrations</h4>
+          <div id="inboxHistoryList"></div>
+        </div>
+        <p class="inbox-note" id="inboxRefreshNote"></p>
+        <div class="inbox-actions">
+          <button class="btn btn-orange full" id="inboxRefreshButton" type="button" onclick="refreshInboxStatus(true)">Refresh Status</button>
+          <button class="inbox-clear" type="button" onclick="clearInbox()">Clear inbox from this device</button>
+        </div>
       </div>
     </div>
   </div>

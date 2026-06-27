@@ -22,6 +22,8 @@ const destinationSelect = document.getElementById("destinationSelect");
 const packageInput = document.getElementById("packageInput");
 const supabaseClient = window.ereftSupabaseClient ? window.ereftSupabaseClient() : null;
 var inboxState = loadInboxState();
+const registrationHistoryKey = "ereft_registration_history";
+var inboxRefreshTimer = null;
 
 function esc(value) {
   return String(value == null ? "" : value)
@@ -66,6 +68,21 @@ function saveInboxState(data) {
   if (data) localStorage.setItem("ereft_registration_inbox", JSON.stringify(data));
   else localStorage.removeItem("ereft_registration_inbox");
   renderInboxButton();
+}
+
+function loadRegistrationHistory() {
+  try {
+    return JSON.parse(localStorage.getItem(registrationHistoryKey) || "[]");
+  } catch (_) {
+    return [];
+  }
+}
+
+function saveRegistrationHistory(entry) {
+  var normalized = normalizeInboxRow(entry, entry);
+  var history = loadRegistrationHistory().filter(item => item.reference_code !== normalized.reference_code);
+  history.unshift(normalized);
+  localStorage.setItem(registrationHistoryKey, JSON.stringify(history.slice(0, 6)));
 }
 
 function inboxCopy(status) {
@@ -116,19 +133,27 @@ function normalizeInboxRow(row, payload) {
 function renderInboxButton() {
   var button = document.getElementById("registrationInboxButton");
   if (!button) return;
-  if (!inboxState) {
-    button.hidden = true;
-    return;
-  }
 
   button.hidden = false;
-  button.title = inboxCopy(inboxState.status).title;
+  button.title = inboxState ? inboxCopy(inboxState.status).title : "Registration inbox";
   var dot = button.querySelector(".inbox-dot");
-  if (dot) dot.className = "inbox-dot " + (inboxState.status || "pending");
+  if (dot) {
+    dot.hidden = !inboxState;
+    dot.className = "inbox-dot " + (inboxState ? inboxState.status || "pending" : "pending");
+  }
 }
 
 function renderInboxModal() {
-  if (!inboxState) return;
+  var empty = document.getElementById("inboxEmpty");
+  var content = document.getElementById("inboxContent");
+  if (!inboxState) {
+    if (empty) empty.hidden = false;
+    if (content) content.hidden = true;
+    return;
+  }
+
+  if (empty) empty.hidden = true;
+  if (content) content.hidden = false;
   var copy = inboxCopy(inboxState.status);
   var icon = document.getElementById("inboxStatusIcon");
   if (icon) {
@@ -141,6 +166,7 @@ function renderInboxModal() {
   document.getElementById("inboxDestination").textContent = inboxState.destination || "-";
   document.getElementById("inboxPackage").textContent = inboxState.package_name || "-";
   document.getElementById("inboxPayment").textContent = inboxState.payment_status || "pending";
+  renderInboxHistory();
 
   var refreshButton = document.getElementById("inboxRefreshButton");
   var refreshNote = document.getElementById("inboxRefreshNote");
@@ -148,16 +174,37 @@ function renderInboxModal() {
   if (refreshButton) refreshButton.hidden = !canRefresh;
   if (refreshNote) {
     refreshNote.textContent = canRefresh
-      ? "Refresh after payment or review to see the latest status."
+      ? "This inbox checks for updates while it is open."
       : "This inbox is saved on this device. New registrations will update here after review.";
   }
 }
 
 function openInboxModal() {
-  if (!inboxState) return;
   renderInboxModal();
   openModal("inboxModal");
+  startInboxLiveRefresh();
+}
+
+function startInboxLiveRefresh() {
+  stopInboxLiveRefresh();
+  if (!inboxState || !supabaseClient || !inboxState.lookup_token) return;
+
   refreshInboxStatus(false);
+  inboxRefreshTimer = setInterval(function() {
+    var inboxModal = document.getElementById("inboxModal");
+    if (!inboxModal || !inboxModal.classList.contains("open")) {
+      stopInboxLiveRefresh();
+      return;
+    }
+    refreshInboxStatus(false);
+  }, 10000);
+}
+
+function stopInboxLiveRefresh() {
+  if (inboxRefreshTimer) {
+    clearInterval(inboxRefreshTimer);
+    inboxRefreshTimer = null;
+  }
 }
 
 async function refreshInboxStatus(showMessage) {
@@ -180,16 +227,44 @@ async function refreshInboxStatus(showMessage) {
 
   var row = Array.isArray(result.data) ? result.data[0] : result.data;
   if (row) {
-    saveInboxState(Object.assign({}, inboxState, normalizeInboxRow(row, inboxState)));
+    var refreshedInbox = Object.assign({}, inboxState, normalizeInboxRow(row, inboxState));
+    saveInboxState(refreshedInbox);
+    saveRegistrationHistory(refreshedInbox);
     renderInboxModal();
     if (showMessage) showSiteNotice("Inbox status refreshed.", "success");
   }
 }
 
 function clearInbox() {
+  stopInboxLiveRefresh();
   saveInboxState(null);
+  localStorage.removeItem(registrationHistoryKey);
   closeModals();
   showSiteNotice("Inbox cleared on this device.", "success");
+}
+
+function renderInboxHistory() {
+  var historyWrap = document.getElementById("inboxHistory");
+  var historyList = document.getElementById("inboxHistoryList");
+  if (!historyWrap || !historyList) return;
+  var history = loadRegistrationHistory().filter(item => item.reference_code !== inboxState.reference_code);
+
+  if (!history.length) {
+    historyWrap.hidden = true;
+    historyList.innerHTML = "";
+    return;
+  }
+
+  historyWrap.hidden = false;
+  historyList.className = "inbox-history-list";
+  historyList.innerHTML = history.slice(0, 3).map(item => `
+    <div class="inbox-history-item">
+      <strong>${esc(item.destination || "Registration")}</strong>
+      <span>${esc(item.status || "pending")}</span>
+      <span>${esc(item.reference_code || "")}</span>
+      <span>${esc(item.submitted_date || "")}</span>
+    </div>
+  `).join("");
 }
 
 function renderSuccessReference() {
@@ -370,6 +445,7 @@ function openModal(id) {
 }
 
 function closeModals() {
+  stopInboxLiveRefresh();
   document.querySelectorAll(".modal.open").forEach(modal => {
     modal.classList.remove("open");
     modal.setAttribute("aria-hidden", "true");
@@ -511,7 +587,6 @@ function setupNavSmoothScroll() {
 }
 
 function setupFormsAndModals() {
-  document.querySelectorAll(".signup-open").forEach(btn => btn.addEventListener("click", () => openModal("signupModal")));
   var inboxButton = document.getElementById("registrationInboxButton");
   if (inboxButton) inboxButton.addEventListener("click", openInboxModal);
   document.querySelectorAll("[data-close-modal]").forEach(btn => btn.addEventListener("click", closeModals));
@@ -528,12 +603,6 @@ function setupFormsAndModals() {
   document.getElementById("tripRegisterBtn").addEventListener("click", () => {
     closeModals();
     scrollToSection("register");
-  });
-
-  document.getElementById("signupForm").addEventListener("submit", (e) => {
-    e.preventDefault();
-    closeModals();
-    openModal("successModal");
   });
 
   document.getElementById("registrationForm").addEventListener("submit", async (e) => {
@@ -713,9 +782,11 @@ async function submitRegistration(form) {
       localStorage.setItem('ereft_hiking_registrations', JSON.stringify(saved));
     }
 
-    saveInboxState(normalizeInboxRow(inboxRow, Object.assign({}, payload, {
+    var normalizedInbox = normalizeInboxRow(inboxRow, Object.assign({}, payload, {
       reference_code: localReferenceCode
-    })));
+    }));
+    saveInboxState(normalizedInbox);
+    saveRegistrationHistory(normalizedInbox);
     closeModals();
     renderSuccessReference();
     openModal("successModal");
