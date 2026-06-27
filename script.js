@@ -27,9 +27,10 @@ const otherPaymentWrap = document.getElementById("otherPaymentWrap");
 const otherPaymentNameInput = document.getElementById("otherPaymentName");
 const paymentReceiverGuide = document.getElementById("paymentReceiverGuide");
 const supabaseClient = window.ereftSupabaseClient ? window.ereftSupabaseClient() : null;
-const USERNAME_DOMAIN = "ereft.local";
+const SITE_SESSION_KEY = "ereft_site_session";
 var currentUser = null;
 var currentProfile = null;
+var currentSessionToken = null;
 var userBookings = [];
 var dashboardRefreshTimer = null;
 var pendingAuthAction = null;
@@ -93,10 +94,6 @@ function formatPackagePrice(pkg) {
 
 function normalizeUsername(value) {
   return String(value || "").trim().toLowerCase().replace(/[^a-z0-9._-]/g, "");
-}
-
-function usernameToEmail(username) {
-  return normalizeUsername(username) + "@" + USERNAME_DOMAIN;
 }
 
 function togglePasswordVisibility(inputId, btn) {
@@ -268,10 +265,10 @@ function updateAuthUI() {
 
   if (loginButton) loginButton.hidden = loggedIn;
   if (profileDropdown) profileDropdown.hidden = !loggedIn;
-  if (mobileLabel) mobileLabel.textContent = loggedIn ? "Profile" : "Profile";
+  if (mobileLabel) mobileLabel.textContent = loggedIn ? "Dashboard" : "Sign Up";
 
   if (loggedIn && currentUser) {
-    var name = currentUser.user_metadata?.username || (currentUser.email || "").split("@")[0] || "User";
+    var name = currentUser.username || "User";
     var initial = name.charAt(0).toUpperCase();
     if (profileName) profileName.textContent = name;
     if (profileUsername) profileUsername.textContent = "@" + name;
@@ -316,55 +313,67 @@ function openAuthModal(mode, afterLoginAction) {
   openModal("authModal");
 }
 
-async function ensureProfile(user, username, phone) {
-  if (!supabaseClient || !user) return null;
-  username = normalizeUsername(username || user.user_metadata?.username || (user.email || "").split("@")[0]);
-  phone = phone || user.user_metadata?.phone || "";
+function readStoredSiteSession() {
+  try {
+    var saved = JSON.parse(localStorage.getItem(SITE_SESSION_KEY) || "null");
+    if (!saved || !saved.session_token || !saved.user) return null;
+    return saved;
+  } catch (_) {
+    return null;
+  }
+}
 
-  var existing = await supabaseClient
-    .from("profiles")
-    .select("user_id, username, phone, last_login")
-    .eq("user_id", user.id)
-    .maybeSingle();
+function saveSiteSession(payload) {
+  var token = payload && (payload.session_token || payload.token);
+  var user = payload && payload.user;
+  if (!token || !user) return false;
+  currentSessionToken = token;
+  currentUser = {
+    id:user.id,
+    username:user.username,
+    phone:user.phone || ""
+  };
+  currentProfile = currentUser;
+  localStorage.setItem(SITE_SESSION_KEY, JSON.stringify({
+    session_token:currentSessionToken,
+    user:currentUser
+  }));
+  return true;
+}
 
-  if (existing.data) return existing.data;
-
-  // Profile not found — try inserting (new user or re-created account)
-  var inserted = await supabaseClient
-    .from("profiles")
-    .insert({ user_id:user.id, username:username, phone:phone })
-    .select("user_id, username, phone")
-    .maybeSingle();
-
-  if (inserted.error) return null;
-  return inserted.data || null;
+function clearSiteSession() {
+  currentUser = null;
+  currentProfile = null;
+  currentSessionToken = null;
+  localStorage.removeItem(SITE_SESSION_KEY);
 }
 
 async function loadCurrentUser() {
-  if (!supabaseClient) {
+  var saved = readStoredSiteSession();
+  if (!saved) {
+    clearSiteSession();
     updateAuthUI();
     return;
   }
 
-  var sessionRes = await supabaseClient.auth.getSession();
-  var user = sessionRes.data && sessionRes.data.session && sessionRes.data.session.user;
-  currentUser = user || null;
-  if (currentUser) {
+  currentSessionToken = saved.session_token;
+  currentUser = saved.user;
+  currentProfile = saved.user;
+
+  if (supabaseClient && currentSessionToken) {
     try {
-      currentProfile = await ensureProfile(currentUser);
-      if (!currentProfile) {
-        // User was deleted by admin
-        await supabaseClient.auth.signOut();
-        currentUser = null;
-        currentProfile = null;
-        showSiteNotice("Your account has been deactivated by the administrator.", "error");
+      var current = await supabaseClient.rpc("get_current_user", { p_session_token:currentSessionToken });
+      if (current.error || !current.data || !current.data.success) {
+        clearSiteSession();
+      } else {
+        saveSiteSession({
+          session_token:currentSessionToken,
+          user:current.data.user
+        });
       }
     } catch (error) {
-      console.warn("Profile load failed:", error);
-      currentProfile = { username:(currentUser.email || "").split("@")[0], phone:"" };
+      console.warn("User session check failed:", error);
     }
-  } else {
-    currentProfile = null;
   }
   updateAuthUI();
 }
@@ -390,26 +399,24 @@ async function signInUser(form) {
   button.disabled = true;
   button.textContent = "Logging in...";
   try {
-    var result = await supabaseClient.auth.signInWithPassword({
-      email: usernameToEmail(username),
-      password: password
+    var result = await supabaseClient.rpc("user_login", {
+      p_username:username,
+      p_password:password
     });
     if (result.error) throw result.error;
-    currentUser = result.data.user;
-    try {
-      currentProfile = await ensureProfile(currentUser, username);
-      await supabaseClient.from('profiles').update({ last_login: new Date().toISOString() }).eq('user_id', currentUser.id);
-    } catch (profileError) {
-      console.warn("Profile setup failed:", profileError);
-      currentProfile = { username:username, phone:"" };
+    if (!result.data || !result.data.success) {
+      throw new Error((result.data && result.data.error) || "Username or password is incorrect.");
+    }
+    if (!saveSiteSession(result.data)) {
+      throw new Error("Login setup is incomplete. Run the latest Supabase SQL setup.");
     }
     form.reset();
-    showSuccessToast("✓ Welcome back!");
+    showSuccessToast("Welcome back!");
     await handleSignedIn(pendingAuthAction);
     pendingAuthAction = null;
   } catch (error) {
     console.error("Login failed:", error);
-    showSiteNotice("Username or password is incorrect.", "error");
+    showSiteNotice(error.message || "Username or password is incorrect.", "error");
   } finally {
     button.disabled = false;
     button.textContent = "Login";
@@ -444,64 +451,30 @@ async function signUpUser(form) {
   button.disabled = true;
   button.textContent = "Creating...";
   try {
-    var availability = await supabaseClient.rpc("is_username_available", { p_username:username });
-    if (!availability.error && availability.data === false) {
-      throw new Error("Username already exists.");
-    }
-
-    // Create user via Supabase Auth (trigger auto-creates profile in profiles table)
-    var result = await supabaseClient.auth.signUp({
-      email: usernameToEmail(username),
-      password: password,
-      options: { data:{ username:username, phone:phone } }
+    var result = await supabaseClient.rpc("user_signup", {
+      p_username:username,
+      p_password:password,
+      p_phone:phone
     });
     if (result.error) throw result.error;
-
-    // Login
-    if (result.data.session) {
-      currentUser = result.data.user;
-    } else {
-      var loginRes = await supabaseClient.auth.signInWithPassword({
-        email: usernameToEmail(username),
-        password: password
-      });
-      if (loginRes.error) {
-        var loginMsg = (loginRes.error.message || "").toLowerCase();
-        if (loginMsg.includes("invalid login") || loginMsg.includes("invalid credential")) {
-          showSiteNotice("Account created! But email confirmation is ON. Go to Supabase Dashboard → Authentication → Settings → turn OFF 'Confirm email' to login.", "success");
-          return;
-        }
-        throw loginRes.error;
-      }
-      currentUser = loginRes.data.user;
+    if (!result.data || !result.data.success) {
+      throw new Error((result.data && result.data.error) || "Could not create account.");
     }
-
-    // Step 5: Ensure profile and track login
-    try {
-      currentProfile = await ensureProfile(currentUser, username, phone);
-      if (currentProfile) {
-        await supabaseClient.from('profiles').update({ last_login: new Date().toISOString() }).eq('user_id', currentUser.id);
-      }
-    } catch (profileError) {
-      console.warn("Profile setup failed:", profileError);
-      currentProfile = { username:username, phone:phone };
+    if (!saveSiteSession(result.data)) {
+      throw new Error("Signup setup is incomplete. Run the latest Supabase SQL setup.");
     }
 
     form.reset();
-    showSuccessToast("✓ Account created!");
+    showSuccessToast("Account created!");
     await handleSignedIn(pendingAuthAction);
     pendingAuthAction = null;
   } catch (error) {
     console.error("Sign up failed:", error);
     var msg = error.message || "";
-    if (msg === "Username already exists.") {
+    if (msg.toLowerCase().includes("duplicate") || msg.toLowerCase().includes("exists")) {
       showSiteNotice("That username is already taken.", "error");
-    } else if (msg.includes("already registered") || msg.includes("User already")) {
-      showSiteNotice("This username already exists. Try a different username.", "error");
     } else if (msg.includes("network") || msg.includes("fetch")) {
       showSiteNotice("Network error. Check your connection and try again.", "error");
-    } else if (msg.toLowerCase().includes("rate") || msg.toLowerCase().includes("limit") || msg.toLowerCase().includes("too many")) {
-      showSiteNotice("Too many signup attempts. Please wait a minute and try again.", "error");
     } else {
       showSiteNotice(msg || "Could not create account. Please try again.", "error");
     }
@@ -514,25 +487,25 @@ async function signUpUser(form) {
 async function signOutUser() {
   stopDashboardLiveRefresh();
   userBookings = [];
-  if (supabaseClient) await supabaseClient.auth.signOut();
-  currentUser = null;
-  currentProfile = null;
+  var token = currentSessionToken;
+  if (supabaseClient && token) {
+    supabaseClient.rpc("user_logout", { p_session_token:token }).catch(function() {});
+  }
+  clearSiteSession();
   updateAuthUI();
   closeModals();
   showSiteNotice("Logged out.", "success");
 }
 
 async function loadUserBookings() {
-  if (!supabaseClient || !currentUser) {
+  if (!supabaseClient || !currentUser || !currentSessionToken) {
     userBookings = [];
     return userBookings;
   }
 
-  var response = await supabaseClient
-    .from("registrations")
-    .select("id,hike_id,user_id,username,full_name,phone,participants_count,destination,package_name,trip_date,price,currency,payment_method,sender_account,transaction_id,payment_status,status,admin_message,created_at,updated_at")
-    .eq("user_id", currentUser.id)
-    .order("created_at", { ascending:false });
+  var response = await supabaseClient.rpc("get_user_bookings", {
+    p_session_token:currentSessionToken
+  });
 
   if (response.error) throw response.error;
   userBookings = (response.data || []).map(normalizeBooking);
@@ -651,6 +624,7 @@ async function submitPaymentDetails(form) {
   button.textContent = "Saving...";
   try {
     var result = await supabaseClient.rpc("submit_booking_payment", {
+      p_session_token:currentSessionToken,
       p_hike_id:hikeId,
       p_sender_account:sender,
       p_transaction_id:tx
@@ -906,7 +880,7 @@ function showSiteNotice(message, type) {
 
 function openRegistrationModal() {
   if (!currentUser) {
-    openAuthModal("signin", "register");
+    openAuthModal("signup", "register");
     return;
   }
   if (!hikingDestinations.length) {
@@ -1024,7 +998,7 @@ function setupFormsAndModals() {
   document.getElementById("profileDashBtn").addEventListener("click", function() { toggleProfileMenu(false); openDashboard(); });
   document.getElementById("profileLogoutBtn").addEventListener("click", function() { toggleProfileMenu(false); signOutUser(); });
   document.getElementById("mobileProfileBtn").addEventListener("click", function() {
-    if (currentUser) { openDashboard(); } else { openAuthModal("signup"); }
+    if (currentUser) { openDashboard(); } else { openAuthModal("signup", "dashboard"); }
   });
   document.getElementById("dashboardRefreshButton").addEventListener("click", () => refreshDashboard(false));
   document.getElementById("successViewDashboardButton").addEventListener("click", function() {
@@ -1205,7 +1179,7 @@ async function loadSharedData() {
 
 async function submitRegistration(form) {
   if (!currentUser) {
-    openAuthModal("signin", "register");
+    openAuthModal("signup", "register");
     return;
   }
   if (!destinationSelect.value || !packageInput.value) {
@@ -1245,6 +1219,7 @@ async function submitRegistration(form) {
     var booking = null;
     if (supabaseClient) {
       var rpcPayload = {
+        p_session_token: currentSessionToken,
         p_full_name: payload.full_name,
         p_phone: payload.phone,
         p_age: payload.age,
@@ -1260,11 +1235,6 @@ async function submitRegistration(form) {
         p_transaction_id: payload.transaction_id
       };
       var rpcResponse = await supabaseClient.rpc('create_booking', rpcPayload);
-
-      if (rpcResponse.error && String(rpcResponse.error.message || '').includes('p_participants_count')) {
-        delete rpcPayload.p_participants_count;
-        rpcResponse = await supabaseClient.rpc('create_booking', rpcPayload);
-      }
 
       if (!rpcResponse.error && rpcResponse.data) {
         booking = normalizeBooking(Array.isArray(rpcResponse.data) ? rpcResponse.data[0] : rpcResponse.data);

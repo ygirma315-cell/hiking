@@ -6,6 +6,8 @@
    ============================================================ */
 
 var supabaseClient = window.ereftSupabaseClient ? window.ereftSupabaseClient() : null;
+var ADMIN_SESSION_KEY = 'ereft_admin_session';
+var adminSessionToken = null;
 var PACKAGE_KEYS = ['nativeDay', 'nativeOvernight', 'foreignerDay', 'foreignerOvernight'];
 
 function createEmptyPackage(currency) {
@@ -87,12 +89,12 @@ function saveData(options) {
     if (state.undoStack.length > 10) state.undoStack.shift();
   }
 
-  if (supabaseClient) {
+  if (supabaseClient && adminSessionToken) {
     var payload = cloneData();
     delete payload.registrations;
+    delete payload.users;
     supabaseClient
-      .from('site_content')
-      .upsert({ id:'main', payload:payload }, { onConflict:'id' })
+      .rpc('admin_save_content', { p_admin_token:adminSessionToken, p_payload:payload })
       .then(function(res) {
         if (res.error) {
           console.error('Supabase save failed:', res.error);
@@ -137,62 +139,41 @@ function dbRegistrationToState(row) {
 }
 
 async function fetchRegistrationsFromSupabase() {
-  if (!supabaseClient) return [];
-  var regRes = await supabaseClient
-    .from('registrations')
-    .select('*')
-    .order('created_at', { ascending:false });
+  if (!supabaseClient || !adminSessionToken) return [];
+  var regRes = await supabaseClient.rpc('admin_get_registrations', {
+    p_admin_token:adminSessionToken
+  });
 
   if (regRes.error) throw regRes.error;
   return (regRes.data || []).map(dbRegistrationToState);
 }
 
-async function fetchProfilesFromSupabase() {
-  if (!supabaseClient) return [];
-  var res = await supabaseClient
-    .from('profiles')
-    .select('*')
-    .order('created_at', { ascending:false });
+async function fetchSiteUsersFromSupabase() {
+  if (!supabaseClient || !adminSessionToken) return [];
+  var res = await supabaseClient.rpc('admin_get_site_users', {
+    p_admin_token:adminSessionToken
+  });
   if (res.error) throw res.error;
   return res.data || [];
 }
 
 async function refreshDataFromSupabase() {
-  if (!supabaseClient) return;
+  if (!supabaseClient || !adminSessionToken) return;
 
-  var contentRes = await supabaseClient
-    .from('site_content')
-    .select('payload')
-    .eq('id', 'main')
-    .maybeSingle();
+  var contentRes = await supabaseClient.rpc('admin_get_content', {
+    p_admin_token:adminSessionToken
+  });
 
   if (contentRes.error) throw contentRes.error;
-  if (contentRes.data && contentRes.data.payload && Object.keys(contentRes.data.payload).length) {
-    state.data = normalizeData(contentRes.data.payload);
+  if (contentRes.data && Object.keys(contentRes.data).length) {
+    state.data = normalizeData(contentRes.data);
   } else if (!state.lastSavedData) {
     state.data = createEmptyData();
   }
 
-  var sessionRes = await supabaseClient.auth.getSession();
-  var sessionUser = sessionRes.data && sessionRes.data.session && sessionRes.data.session.user;
-  if (!sessionUser) {
-    render();
-    return;
-  }
-
-  state.user = state.user || {
-    username:sessionUser.email,
-    name:sessionUser.user_metadata?.name || sessionUser.email,
-    email:sessionUser.email
-  };
-
   state.data.registrations = await fetchRegistrationsFromSupabase();
-  try { state.data.users = await fetchProfilesFromSupabase(); } catch(_) {}
-  try {
-    var adminRes = await supabaseClient.from('admin_users').select('user_id');
-    state.adminUserIds = {};
-    (adminRes.data || []).forEach(function(a){ state.adminUserIds[a.user_id] = true });
-  } catch(_) { state.adminUserIds = {}; }
+  try { state.data.users = await fetchSiteUsersFromSupabase(); } catch(_) {}
+  state.adminUserIds = {};
   state.lastSavedData = cloneData();
   render();
 }
@@ -209,6 +190,7 @@ async function refreshRegistrationsFromSupabase(showMessage) {
 
   try {
     state.data.registrations = await fetchRegistrationsFromSupabase();
+    state.data.users = await fetchSiteUsersFromSupabase();
     state.lastRegistrationRefresh = new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
     if (state.viewRegId != null && !state.data.registrations.some(function(r){ return r.id === state.viewRegId; })) {
       state.viewRegId = null;
@@ -242,16 +224,14 @@ function formatAdminPrice(reg) {
 }
 
 function updateRegistrationStatus(id, status, message) {
-  if (!supabaseClient) return Promise.resolve();
-  var patch = {
-    status:status,
-    payment_status: paymentStatusForBookingStatus(status)
-  };
-  if (message != null) patch.admin_message = message;
+  if (!supabaseClient || !adminSessionToken) return Promise.resolve();
   return supabaseClient
-    .from('registrations')
-    .update(patch)
-    .eq('id', id)
+    .rpc('admin_update_registration', {
+      p_admin_token:adminSessionToken,
+      p_registration_id:id,
+      p_status:status || null,
+      p_admin_message:message == null ? null : message
+    })
     .then(function(res) {
       if (res.error) {
         console.error('Registration status sync failed:', res.error);
@@ -551,34 +531,37 @@ function showToast(msg, type) {
 // ==============================
 function initAuth() {
   state.user = null;
+  adminSessionToken = null;
 }
 
-function adminUserFromAuth(user) {
-  return {
-    id:user.id,
-    username:user.email,
-    name:user.user_metadata?.name || user.email,
-    email:user.email
+function saveAdminSession(payload) {
+  var token = payload && (payload.session_token || payload.token);
+  var admin = payload && payload.admin;
+  if (!token || !admin) return false;
+  adminSessionToken = token;
+  state.user = {
+    id:admin.id,
+    username:admin.username,
+    name:admin.display_name || admin.username,
+    displayName:admin.display_name || admin.username
   };
+  localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify({
+    session_token:adminSessionToken,
+    user:state.user
+  }));
+  return true;
 }
 
-async function verifyAdminUser(user) {
-  if (!supabaseClient || !user) return false;
-  var result = await supabaseClient
-    .from('admin_users')
-    .select('user_id,email')
-    .eq('user_id', user.id)
-    .maybeSingle();
-
-  if (result.error) throw result.error;
-  return !!result.data;
+function clearAdminSession() {
+  adminSessionToken = null;
+  state.user = null;
+  localStorage.removeItem(ADMIN_SESSION_KEY);
 }
 
 async function handleLogin(e) {
   e.preventDefault();
   var u = (document.getElementById('login-user')?.value || '').trim();
   var p = document.getElementById('login-pass')?.value || '';
-  var r = document.getElementById('login-remember')?.checked || false;
 
   state.loginError = '';
   state.loginLoading = true;
@@ -592,42 +575,21 @@ async function handleLogin(e) {
   }
 
   try {
-    // Step 1: Validate against admin_credentials table
-    var credRes = await supabaseClient.rpc('admin_login', { p_username:u, p_password:p });
-    if (credRes.error || !credRes.data || !credRes.data.success) {
-      state.loginError = (credRes.data && credRes.data.error) || 'Invalid username or password';
+    var loginRes = await supabaseClient.rpc('admin_login', { p_username:u, p_password:p });
+    if (loginRes.error) throw loginRes.error;
+    if (!loginRes.data || !loginRes.data.success) {
+      state.loginError = (loginRes.data && loginRes.data.error) || 'Invalid username or password';
+      state.loginLoading = false;
+      render();
+      return;
+    }
+    if (!saveAdminSession(loginRes.data)) {
+      state.loginError = 'Admin SQL setup is incomplete. Run supabase-schema.sql again.';
       state.loginLoading = false;
       render();
       return;
     }
 
-    // Step 2: Get/create linked Supabase Auth user for data access
-    var setupRes = await supabaseClient.rpc('setup_admin_auth_user', { p_admin_username:u });
-    if (setupRes.error || !setupRes.data || !setupRes.data.success) {
-      state.loginError = 'Could not setup data access. Run the SQL script.';
-      state.loginLoading = false;
-      render();
-      return;
-    }
-
-    // Step 3: Sign in to Supabase Auth (needed for data queries)
-    var authLogin = await supabaseClient.auth.signInWithPassword({
-      email: setupRes.data.email,
-      password: 'ereft_admin_supabase_2024'
-    });
-    if (authLogin.error) {
-      state.loginError = 'Data access login failed. Try again.';
-      state.loginLoading = false;
-      render();
-      return;
-    }
-
-    state.user = {
-      name: credRes.data.display_name || u,
-      username: u,
-      email: setupRes.data.email,
-      id: setupRes.data.user_id
-    };
     state.loginLoading = false;
     navigateTo('overview');
     await refreshDataFromSupabase().catch(function(err) {
@@ -645,54 +607,42 @@ async function handleLogin(e) {
 async function restoreAdminSession() {
   if (!supabaseClient) return;
   try {
-    var sessionRes = await supabaseClient.auth.getSession();
-    var sessionUser = sessionRes.data && sessionRes.data.session && sessionRes.data.session.user;
-    if (!sessionUser) {
-      state.user = null;
+    var saved = JSON.parse(localStorage.getItem(ADMIN_SESSION_KEY) || 'null');
+    if (!saved || !saved.session_token) {
+      clearAdminSession();
       render();
       return;
     }
 
-    // Derive admin username from the linked auth email (e.g. admin@admin.ereft.local → admin)
-    var adminEmail = sessionUser.email || '';
-    var adminUsername = adminEmail.split('@')[0];
+    adminSessionToken = saved.session_token;
+    state.user = saved.user || null;
 
-    // Verify they're still in admin_credentials
-    var credRes = await supabaseClient.rpc('admin_login', { p_username:adminUsername, p_password:'' });
-    // Password check will fail, but if the user exists, it returns error, not RPC error
-    // We just need to check the user exists - try a different approach
-    // Instead, check admin_users table
-    var adminCheck = await supabaseClient.from('admin_users').select('user_id').eq('user_id', sessionUser.id).maybeSingle();
-    if (!adminCheck.data) {
-      await supabaseClient.auth.signOut();
-      state.user = null;
+    var current = await supabaseClient.rpc('admin_current', { p_admin_token:adminSessionToken });
+    if (current.error || !current.data || !current.data.success) {
+      clearAdminSession();
       navigateTo('login');
       render();
       return;
     }
-
-    state.user = {
-      name: adminUsername,
-      username: adminUsername,
-      email: adminEmail,
-      id: sessionUser.id
-    };
+    saveAdminSession({ session_token:adminSessionToken, admin:current.data.admin });
     await refreshDataFromSupabase();
     render();
   } catch (err) {
     console.error('Could not restore admin session:', err);
-    state.user = null;
+    clearAdminSession();
     render();
   }
 }
 
 function handleLogout() {
-  state.user = null;
-  if (supabaseClient) supabaseClient.auth.signOut();
+  var token = adminSessionToken;
+  if (supabaseClient && token) {
+    supabaseClient.rpc('admin_logout', { p_admin_token:token }).catch(function() {});
+  }
+  clearAdminSession();
   navigateTo('login');
   render();
 }
-
 // ==============================
 // ROUTER
 // ==============================
@@ -823,8 +773,7 @@ function renderOverview() {
   var totalImages = d.galleryImages.length;
   var now = new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
 
-  var adminIds = state.adminUserIds || {};
-  var totalUsers = d.users.filter(function(u){ return !adminIds[u.user_id] }).length;
+  var totalUsers = d.users.length;
   var stats = [
     { label:'Total Trips', value:totalTrips, icon:'\uD83C\uDFD4\uFE0F', change:activeTrips + ' active', cls:'up' },
     { label:'Active Trips', value:activeTrips, icon:'\u2705', change:Math.round(activeTrips/totalTrips*100)+'%', cls:'up' },
@@ -836,7 +785,7 @@ function renderOverview() {
 
   var recentHtml = d.registrations.slice(-5).reverse().map(function(r) {
     var cls = r.status === 'pending' ? 'registration' : r.status === 'accepted' ? 'trip' : 'payment';
-    return '<div class="activity-item"><div class="activity-dot ' + cls + '"></div><div class="activity-content"><p class="activity-text">' + esc(r.fullName) + ' — ' + esc(r.destination) + ' (' + r.status + ')</p><span class="activity-time">' + formatDate(r.submittedDate) + '</span></div></div>';
+    return '<div class="activity-item"><div class="activity-dot ' + cls + '"></div><div class="activity-content"><p class="activity-text">' + esc(r.fullName) + ' â€” ' + esc(r.destination) + ' (' + r.status + ')</p><span class="activity-time">' + formatDate(r.submittedDate) + '</span></div></div>';
   }).join('') || '<div class="activity-item"><div class="activity-content"><p class="activity-text text-muted">No registrations yet</p></div></div>';
 
   var tripCards = d.trips.filter(function(t){ return t.status === 'active' }).slice(0, 4).map(function(t) {
@@ -1509,9 +1458,7 @@ function renderRegistrations() {
 }
 
 function renderUsers() {
-  var allUsers = state.data.users || [];
-  var adminIds = state.adminUserIds || {};
-  var users = allUsers.filter(function(u){ return !adminIds[u.user_id] });
+  var users = state.data.users || [];
   var rows = users.length === 0
     ? '<tr><td colspan="6" class="table-empty">No users signed up yet.</td></tr>'
     : users.map(function(u) {
@@ -1519,10 +1466,10 @@ function renderUsers() {
         return '<tr>' +
           '<td><strong>' + esc(u.username || '-') + '</strong></td>' +
           '<td>' + esc(u.phone || '-') + '</td>' +
-          '<td class="td-userid">' + esc(u.user_id ? u.user_id.slice(0, 8) + '...' : '-') + '</td>' +
+          '<td class="td-userid">' + esc(u.id || '-') + '</td>' +
           '<td>' + formatDate(u.created_at || u.createdAt) + '</td>' +
           '<td>' + lastLogin + '</td>' +
-          '<td class="td-actions"><button class="btn btn-sm btn-danger" onclick="deleteUser(\'' + esc(u.user_id) + '\',\'' + esc(u.username) + '\')" title="Delete user">' + iconSvg('trash') + '</button></td>' +
+          '<td class="td-actions"><button class="btn btn-sm btn-danger" onclick="deleteUser(' + Number(u.id || 0) + ',\'' + esc(u.username) + '\')" title="Delete user">' + iconSvg('trash') + '</button></td>' +
         '</tr>';
       }).join('');
 
@@ -1592,11 +1539,14 @@ function saveRegMessage(id) {
     return r.id === id ? Object.assign({}, r, { adminMessage:message }) : r;
   });
   var reg = state.data.registrations.find(function(r){ return r.id === id });
-  if (supabaseClient) {
+  if (supabaseClient && adminSessionToken) {
     supabaseClient
-      .from('registrations')
-      .update({ admin_message:message })
-      .eq('id', id)
+      .rpc('admin_update_registration', {
+        p_admin_token:adminSessionToken,
+        p_registration_id:id,
+        p_status:null,
+        p_admin_message:message
+      })
       .then(function(res) {
         if (res.error) {
           console.error('Admin message sync failed:', res.error);
@@ -1654,16 +1604,21 @@ function renderRegDetail(id) {
 // SETTINGS PAGE
 // ==============================
 async function deleteUser(userId, username) {
-  if (state.user && state.user.id === userId) {
-    showToast('You cannot delete your own account', 'error');
-    return;
-  }
-  var ok = await confirmAction({ title:'Delete User', message:'Permanently delete "' + username + '"? This removes their account and all their data.', confirmText:'Delete', danger:true });
+  var ok = await confirmAction({
+    title:'Delete User',
+    message:'Permanently delete "' + username + '"?',
+    details:'Their public login account will be removed. Existing registrations stay for history, but they will no longer be able to sign in with this account.',
+    confirmText:'Delete',
+    tone:'danger'
+  });
   if (!ok) return;
-  if (!supabaseClient) { showToast('Supabase required', 'error'); return; }
-  var res = await supabaseClient.rpc('delete_user', { p_user_id:userId });
+  if (!supabaseClient || !adminSessionToken) { showToast('Supabase admin session required', 'error'); return; }
+  var res = await supabaseClient.rpc('admin_delete_site_user', {
+    p_admin_token:adminSessionToken,
+    p_user_id:userId
+  });
   if (res.error) { showToast(res.error.message || 'Delete failed', 'error'); return; }
-  state.data.users = state.data.users.filter(function(u){ return u.user_id !== userId });
+  state.data.users = state.data.users.filter(function(u){ return Number(u.id) !== Number(userId) });
   render();
   showToast('User deleted', 'success');
 }
@@ -1674,7 +1629,7 @@ function renderSettings() {
     '<div class="settings-grid">' +
       '<div class="card"><h2 class="card-title">Admin Profile</h2>' +
         '<div class="form-group"><label class="form-label">Name</label><input class="form-input" id="set-name" value="' + esc(state.user?.name || '') + '"></div>' +
-        '<div class="form-group"><label class="form-label">Email</label><input class="form-input" id="set-email" value="' + esc(state.user?.email || '') + '"></div>' +
+        '<div class="form-group"><label class="form-label">Username</label><input class="form-input" value="' + esc(state.user?.username || '') + '" disabled></div>' +
         '<div class="form-actions"><button class="btn btn-primary" onclick="saveProfile()">Save Profile</button></div>' +
       '</div>' +
       '<div class="card"><h2 class="card-title">Change Password</h2>' +
@@ -1697,11 +1652,20 @@ function addAdminCred() {
   var pass = document.getElementById('new-admin-pass')?.value || '';
   var name = (document.getElementById('new-admin-name')?.value || '').trim() || user;
   if (!user || !pass) { showToast('Enter username and password', 'error'); return; }
-  if (pass.length < 4) { showToast('Password must be at least 4 characters', 'error'); return; }
-  if (!supabaseClient) { showToast('Supabase required', 'error'); return; }
+  if (pass.length < 6) { showToast('Password must be at least 6 characters', 'error'); return; }
+  if (!supabaseClient || !adminSessionToken) { showToast('Supabase admin session required', 'error'); return; }
 
-  supabaseClient.rpc('add_admin_credentials', { p_username:user, p_password:pass, p_display_name:name }).then(function(res) {
+  supabaseClient.rpc('admin_add_admin', {
+    p_admin_token:adminSessionToken,
+    p_username:user,
+    p_password:pass,
+    p_display_name:name
+  }).then(function(res) {
     if (res.error) { showToast(res.error.message || 'Could not add admin', 'error'); return; }
+    if (!res.data || !res.data.success) {
+      showToast((res.data && res.data.error) || 'Could not add admin', 'error');
+      return;
+    }
     showToast('Admin "' + user + '" added. They can login with that username and password.', 'success');
     document.getElementById('new-admin-user').value = '';
     document.getElementById('new-admin-pass').value = '';
@@ -1711,32 +1675,20 @@ function addAdminCred() {
 
 function saveProfile() {
   var n = document.getElementById('set-name')?.value;
-  var e = document.getElementById('set-email')?.value;
   if (!state.user || !n) return;
 
-  if (!supabaseClient) {
-    state.user.name = n;
-    state.user.email = e || state.user.email;
-    localStorage.setItem('ereft_admin_session', JSON.stringify(state.user));
-    showToast('Profile saved locally', 'success');
-    render();
-    return;
-  }
+  if (!supabaseClient || !adminSessionToken) { showToast('Supabase admin session required', 'error'); return; }
 
-  supabaseClient.auth.updateUser({
-    email: e || state.user.email,
-    data: { name:n }
+  supabaseClient.rpc('admin_update_profile', {
+    p_admin_token:adminSessionToken,
+    p_display_name:n
   }).then(function(res) {
-    if (res.error) {
-      showToast(res.error.message || 'Could not update profile', 'error');
+    if (res.error || !res.data || !res.data.success) {
+      showToast((res.data && res.data.error) || res.error?.message || 'Could not update profile', 'error');
       return;
     }
-
-    state.user.name = n;
-    state.user.email = res.data.user.email || e || state.user.email;
-    state.user.username = state.user.email;
-    localStorage.setItem('ereft_admin_session', JSON.stringify(state.user));
-    showToast('Profile saved. Confirm the new email if Supabase sends a verification email.', 'success');
+    saveAdminSession({ session_token:adminSessionToken, admin:res.data.admin });
+    showToast('Profile saved', 'success');
     render();
   });
 }
@@ -1749,25 +1701,18 @@ function changePassword() {
   if (n !== c) { showToast('Passwords mismatch', 'error'); return; }
   if (n.length < 6) { showToast('Min 6 characters', 'error'); return; }
 
-  if (!supabaseClient || !state.user?.email) {
-    showToast('Supabase login is required to change password', 'error');
+  if (!supabaseClient || !adminSessionToken) {
+    showToast('Supabase admin session required', 'error');
     return;
   }
 
-  supabaseClient.auth.signInWithPassword({
-    email: state.user.email,
-    password: o
-  }).then(function(login) {
-    if (login.error) {
-      showToast('Current password is incorrect', 'error');
-      return;
-    }
-
-    return supabaseClient.auth.updateUser({ password:n });
+  supabaseClient.rpc('admin_change_password', {
+    p_admin_token:adminSessionToken,
+    p_current_password:o,
+    p_new_password:n
   }).then(function(update) {
-    if (!update) return;
-    if (update.error) {
-      showToast(update.error.message || 'Could not change password', 'error');
+    if (update.error || !update.data || !update.data.success) {
+      showToast((update.data && update.data.error) || update.error?.message || 'Could not change password', 'error');
       return;
     }
 

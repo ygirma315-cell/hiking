@@ -1,3 +1,8 @@
+-- Optional storage helper.
+-- This creates the public image bucket for reading images.
+-- It does NOT allow anonymous uploads, because custom admin sessions cannot
+-- secure Supabase Storage policies by themselves.
+
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values (
   'ereft-images',
@@ -18,32 +23,5 @@ to anon, authenticated
 using (bucket_id = 'ereft-images');
 
 drop policy if exists "Admins can upload Ereft images" on storage.objects;
-create policy "Admins can upload Ereft images"
-on storage.objects for insert
-to authenticated
-with check (
-  bucket_id = 'ereft-images'
-  and exists (select 1 from public.admin_users where user_id = auth.uid())
-);
-
 drop policy if exists "Admins can update Ereft images" on storage.objects;
-create policy "Admins can update Ereft images"
-on storage.objects for update
-to authenticated
-using (
-  bucket_id = 'ereft-images'
-  and exists (select 1 from public.admin_users where user_id = auth.uid())
-)
-with check (
-  bucket_id = 'ereft-images'
-  and exists (select 1 from public.admin_users where user_id = auth.uid())
-);
-
 drop policy if exists "Admins can delete Ereft images" on storage.objects;
-create policy "Admins can delete Ereft images"
-on storage.objects for delete
-to authenticated
-using (
-  bucket_id = 'ereft-images'
-  and exists (select 1 from public.admin_users where user_id = auth.uid())
-);
