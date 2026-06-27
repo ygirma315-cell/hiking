@@ -1012,8 +1012,8 @@ function renderDestinations() {
         <h3>${esc(trip.name)}</h3>
         <p>${esc(trip.description || "")}</p>
         <div class="card-info-row">
-          <span class="card-date">${esc(trip.date || "")}</span>
-          <span class="card-spots">${Number(trip.spotsLeft || 0)} spots left</span>
+          <span class="card-date"><span class="emo-icon">📅</span> ${esc(trip.date || "")}</span>
+          <span class="card-spots"><span class="emo-icon">👥</span> ${Number(trip.spotsLeft || 0)} left</span>
         </div>
         <div class="card-actions">
           <button class="card-details" data-destination="${esc(trip.name)}">View Details</button>
