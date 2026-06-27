@@ -361,19 +361,16 @@ function paymentGuideHtml(account, hikeId) {
   if (!account) return "";
   var hasAccount = !!String(account.accountNumber || "").trim();
   var accountLine = hasAccount
-    ? '<div><span>' + esc(account.accountLabel) + '</span><strong>' + esc(account.accountNumber) + '</strong><button class="copy-btn" type="button" data-copy-value="' + esc(account.accountNumber) + '">Copy</button></div>'
-    : '<div><span>' + esc(account.accountLabel) + '</span><strong>Contact Ereft Hiking for this account</strong></div>';
-  var hikeLine = hikeId
-    ? '<div class="payment-guide-reminder"><span>Payment note reminder</span><p>Write <strong>' + esc(hikeId) + '</strong> in the payment note/description. Without it, confirmation may be delayed and you may need to contact us manually.</p></div>'
-    : '<div class="payment-guide-reminder"><span>Payment note reminder</span><p>After booking, write your Hike ID in the payment note/description. Without it, confirmation may be delayed and you may need to contact us manually.</p></div>';
-  return '<div class="payment-guide-title">' +
-      '<span>Payment method</span><strong>' + esc(account.label) + '</strong>' +
-    '</div>' +
-    '<div class="payment-guide-details">' +
-      '<div><span>Deposit account name</span><strong>' + esc(account.accountName || "Ereft Hiking") + '</strong></div>' +
+    ? '<span>' + esc(account.accountLabel) + ':</span><strong>' + esc(account.accountNumber) + '</strong><button class="copy-btn" type="button" data-copy-value="' + esc(account.accountNumber) + '">Copy</button>'
+    : '<span>' + esc(account.accountLabel) + ':</span><strong>Contact us</strong>';
+  var hikeNote = hikeId ? ' Write <strong>' + esc(hikeId) + '</strong> in payment note.' : '';
+  return '<div class="payment-guide-compact">' +
+    '<span class="pg-label">' + esc(account.label) + '</span>' +
+    '<div class="pg-details">' +
+      '<span>Name: <b>Ereft Hiking</b></span>' +
       accountLine +
-    '</div>' +
-    hikeLine;
+      (hikeNote ? '<span class="pg-hike-note">' + hikeNote + '</span>' : '') +
+    '</div></div>';
 }
 
 function updatePaymentGuide(hikeId) {
@@ -662,31 +659,34 @@ function renderDashboard() {
     var price = formatBookingPrice(booking);
     var paymentAccount = paymentAccountFor(booking.payment_method);
     var accountLine = paymentAccount ? esc(paymentAccount.accountLabel) + ': ' + esc(paymentAccount.accountNumber) : '-';
+    var hasSender = !!booking.sender_account;
+    if (hasSender) {
+      return '<tr>' +
+        '<td data-label="Hike ID"><div class="hike-id-cell"><strong>' + esc(booking.hike_id) + '</strong><button class="copy-btn-sm" type="button" data-copy-value="' + esc(booking.hike_id) + '" title="Copy Hike ID">Copy</button></div></td>' +
+        '<td colspan="9"><div class="submitted-info"><span>Name: <b>' + esc(booking.full_name) + '</b></span><span>Phone: <b>' + esc(booking.phone) + '</b></span><span>Pax: <b>' + esc(booking.participants_count || 1) + '</b></span><span>Price: <b>' + esc(price) + '</b></span><span>Paid from: <b>' + esc(booking.sender_account) + '</b></span><span>Pay method: <b>' + esc(booking.payment_method || '-') + '</b></span><span>Receiving: <b>' + accountLine + '</b></span><span class="status-badge ' + statusBadgeClass(booking.status) + '">' + esc(copy.label) + '</span></div></td>' +
+      '</tr>';
+    }
     return '<tr>' +
       '<td data-label="Hike ID"><div class="hike-id-cell"><strong>' + esc(booking.hike_id) + '</strong><button class="copy-btn-sm" type="button" data-copy-value="' + esc(booking.hike_id) + '" title="Copy Hike ID">Copy</button></div></td>' +
-      '<td data-label="Trip / Package">' + esc(booking.destination || booking.package_name) + '<br><small>' + esc(booking.package_name || '-') + '</small></td>' +
-      '<td data-label="Pax">' + esc(booking.participants_count || 1) + '</td>' +
-      '<td data-label="Price">' + esc(price) + '</td>' +
-      '<td data-label="Trip Date">' + esc(booking.trip_date || 'Not set') + '</td>' +
-      '<td data-label="Payment">' + esc(booking.payment_method || '-') + '</td>' +
-      '<td data-label="Receiving Account">' + accountLine + '</td>' +
-      '<td data-label="Pay Status">' + esc(booking.payment_status || 'pending') + '</td>' +
-      '<td data-label="Status"><span class="status-badge ' + statusBadgeClass(booking.status) + '">' + esc(copy.label) + '</span></td>' +
-      '<td data-label="Actions"><button class="btn btn-sm btn-soft" onclick="togglePayForm(\'' + esc(booking.hike_id) + '\')" title="Update payment">Pay</button></td>' +
-    '</tr>' +
-    '<tr class="pay-form-row" id="pay-form-' + esc(booking.hike_id) + '" hidden>' +
-      '<td colspan="10"><div class="pay-form-inline"><form class="payment-update-form" data-hike-id="' + esc(booking.hike_id) + '">' +
-        '<label>Your transferring account / phone<input name="sender_account" value="' + esc(booking.sender_account || '') + '" placeholder="Account or phone you paid from"></label>' +
-        '<button class="btn btn-orange" type="submit">Submit Payment</button>' +
-        '<button class="btn btn-soft" type="button" onclick="togglePayForm(\'' + esc(booking.hike_id) + '\')">Cancel</button>' +
-      '</form></div></td>' +
+      '<td colspan="9"><div class="pending-pay-info">' +
+        '<span>Trip: <b>' + esc(booking.destination || booking.package_name) + '</b></span>' +
+        '<span>Price: <b>' + esc(price) + '</b></span>' +
+        '<span>Pay to: <b>' + accountLine + '</b></span>' +
+        '<button class="btn btn-sm btn-orange" onclick="togglePayForm(\'' + esc(booking.hike_id) + '\')">Submit Payment</button>' +
+      '</div>' +
+      '<div class="pay-form-wrap" id="pay-form-' + esc(booking.hike_id) + '" hidden>' +
+        '<form class="payment-update-form" data-hike-id="' + esc(booking.hike_id) + '">' +
+          '<label>Your acc/phone<input name="sender_account" value="" placeholder="Account/phone you pay from"></label>' +
+          '<button class="btn btn-orange" type="submit">Save</button>' +
+          '<button class="btn btn-soft" type="button" onclick="togglePayForm(\'' + esc(booking.hike_id) + '\')">Cancel</button>' +
+        '</form></div></td>' +
     '</tr>';
   }).join("");
 }
 
 function togglePayForm(hikeId) {
-  var row = document.getElementById('pay-form-' + hikeId);
-  if (row) row.hidden = !row.hidden;
+  var wrap = document.getElementById('pay-form-' + hikeId);
+  if (wrap) wrap.hidden = !wrap.hidden;
 }
 
 async function openDashboard() {
@@ -780,8 +780,8 @@ function renderSuccessBooking(booking) {
   var idEl = document.getElementById("successHikeId");
   var guide = document.getElementById("successPaymentGuide");
   if (instruction) instruction.textContent = id
-    ? "Your Hike ID is " + id + ". When sending the payment, write this exact Hike ID in the payment note. This helps us confirm your payment faster."
-    : "Your booking was created. Use your Hike ID when sending payment.";
+    ? 'Your Hike ID is ' + id + '. Write it in the payment note.'
+    : 'Booking created. Share your Hike ID when paying.';
   if (wrap && idEl) {
     wrap.hidden = !id;
     idEl.textContent = id;
