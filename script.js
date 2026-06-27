@@ -663,7 +663,7 @@ function renderDashboard() {
     if (hasSender) {
       return '<tr>' +
         '<td data-label="Hike ID"><div class="hike-id-cell"><strong>' + esc(booking.hike_id) + '</strong><button class="copy-btn-sm" type="button" data-copy-value="' + esc(booking.hike_id) + '" title="Copy Hike ID">Copy</button></div></td>' +
-        '<td colspan="9"><div class="submitted-info"><span>Name: <b>' + esc(booking.full_name) + '</b></span><span>Phone: <b>' + esc(booking.phone) + '</b></span><span>Pax: <b>' + esc(booking.participants_count || 1) + '</b></span><span>Price: <b>' + esc(price) + '</b></span><span>Paid from: <b>' + esc(booking.sender_account) + '</b></span><span>Pay method: <b>' + esc(booking.payment_method || '-') + '</b></span><span>Receiving: <b>' + accountLine + '</b></span><span class="status-badge ' + statusBadgeClass(booking.status) + '">' + esc(copy.label) + '</span></div></td>' +
+        '<td colspan="9"><div class="submitted-info"><span>Name: <b>' + esc(booking.full_name) + '</b></span><span>Phone: <b>' + esc(booking.phone) + '</b></span><span>Pax: <b>' + esc(booking.participants_count || 1) + '</b></span><span>Price: <b>' + esc(price) + '</b></span><span>Paid from: <b>' + esc(booking.sender_account) + '</b></span><span>Via: <b>' + esc(booking.payment_method || '-') + '</b></span><span class="status-badge ' + statusBadgeClass(booking.status) + '">' + esc(copy.label) + '</span></div></td>' +
       '</tr>';
     }
     return '<tr>' +
@@ -672,12 +672,12 @@ function renderDashboard() {
         '<span>Trip: <b>' + esc(booking.destination || booking.package_name) + '</b></span>' +
         '<span>Price: <b>' + esc(price) + '</b></span>' +
         '<span>Pay to: <b>' + accountLine + '</b></span>' +
-        '<button class="btn btn-sm btn-orange" onclick="togglePayForm(\'' + esc(booking.hike_id) + '\')">Submit Payment</button>' +
+        '<button class="btn btn-sm btn-orange" onclick="togglePayForm(\'' + esc(booking.hike_id) + '\')">I\'ve Paid</button>' +
       '</div>' +
       '<div class="pay-form-wrap" id="pay-form-' + esc(booking.hike_id) + '" hidden>' +
         '<form class="payment-update-form" data-hike-id="' + esc(booking.hike_id) + '">' +
-          '<label>Your acc/phone<input name="sender_account" value="" placeholder="Account/phone you pay from"></label>' +
-          '<button class="btn btn-orange" type="submit">Save</button>' +
+          '<label>Enter account/phone you paid from<input name="sender_account" value="" placeholder="e.g. +251912345678"></label>' +
+          '<button class="btn btn-orange" type="submit">Confirm</button>' +
           '<button class="btn btn-soft" type="button" onclick="togglePayForm(\'' + esc(booking.hike_id) + '\')">Cancel</button>' +
         '</form></div></td>' +
     '</tr>';
