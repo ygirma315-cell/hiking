@@ -42,10 +42,23 @@ function formatPackagePrice(pkg) {
 
 function loadInboxState() {
   try {
-    return JSON.parse(localStorage.getItem("ereft_registration_inbox") || "null");
+    var saved = JSON.parse(localStorage.getItem("ereft_registration_inbox") || "null");
+    if (saved && !saved.reference_code) {
+      saved.reference_code = buildRegistrationReference(saved.lookup_token || saved.id || saved.submitted_date);
+      localStorage.setItem("ereft_registration_inbox", JSON.stringify(saved));
+    }
+    return saved;
   } catch (_) {
     return null;
   }
+}
+
+function buildRegistrationReference(seed) {
+  var fallback = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  var raw = String(seed || (window.crypto && window.crypto.randomUUID ? window.crypto.randomUUID() : fallback));
+  var clean = raw.replace(/[^a-z0-9]/gi, "").toUpperCase();
+  if (!clean) clean = fallback.toUpperCase();
+  return "ERF-" + clean.slice(-8).padStart(8, "0");
 }
 
 function saveInboxState(data) {
@@ -80,9 +93,17 @@ function inboxCopy(status) {
 function normalizeInboxRow(row, payload) {
   row = row || {};
   payload = payload || {};
+  var rowIdentifier = row.lookup_token || row.id;
+  var payloadIdentifier = payload.lookup_token || payload.id;
+  var referenceCode = row.reference_code ||
+    (rowIdentifier ? buildRegistrationReference(rowIdentifier) : "") ||
+    payload.reference_code ||
+    buildRegistrationReference(payloadIdentifier);
+
   return {
     id: row.id || payload.id || Date.now(),
     lookup_token: row.lookup_token || payload.lookup_token || null,
+    reference_code: referenceCode,
     status: row.status || payload.status || "pending",
     payment_status: row.payment_status || payload.payment_status || "pending",
     destination: row.destination || payload.destination || "",
@@ -116,6 +137,7 @@ function renderInboxModal() {
   }
   document.getElementById("inboxStatusTitle").textContent = copy.title;
   document.getElementById("inboxStatusMessage").textContent = copy.message;
+  document.getElementById("inboxReference").textContent = inboxState.reference_code || "-";
   document.getElementById("inboxDestination").textContent = inboxState.destination || "-";
   document.getElementById("inboxPackage").textContent = inboxState.package_name || "-";
   document.getElementById("inboxPayment").textContent = inboxState.payment_status || "pending";
@@ -168,6 +190,18 @@ function clearInbox() {
   saveInboxState(null);
   closeModals();
   showSiteNotice("Inbox cleared on this device.", "success");
+}
+
+function renderSuccessReference() {
+  var ref = document.getElementById("successReferenceId");
+  if (!ref) return;
+  if (!inboxState || !inboxState.reference_code) {
+    ref.hidden = true;
+    ref.textContent = "";
+    return;
+  }
+  ref.hidden = false;
+  ref.textContent = "Reference ID: " + inboxState.reference_code;
 }
 
 function findTrip(name) {
@@ -626,6 +660,7 @@ async function submitRegistration(form) {
     return;
   }
 
+  var localReferenceCode = buildRegistrationReference();
   var payload = {
     full_name: document.getElementById("fullName").value.trim(),
     age: Number(document.getElementById("age").value),
@@ -656,11 +691,17 @@ async function submitRegistration(form) {
       } else {
         var response = await supabaseClient.from('registrations').insert(payload);
         if (response.error) throw response.error;
+        inboxRow = Object.assign({}, payload, {
+          id: Date.now(),
+          reference_code: localReferenceCode,
+          submitted_date: new Date().toISOString().slice(0, 10)
+        });
       }
     } else {
       var saved = JSON.parse(localStorage.getItem('ereft_hiking_registrations') || '[]');
       inboxRow = Object.assign({}, payload, {
         id: Date.now(),
+        reference_code: localReferenceCode,
         status: "pending",
         payment_status: "pending",
         submittedDate: new Date().toISOString().slice(0, 10)
@@ -672,8 +713,11 @@ async function submitRegistration(form) {
       localStorage.setItem('ereft_hiking_registrations', JSON.stringify(saved));
     }
 
-    saveInboxState(normalizeInboxRow(inboxRow, payload));
+    saveInboxState(normalizeInboxRow(inboxRow, Object.assign({}, payload, {
+      reference_code: localReferenceCode
+    })));
     closeModals();
+    renderSuccessReference();
     openModal("successModal");
     form.reset();
   } catch (error) {
