@@ -524,28 +524,37 @@ $$;
 
 grant execute on function public.create_user_with_confirmed_email(text, text, text) to anon, authenticated;
 
--- Function: create a profile for an existing auth user by email (bypasses RLS)
--- Used when auth.signUp() creates a user but no session is returned
-create or replace function public.create_profile_for_email(
-  p_email text,
-  p_username text,
-  p_phone text default ''
-)
-returns boolean
+-- Backfill: create profiles for existing auth users who signed up before the trigger existed
+insert into public.profiles (user_id, username, phone)
+select
+  au.id,
+  public.normalize_username(coalesce(au.raw_user_meta_data ->> 'username', split_part(au.email, '@', 1))),
+  coalesce(au.raw_user_meta_data ->> 'phone', '')
+from auth.users au
+left join public.profiles p on p.user_id = au.id
+where p.user_id is null
+on conflict (user_id) do nothing;
+
+-- Auto-create profile when a new user signs up (trigger on auth.users)
+create or replace function public.handle_new_user()
+returns trigger
 language plpgsql
 security definer
 set search_path = public
 as $$
-declare
-  v_user_id uuid;
 begin
-  select id into v_user_id from auth.users where email = p_email;
-  if v_user_id is null then return false; end if;
   insert into public.profiles (user_id, username, phone)
-  values (v_user_id, public.normalize_username(p_username), p_phone)
+  values (
+    new.id,
+    public.normalize_username(coalesce(new.raw_user_meta_data ->> 'username', split_part(new.email, '@', 1))),
+    coalesce(new.raw_user_meta_data ->> 'phone', '')
+  )
   on conflict (user_id) do nothing;
-  return true;
+  return new;
 end;
 $$;
 
-grant execute on function public.create_profile_for_email(text, text, text) to anon, authenticated;
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();

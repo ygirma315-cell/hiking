@@ -441,23 +441,13 @@ async function signUpUser(form) {
       throw new Error("Username already exists.");
     }
 
-    // Create user via Supabase Auth
+    // Create user via Supabase Auth (trigger auto-creates profile in profiles table)
     var result = await supabaseClient.auth.signUp({
       email: usernameToEmail(username),
       password: password,
       options: { data:{ username:username, phone:phone } }
     });
     if (result.error) throw result.error;
-
-    // Create profile (try RPC first, fallback to direct insert)
-    try {
-      var profileOk = await supabaseClient.rpc("create_profile_for_email", {
-        p_email: usernameToEmail(username),
-        p_username: username,
-        p_phone: phone
-      });
-      if (profileOk.error) console.warn("Profile RPC failed:", profileOk.error);
-    } catch(_) {}
 
     // Login
     if (result.data.session) {
