@@ -711,7 +711,7 @@ function renderLogin() {
     '<div class="login-bg"><div class="login-bg-shapes"><div class="shape shape-1"></div><div class="shape shape-2"></div><div class="shape shape-3"></div></div></div>' +
     '<div class="login-container">' +
       '<div class="login-card">' +
-        '<div class="login-header"><div class="login-logo">\u26F0\uFE0F</div><h1 class="login-title">Ereft Hiking</h1><p class="login-subtitle">Admin Dashboard</p></div>' +
+        '<div class="login-header"><div class="login-logo"><img src="../assets/logo/logo.webp" alt="Ereft Hiking logo"></div><h1 class="login-title">Ereft Hiking</h1><p class="login-subtitle">Admin Dashboard</p></div>' +
         '<form class="login-form" onsubmit="handleLogin(event)">' +
           '<div class="form-group"><label class="form-label">Username</label><div class="input-wrapper"><svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><input id="login-user" type="text" class="form-input" placeholder="admin" autofocus autocomplete="off"></div></div>' +
           '<div class="form-group"><label class="form-label">Password</label><div class="input-wrapper"><svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><input id="login-pass" type="password" class="form-input" placeholder="Enter password"><button type="button" class="input-toggle" onclick="togglePass()" aria-label="Toggle"><svg id="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>' +
@@ -808,7 +808,7 @@ function renderOverview() {
     { label:'Total Trips', value:totalTrips, icon:'\uD83C\uDFD4\uFE0F', change:activeTrips + ' active', cls:'up' },
     { label:'Active Trips', value:activeTrips, icon:'\u2705', change:Math.round(activeTrips/totalTrips*100)+'%', cls:'up' },
     { label:'Total Registrations', value:totalRegs, icon:'\uD83D\uDCDD', change:pendingRegs + ' pending', cls:pendingRegs > 0 ? 'down' : 'up' },
-    { label:'Registered Users', value:totalUsers, icon:'\uD83D\uDC65', change:totalUsers + ' accounts', cls:'up' },
+    { label:'Signup Users', value:totalUsers, icon:'\uD83D\uDC65', change:totalUsers + ' accounts', cls:'up' },
     { label:'Pending', value:pendingRegs, icon:'\u23F3', change:pendingRegs > 0 ? 'Needs review' : 'None', cls:pendingRegs > 0 ? 'down' : 'up' },
     { label:'Gallery Images', value:totalImages, icon:'\uD83D\uDDBC\uFE0F', change:d.galleryCategories.length + ' categories', cls:'up' }
   ];
@@ -1457,17 +1457,17 @@ function renderRegistrations() {
         var badge = registrationBadgeClass(r.status);
         var refId = r.hikeId || (r.id ? r.id.toString().slice(0, 8).toUpperCase() : '-');
         return '<tr class="' + cls + '">' +
-          '<td class="td-id">' + esc(refId) + '</td>' +
-          '<td class="td-name">' + esc(r.fullName || '-') + '</td>' +
-          '<td>' + esc(r.destination || '-') + '</td>' +
-          '<td>' + esc(r.package || '-') + '</td>' +
-          '<td>' + esc(r.phone || '-') + '</td>' +
-          '<td>' + esc(r.participantsCount || 1) + '</td>' +
-          '<td class="td-price">' + esc(formatAdminPrice(r)) + '</td>' +
-          '<td>' + esc(r.paymentMethod || '-') + '</td>' +
-          '<td><span class="badge ' + badge + '">' + esc((r.status || 'pending').replace('_', ' ')) + '</span></td>' +
-          '<td>' + formatDate(r.createdAt || r.submittedDate) + '</td>' +
-          '<td class="td-actions">' +
+          '<td class="td-id" data-label="Hike ID">' + esc(refId) + '</td>' +
+          '<td class="td-name" data-label="Name">' + esc(r.fullName || '-') + '</td>' +
+          '<td data-label="Destination">' + esc(r.destination || '-') + '</td>' +
+          '<td data-label="Package">' + esc(r.package || '-') + '</td>' +
+          '<td data-label="Phone">' + esc(r.phone || '-') + '</td>' +
+          '<td data-label="Pax">' + esc(r.participantsCount || 1) + '</td>' +
+          '<td class="td-price" data-label="Price">' + esc(formatAdminPrice(r)) + '</td>' +
+          '<td data-label="Payment">' + esc(r.paymentMethod || '-') + '</td>' +
+          '<td data-label="Status"><span class="badge ' + badge + '">' + esc((r.status || 'pending').replace('_', ' ')) + '</span></td>' +
+          '<td data-label="Date">' + formatDate(r.createdAt || r.submittedDate) + '</td>' +
+          '<td class="td-actions" data-label="Actions">' +
             '<button class="btn btn-sm btn-secondary" onclick="viewReg(' + r.id + ')" title="View">' + iconSvg('eye') + '</button>' +
             (r.status !== 'accepted' ? '<button class="btn btn-sm btn-success" onclick="acceptReg(' + r.id + ')" title="Accept">' + iconSvg('check') + '</button>' : '') +
             (r.status !== 'needs_review' ? '<button class="btn btn-sm btn-secondary" onclick="needsReviewReg(' + r.id + ')" title="Review">' + iconSvg('zoom') + '</button>' : '') +
@@ -1497,18 +1497,18 @@ function renderUsers() {
     : users.map(function(u) {
         var lastLogin = u.last_login ? formatDateTime(u.last_login) : '-';
         return '<tr>' +
-          '<td><strong>' + esc(u.username || '-') + '</strong></td>' +
-          '<td>' + esc(u.phone || '-') + '</td>' +
-          '<td class="td-userid">' + esc(u.id || '-') + '</td>' +
-          '<td>' + formatDate(u.created_at || u.createdAt) + '</td>' +
-          '<td>' + lastLogin + '</td>' +
-          '<td class="td-actions"><button class="btn btn-sm btn-danger" onclick="deleteUser(' + Number(u.id || 0) + ',\'' + esc(u.username) + '\')" title="Delete user">' + iconSvg('trash') + '</button></td>' +
+          '<td data-label="Username"><strong>' + esc(u.username || '-') + '</strong></td>' +
+          '<td data-label="Phone">' + esc(u.phone || '-') + '</td>' +
+          '<td class="td-userid" data-label="User ID">' + esc(u.id || '-') + '</td>' +
+          '<td data-label="Signed Up">' + formatDate(u.created_at || u.createdAt) + '</td>' +
+          '<td data-label="Last Login">' + lastLogin + '</td>' +
+          '<td class="td-actions" data-label="Actions"><button class="btn btn-sm btn-danger" onclick="deleteUser(' + Number(u.id || 0) + ')" title="Delete user">' + iconSvg('trash') + '</button></td>' +
         '</tr>';
       }).join('');
 
   return '<div class="page">' +
     '<div class="page-header"><div><h1 class="page-title">Users</h1><p class="page-subtitle">Website accounts created via signup</p></div><div class="page-header-actions"><span class="badge badge-info">Total: ' + users.length + '</span><button class="btn btn-sm btn-primary btn-icon-text" onclick="refreshRegistrationsFromSupabase(true)"' + refreshDisabled + '>' + refreshIcon + ' ' + refreshText + '</button></div></div>' +
-    '<div class="table-wrapper"><table class="data-table"><thead><tr><th>Username</th><th>Phone</th><th>User ID</th><th>Signed Up</th><th>Last Login</th><th class="th-actions">Actions</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+    '<div class="table-wrapper"><table class="data-table users-table"><thead><tr><th>Username</th><th>Phone</th><th>User ID</th><th>Signed Up</th><th>Last Login</th><th class="th-actions">Actions</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
   '</div>';
 }
 
@@ -1635,6 +1635,8 @@ function renderRegDetail(id) {
 // SETTINGS PAGE
 // ==============================
 async function deleteUser(userId, username) {
+  var user = state.data.users.find(function(u){ return Number(u.id) === Number(userId) });
+  username = username || (user ? user.username : 'this user');
   var ok = await confirmAction({
     title:'Delete User',
     message:'Permanently delete "' + username + '"?',

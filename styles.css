@@ -670,3 +670,21 @@ body.modal-open{overflow:hidden;}
   .footer-links-col h4{width:100%;text-align:center;margin:6px 0 2px}
   .footer-links-col h4:first-child{margin-top:0}
 }
+
+@media (max-width:560px){
+  .simple-form{gap:9px}
+  .simple-form label{font-size:.74rem}
+  .simple-form input,.simple-form select{min-height:42px;font-size:.84rem;padding:9px 10px}
+  .dashboard-panel{width:calc(100vw - 24px)}
+  .dashboard-actions{justify-content:stretch}
+  .dashboard-actions .btn{width:100%}
+  .booking-card{box-shadow:none}
+  .booking-card .copy-btn{width:100%;justify-content:center}
+  .payment-update-form .btn{width:100%;justify-content:center}
+}
+
+@media (max-width:380px){
+  .contact-social a{font-size:.62rem}
+  .contact-phone-row{grid-template-columns:1fr}
+  .auth-btn{padding-inline:6px}
+}

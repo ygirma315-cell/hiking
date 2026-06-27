@@ -286,11 +286,9 @@ function updateAuthUI() {
   var profileName = document.getElementById("profileName");
   var profileUsername = document.getElementById("profileUsername");
   var profileAvatar = document.getElementById("profileAvatar");
-  var mobileLabel = document.getElementById("mobileProfileLabel");
 
   if (loginButton) loginButton.hidden = loggedIn;
   if (profileDropdown) profileDropdown.hidden = !loggedIn;
-  if (mobileLabel) mobileLabel.textContent = loggedIn ? "Dashboard" : "Sign Up";
 
   if (loggedIn && currentUser) {
     var name = currentUser.username || "User";
@@ -1020,9 +1018,6 @@ function setupFormsAndModals() {
   document.getElementById("profileOverlay").addEventListener("click", function() { toggleProfileMenu(false); });
   document.getElementById("profileDashBtn").addEventListener("click", function() { toggleProfileMenu(false); openDashboard(); });
   document.getElementById("profileLogoutBtn").addEventListener("click", function() { toggleProfileMenu(false); signOutUser(); });
-  document.getElementById("mobileProfileBtn").addEventListener("click", function() {
-    if (currentUser) { openDashboard(); } else { openAuthModal("signup", "dashboard"); }
-  });
   document.getElementById("dashboardRefreshButton").addEventListener("click", () => refreshDashboard(false));
   document.getElementById("successViewDashboardButton").addEventListener("click", function() {
     closeModals();
