@@ -433,8 +433,8 @@ async function signUpUser(form) {
       });
       if (login.error) {
         var loginMsg = (login.error.message || login.error.name || "").toLowerCase();
-        if (loginMsg.includes("email not confirmed") || loginMsg.includes("email_not_confirmed")) {
-          showSiteNotice("Account created but needs email confirmation. Ask the admin to disable 'Confirm email' in Supabase Auth settings, then try again.", "error");
+        if (loginMsg.includes("invalid login") || loginMsg.includes("invalid_login") || loginMsg.includes("invalid credential")) {
+          showSiteNotice("Could not log you in after signup. This is because your Supabase project requires email confirmation. To fix: go to Supabase Dashboard > Authentication > Settings > turn OFF 'Confirm email', then try again.", "error");
           return;
         }
         throw login.error;
@@ -462,6 +462,8 @@ async function signUpUser(form) {
       showSiteNotice("Network error. Check your connection and try again.", "error");
     } else if (msg.toLowerCase().includes("rate") || msg.toLowerCase().includes("limit") || msg.toLowerCase().includes("too many")) {
       showSiteNotice("Too many signup attempts. Please wait a minute and try again, or try logging in if you already have an account.", "error");
+    } else if (msg.toLowerCase().includes("invalid login") || msg.toLowerCase().includes("invalid credential")) {
+      showSiteNotice("Could not create account. Your Supabase project has email confirmation enabled. To fix: go to Supabase Dashboard > Authentication > Settings > turn OFF 'Confirm email', then try again.", "error");
     } else {
       showSiteNotice(msg || "Could not create account. Please try again.", "error");
     }
