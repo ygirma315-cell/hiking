@@ -585,48 +585,61 @@ async function handleLogin(e) {
   render();
 
   if (!supabaseClient) {
-    state.loginError = 'Supabase is not configured yet. Add your project URL and anon key first.';
+    state.loginError = 'Supabase is not configured yet.';
     state.loginLoading = false;
     render();
     return;
   }
 
-  var login = await supabaseClient.auth.signInWithPassword({ email:u, password:p });
-  if (login.error) {
-    state.loginError = login.error.message || 'Invalid email or password';
-    state.loginLoading = false;
-    render();
-    return;
-  }
-
-  var allowed = false;
   try {
-    allowed = await verifyAdminUser(login.data.user);
+    // Step 1: Validate against admin_credentials table
+    var credRes = await supabaseClient.rpc('admin_login', { p_username:u, p_password:p });
+    if (credRes.error || !credRes.data || !credRes.data.success) {
+      state.loginError = (credRes.data && credRes.data.error) || 'Invalid username or password';
+      state.loginLoading = false;
+      render();
+      return;
+    }
+
+    // Step 2: Get/create linked Supabase Auth user for data access
+    var setupRes = await supabaseClient.rpc('setup_admin_auth_user', { p_admin_username:u });
+    if (setupRes.error || !setupRes.data || !setupRes.data.success) {
+      state.loginError = 'Could not setup data access. Run the SQL script.';
+      state.loginLoading = false;
+      render();
+      return;
+    }
+
+    // Step 3: Sign in to Supabase Auth (needed for data queries)
+    var authLogin = await supabaseClient.auth.signInWithPassword({
+      email: setupRes.data.email,
+      password: 'ereft_admin_supabase_2024'
+    });
+    if (authLogin.error) {
+      state.loginError = 'Data access login failed. Try again.';
+      state.loginLoading = false;
+      render();
+      return;
+    }
+
+    state.user = {
+      name: credRes.data.display_name || u,
+      username: u,
+      email: setupRes.data.email,
+      id: setupRes.data.user_id
+    };
+    state.loginLoading = false;
+    navigateTo('overview');
+    await refreshDataFromSupabase().catch(function(err) {
+      console.error('Could not refresh Supabase data:', err);
+      showToast('Logged in, but data refresh failed', 'error');
+    });
+    render();
   } catch (err) {
-    console.error('Admin access check failed:', err);
-    await supabaseClient.auth.signOut();
-    state.loginError = 'Admin access is not ready. Run the admin SQL setup first.';
+    state.loginError = 'Login failed: ' + (err.message || 'unknown error');
     state.loginLoading = false;
     render();
-    return;
   }
-
-  if (!allowed) {
-    await supabaseClient.auth.signOut();
-    state.loginError = 'This account is not allowed to access the admin dashboard.';
-    state.loginLoading = false;
-    render();
-    return;
-  }
-
-  state.user = adminUserFromAuth(login.data.user);
-  state.loginLoading = false;
-  navigateTo('overview');
-  await refreshDataFromSupabase().catch(function(err) {
-    console.error('Could not refresh Supabase data:', err);
-    showToast('Logged in, but data refresh failed', 'error');
-  });
-  render();
 }
 
 async function restoreAdminSession() {
@@ -640,23 +653,35 @@ async function restoreAdminSession() {
       return;
     }
 
-    var allowed = await verifyAdminUser(sessionUser);
-    if (!allowed) {
+    // Derive admin username from the linked auth email (e.g. admin@admin.ereft.local → admin)
+    var adminEmail = sessionUser.email || '';
+    var adminUsername = adminEmail.split('@')[0];
+
+    // Verify they're still in admin_credentials
+    var credRes = await supabaseClient.rpc('admin_login', { p_username:adminUsername, p_password:'' });
+    // Password check will fail, but if the user exists, it returns error, not RPC error
+    // We just need to check the user exists - try a different approach
+    // Instead, check admin_users table
+    var adminCheck = await supabaseClient.from('admin_users').select('user_id').eq('user_id', sessionUser.id).maybeSingle();
+    if (!adminCheck.data) {
       await supabaseClient.auth.signOut();
       state.user = null;
-      state.loginError = 'This account is not allowed to access the admin dashboard.';
       navigateTo('login');
       render();
       return;
     }
 
-    state.user = adminUserFromAuth(sessionUser);
+    state.user = {
+      name: adminUsername,
+      username: adminUsername,
+      email: adminEmail,
+      id: sessionUser.id
+    };
     await refreshDataFromSupabase();
     render();
   } catch (err) {
     console.error('Could not restore admin session:', err);
     state.user = null;
-    state.loginError = 'Could not verify admin access. Please sign in again.';
     render();
   }
 }
@@ -708,9 +733,9 @@ function renderLogin() {
       '<div class="login-card">' +
         '<div class="login-header"><div class="login-logo">\u26F0\uFE0F</div><h1 class="login-title">Ereft Hiking</h1><p class="login-subtitle">Admin Dashboard</p></div>' +
         '<form class="login-form" onsubmit="handleLogin(event)">' +
-          '<div class="form-group"><label class="form-label">Email</label><div class="input-wrapper"><svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><input id="login-user" type="email" class="form-input" placeholder="admin@example.com" autofocus></div></div>' +
+          '<div class="form-group"><label class="form-label">Username</label><div class="input-wrapper"><svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><input id="login-user" type="text" class="form-input" placeholder="admin" autofocus autocomplete="off"></div></div>' +
           '<div class="form-group"><label class="form-label">Password</label><div class="input-wrapper"><svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><input id="login-pass" type="password" class="form-input" placeholder="Enter password"><button type="button" class="input-toggle" onclick="togglePass()" aria-label="Toggle"><svg id="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>' +
-          '<div class="form-row"><label class="checkbox-label"><input type="checkbox" id="login-remember" class="checkbox-input"><span class="checkbox-custom"></span><span class="checkbox-text">Remember me</span></label></div>' +
+          '<p style="font-size:12px;color:var(--text-muted);margin:-8px 0 16px">Default: username <strong>admin</strong>, password <strong>admin123</strong></p>' +
           (state.loginError ? '<div class="login-error"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg><span>' + state.loginError + '</span></div>' : '') +
           '<button type="submit" class="btn btn-primary btn-block"' + (state.loginLoading ? ' disabled' : '') + '>' + (state.loginLoading ? '<span class="spinner"></span> Signing in...' : 'Sign In') + '</button>' +
         '</form>' +
@@ -1658,31 +1683,29 @@ function renderSettings() {
         '<div class="form-group"><label class="form-label">Confirm</label><input type="password" class="form-input" id="pw-conf" placeholder="Confirm new"></div>' +
         '<div class="form-actions"><button class="btn btn-primary" onclick="changePassword()">Change Password</button></div>' +
       '</div>' +
-      '<div class="card"><h2 class="card-title">Add Admin</h2>' +
-        '<div class="form-group"><label class="form-label">Admin Email</label><input type="email" class="form-input" id="new-admin-email" placeholder="new-admin@example.com"></div>' +
-        '<p class="form-hint">This grants admin access to an existing Auth user, or stores an invite for that email.</p>' +
-        '<div class="form-actions"><button class="btn btn-primary" onclick="inviteAdmin()">Add Admin</button></div>' +
-      '</div>' +
-      '<div class="card card-full"><h2 class="card-title">Data Management</h2>' +
-        '<p class="text-muted" style="margin-bottom:12px">Content syncs to Supabase when configured. A local browser copy is kept only as a fallback.</p>' +
-        '<div class="form-actions"><button class="btn btn-danger" onclick="resetAllData()">Reset All Data to Default</button></div>' +
+      '<div class="card"><h2 class="card-title">Add Admin Login</h2>' +
+        '<div class="form-group"><label class="form-label">Username</label><input type="text" class="form-input" id="new-admin-user" placeholder="choose a username"></div>' +
+        '<div class="form-group"><label class="form-label">Password</label><input type="password" class="form-input" id="new-admin-pass" placeholder="choose a password"></div>' +
+        '<div class="form-group"><label class="form-label">Display Name</label><input type="text" class="form-input" id="new-admin-name" placeholder="optional display name"></div>' +
+        '<div class="form-actions"><button class="btn btn-primary" onclick="addAdminCred()">Add Admin</button></div>' +
       '</div>' +
     '</div></div>';
 }
 
-function inviteAdmin() {
-  var email = (document.getElementById('new-admin-email')?.value || '').trim().toLowerCase();
-  if (!email) { showToast('Enter an admin email', 'error'); return; }
-  if (!supabaseClient) { showToast('Supabase is required to add admins', 'error'); return; }
+function addAdminCred() {
+  var user = (document.getElementById('new-admin-user')?.value || '').trim();
+  var pass = document.getElementById('new-admin-pass')?.value || '';
+  var name = (document.getElementById('new-admin-name')?.value || '').trim() || user;
+  if (!user || !pass) { showToast('Enter username and password', 'error'); return; }
+  if (pass.length < 4) { showToast('Password must be at least 4 characters', 'error'); return; }
+  if (!supabaseClient) { showToast('Supabase required', 'error'); return; }
 
-  supabaseClient.rpc('invite_admin', { p_email:email }).then(function(res) {
-    if (res.error) {
-      showToast(res.error.message || 'Could not add admin', 'error');
-      return;
-    }
-
-    showToast(res.data || 'Admin invite saved', 'success');
-    document.getElementById('new-admin-email').value = '';
+  supabaseClient.rpc('add_admin_credentials', { p_username:user, p_password:pass, p_display_name:name }).then(function(res) {
+    if (res.error) { showToast(res.error.message || 'Could not add admin', 'error'); return; }
+    showToast('Admin "' + user + '" added. They can login with that username and password.', 'success');
+    document.getElementById('new-admin-user').value = '';
+    document.getElementById('new-admin-pass').value = '';
+    document.getElementById('new-admin-name').value = '';
   });
 }
 
