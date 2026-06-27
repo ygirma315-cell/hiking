@@ -20,10 +20,59 @@ const galleryFilters = document.getElementById("galleryFilters");
 const galleryGrid = document.getElementById("galleryGrid");
 const destinationSelect = document.getElementById("destinationSelect");
 const packageInput = document.getElementById("packageInput");
+const packagePriceInput = document.getElementById("packagePriceInput");
+const participantsCountInput = document.getElementById("participantsCount");
+const paymentMethodSelect = document.getElementById("paymentMethod");
+const otherPaymentWrap = document.getElementById("otherPaymentWrap");
+const otherPaymentNameInput = document.getElementById("otherPaymentName");
+const paymentReceiverGuide = document.getElementById("paymentReceiverGuide");
 const supabaseClient = window.ereftSupabaseClient ? window.ereftSupabaseClient() : null;
-var inboxState = loadInboxState();
-const registrationHistoryKey = "ereft_registration_history";
-var inboxRefreshTimer = null;
+const USERNAME_DOMAIN = "ereft.local";
+var currentUser = null;
+var currentProfile = null;
+var userBookings = [];
+var dashboardRefreshTimer = null;
+var pendingAuthAction = null;
+var selectedPackageMeta = null;
+
+const PAYMENT_ACCOUNTS = {
+  cbe: {
+    label:"Commercial Bank of Ethiopia (CBE)",
+    accountName:"Ereft Hiking",
+    accountLabel:"CBE account number",
+    accountNumber:"1000123456789"
+  },
+  telebirr: {
+    label:"Telebirr",
+    accountName:"Ereft Hiking",
+    accountLabel:"Telebirr receiving phone",
+    accountNumber:"+251911234567"
+  },
+  boa: {
+    label:"Bank of Abyssinia (BOA)",
+    accountName:"Ereft Hiking",
+    accountLabel:"BOA account number",
+    accountNumber:"110012345678"
+  },
+  awash: {
+    label:"Awash Bank",
+    accountName:"Ereft Hiking",
+    accountLabel:"Awash account number",
+    accountNumber:"0134123456789"
+  },
+  dashen: {
+    label:"Dashen Bank",
+    accountName:"Ereft Hiking",
+    accountLabel:"Dashen account number",
+    accountNumber:"780012345678"
+  },
+  cash: {
+    label:"Cash",
+    accountName:"Ereft Hiking",
+    accountLabel:"Payment location",
+    accountNumber:"Confirm with Ereft Hiking before the trip"
+  }
+};
 
 function esc(value) {
   return String(value == null ? "" : value)
@@ -42,241 +91,530 @@ function formatPackagePrice(pkg) {
   return amount + " " + (pkg.currency || "ETB");
 }
 
-function loadInboxState() {
-  try {
-    var saved = JSON.parse(localStorage.getItem("ereft_registration_inbox") || "null");
-    if (saved && !saved.reference_code) {
-      saved.reference_code = buildRegistrationReference(saved.lookup_token || saved.id || saved.submitted_date);
-      localStorage.setItem("ereft_registration_inbox", JSON.stringify(saved));
-    }
-    return saved;
-  } catch (_) {
-    return null;
-  }
+function normalizeUsername(value) {
+  return String(value || "").trim().toLowerCase().replace(/[^a-z0-9._-]/g, "");
 }
 
-function buildRegistrationReference(seed) {
+function usernameToEmail(username) {
+  return normalizeUsername(username) + "@" + USERNAME_DOMAIN;
+}
+
+function buildLocalHikeId(seed) {
   var fallback = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   var raw = String(seed || (window.crypto && window.crypto.randomUUID ? window.crypto.randomUUID() : fallback));
   var clean = raw.replace(/[^a-z0-9]/gi, "").toUpperCase();
   if (!clean) clean = fallback.toUpperCase();
-  return "ERF-" + clean.slice(-8).padStart(8, "0");
+  return "HIK-" + clean.slice(-6).padStart(6, "0");
 }
 
-function saveInboxState(data) {
-  inboxState = data;
-  if (data) localStorage.setItem("ereft_registration_inbox", JSON.stringify(data));
-  else localStorage.removeItem("ereft_registration_inbox");
-  renderInboxButton();
-}
-
-function loadRegistrationHistory() {
-  try {
-    return JSON.parse(localStorage.getItem(registrationHistoryKey) || "[]");
-  } catch (_) {
-    return [];
-  }
-}
-
-function saveRegistrationHistory(entry) {
-  var normalized = normalizeInboxRow(entry, entry);
-  var history = loadRegistrationHistory().filter(item => item.reference_code !== normalized.reference_code);
-  history.unshift(normalized);
-  localStorage.setItem(registrationHistoryKey, JSON.stringify(history.slice(0, 6)));
-}
-
-function inboxCopy(status) {
+function statusCopy(status) {
   if (status === "accepted") {
     return {
-      title:"Registration accepted",
-      message:"Your registration has been accepted. Keep your phone available because Ereft Hiking may contact you with payment or meeting details.",
-      icon:"A"
+      label:"Accepted",
+      message:"Congratulations, your payment has been confirmed. You are accepted for this trip."
     };
   }
   if (status === "rejected") {
     return {
-      title:"Registration rejected",
-      message:"Your registration was not accepted. Contact Ereft Hiking directly if you need help or want to choose another trip.",
-      icon:"R"
+      label:"Rejected",
+      message:"Your registration was rejected. Please contact support."
+    };
+  }
+  if (status === "needs_review") {
+    return {
+      label:"Needs Review",
+      message:"Your payment needs manual review. Please contact us with your Hike ID."
     };
   }
   return {
-    title:"Registration pending",
-    message:"Your registration is being reviewed. Check this inbox later for acceptance or rejection updates.",
-    icon:"P"
+    label:"Pending",
+    message:"Waiting for payment confirmation."
   };
 }
 
-function normalizeInboxRow(row, payload) {
-  row = row || {};
-  payload = payload || {};
-  var rowIdentifier = row.lookup_token || row.id;
-  var payloadIdentifier = payload.lookup_token || payload.id;
-  var referenceCode = row.reference_code ||
-    (rowIdentifier ? buildRegistrationReference(rowIdentifier) : "") ||
-    payload.reference_code ||
-    buildRegistrationReference(payloadIdentifier);
+function statusBadgeClass(status) {
+  if (status === "accepted") return "status-accepted";
+  if (status === "rejected") return "status-rejected";
+  if (status === "needs_review") return "status-review";
+  return "status-pending";
+}
 
+function normalizeBooking(row) {
+  row = row || {};
   return {
-    id: row.id || payload.id || Date.now(),
-    lookup_token: row.lookup_token || payload.lookup_token || null,
-    reference_code: referenceCode,
-    status: row.status || payload.status || "pending",
-    payment_status: row.payment_status || payload.payment_status || "pending",
-    destination: row.destination || payload.destination || "",
-    package_name: row.package_name || payload.package_name || "",
-    submitted_date: row.submitted_date || new Date().toISOString().slice(0, 10),
+    id: row.id || Date.now(),
+    hike_id: row.hike_id || row.reference_code || buildLocalHikeId(row.id),
+    user_id: row.user_id || "",
+    username: row.username || "",
+    full_name: row.full_name || row.fullName || "",
+    phone: row.phone || "",
+    participants_count: cleanPeopleCount(row.participants_count || row.participantsCount || 1),
+    destination: row.destination || "",
+    package_name: row.package_name || row.package || "",
+    trip_date: row.trip_date || row.trip_date_text || row.submitted_date || "",
+    price: row.price == null ? null : Number(row.price),
+    currency: row.currency || "ETB",
+    payment_method: row.payment_method || row.paymentMethod || "Not selected",
+    sender_account: row.sender_account || "",
+    transaction_id: row.transaction_id || "",
+    payment_status: row.payment_status || "pending",
+    status: row.status || "pending",
+    admin_message: row.admin_message || row.notes || "",
+    created_at: row.created_at || row.submitted_date || new Date().toISOString(),
     updated_at: row.updated_at || new Date().toISOString()
   };
 }
 
-function renderInboxButton() {
-  var button = document.getElementById("registrationInboxButton");
-  if (!button) return;
-
-  button.hidden = false;
-  button.title = inboxState ? inboxCopy(inboxState.status).title : "Registration inbox";
-  var dot = button.querySelector(".inbox-dot");
-  if (dot) {
-    dot.hidden = !inboxState;
-    dot.className = "inbox-dot " + (inboxState ? inboxState.status || "pending" : "pending");
-  }
+function formatBookingPrice(booking) {
+  if (!booking || booking.price == null || Number.isNaN(Number(booking.price))) return "-";
+  var amount = Number(booking.price).toLocaleString();
+  return booking.currency === "USD" ? "$" + amount : amount + " " + (booking.currency || "ETB");
 }
 
-function renderInboxModal() {
-  var empty = document.getElementById("inboxEmpty");
-  var content = document.getElementById("inboxContent");
-  if (!inboxState) {
-    if (empty) empty.hidden = false;
-    if (content) content.hidden = true;
+function cleanPeopleCount(value) {
+  var count = Number(value);
+  if (!Number.isFinite(count) || count < 1) return 1;
+  return Math.floor(count);
+}
+
+function getPackageByName(name) {
+  if (!sharedPkgData) return null;
+  var found = null;
+  ["nativeDay", "nativeOvernight", "foreignerDay", "foreignerOvernight"].forEach(function(key) {
+    if (sharedPkgData[key] && sharedPkgData[key].name === name) found = sharedPkgData[key];
+  });
+  return found;
+}
+
+function paymentAccountFor(value) {
+  var raw = String(value || "").trim();
+  if (!raw) return null;
+  if (PAYMENT_ACCOUNTS[raw]) return PAYMENT_ACCOUNTS[raw];
+  var lower = raw.toLowerCase();
+  var key = Object.keys(PAYMENT_ACCOUNTS).find(function(id) {
+    var item = PAYMENT_ACCOUNTS[id];
+    return item.label.toLowerCase() === lower || lower.includes(id) || lower.includes(item.label.toLowerCase());
+  });
+  return key ? PAYMENT_ACCOUNTS[key] : {
+    label:raw,
+    accountName:"Ereft Hiking",
+    accountLabel:"Receiving account",
+    accountNumber:"Confirm with Ereft Hiking before paying"
+  };
+}
+
+function selectedPaymentLabel() {
+  var value = paymentMethodSelect ? paymentMethodSelect.value : "";
+  if (value === "other") {
+    var otherName = otherPaymentNameInput ? otherPaymentNameInput.value.trim() : "";
+    return otherName ? "Other - " + otherName : "Other bank / wallet";
+  }
+  var account = paymentAccountFor(value);
+  return account ? account.label : "";
+}
+
+function paymentGuideHtml(account, hikeId) {
+  if (!account) return "";
+  var hasAccount = !!String(account.accountNumber || "").trim();
+  var accountLine = hasAccount
+    ? '<div><span>' + esc(account.accountLabel) + '</span><strong>' + esc(account.accountNumber) + '</strong><button class="copy-btn" type="button" data-copy-value="' + esc(account.accountNumber) + '">Copy</button></div>'
+    : '<div><span>' + esc(account.accountLabel) + '</span><strong>Account number not added yet</strong></div>';
+  var hikeLine = hikeId
+    ? '<p>Your Hike ID is <strong>' + esc(hikeId) + '</strong>. Write this exact ID in the payment note/description/reference.</p>'
+    : '<p>After booking, copy your Hike ID and write it in the payment note/description/reference.</p>';
+  return '<div class="payment-guide-title">' +
+      '<span>Pay with</span><strong>' + esc(account.label) + '</strong>' +
+    '</div>' +
+    '<div class="payment-guide-details">' +
+      '<div><span>Account name</span><strong>' + esc(account.accountName || "Ereft Hiking") + '</strong></div>' +
+      accountLine +
+    '</div>' +
+    hikeLine +
+    '<p class="payment-guide-note">Demo receiving account for setup. Replace this with the real Ereft Hiking deposit account before launch.</p>' +
+    '<p class="payment-guide-note">After paying, enter your sender account/phone and transaction/reference ID so admin can match Hike ID + reference + sender + amount.</p>';
+}
+
+function updatePaymentGuide(hikeId) {
+  if (!paymentMethodSelect || !paymentReceiverGuide) return;
+  var value = paymentMethodSelect.value;
+  var account = value === "other"
+    ? paymentAccountFor(selectedPaymentLabel())
+    : paymentAccountFor(value);
+
+  if (otherPaymentWrap) otherPaymentWrap.hidden = value !== "other";
+  paymentReceiverGuide.hidden = !account;
+  paymentReceiverGuide.innerHTML = account ? paymentGuideHtml(account, hikeId) : "";
+}
+
+function updateAuthUI() {
+  var loggedIn = !!currentUser;
+  var loginButton = document.getElementById("loginOpenButton");
+  var dashboardButton = document.getElementById("dashboardOpenButton");
+  var logoutButton = document.getElementById("logoutButton");
+  if (loginButton) loginButton.hidden = loggedIn;
+  if (dashboardButton) dashboardButton.hidden = true;
+  if (logoutButton) logoutButton.hidden = !loggedIn;
+}
+
+function switchAuthTab(mode) {
+  var signIn = mode !== "signup";
+  document.querySelectorAll(".auth-tab").forEach(function(tab) {
+    tab.classList.toggle("active", tab.dataset.authTab === (signIn ? "signin" : "signup"));
+  });
+  document.getElementById("signinForm").hidden = !signIn;
+  document.getElementById("signupForm").hidden = signIn;
+}
+
+function openAuthModal(mode, afterLoginAction) {
+  pendingAuthAction = afterLoginAction || null;
+  switchAuthTab(mode || "signin");
+  openModal("authModal");
+}
+
+async function ensureProfile(user, username, phone) {
+  if (!supabaseClient || !user) return null;
+  username = normalizeUsername(username || user.user_metadata?.username || (user.email || "").split("@")[0]);
+  phone = phone || user.user_metadata?.phone || "";
+
+  var existing = await supabaseClient
+    .from("profiles")
+    .select("user_id, username, phone")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (existing.data) return existing.data;
+
+  var inserted = await supabaseClient
+    .from("profiles")
+    .insert({ user_id:user.id, username:username, phone:phone })
+    .select("user_id, username, phone")
+    .single();
+
+  if (inserted.error) throw inserted.error;
+  return inserted.data;
+}
+
+async function loadCurrentUser() {
+  if (!supabaseClient) {
+    updateAuthUI();
     return;
   }
 
-  if (empty) empty.hidden = true;
-  if (content) content.hidden = false;
-  var copy = inboxCopy(inboxState.status);
-  var icon = document.getElementById("inboxStatusIcon");
-  if (icon) {
-    icon.className = "inbox-status-icon " + (inboxState.status || "pending");
-    icon.textContent = copy.icon;
+  var sessionRes = await supabaseClient.auth.getSession();
+  var user = sessionRes.data && sessionRes.data.session && sessionRes.data.session.user;
+  currentUser = user || null;
+  if (currentUser) {
+    try {
+      currentProfile = await ensureProfile(currentUser);
+    } catch (error) {
+      console.warn("Profile load failed:", error);
+      currentProfile = { username:(currentUser.email || "").split("@")[0], phone:"" };
+    }
+  } else {
+    currentProfile = null;
   }
-  document.getElementById("inboxStatusTitle").textContent = copy.title;
-  document.getElementById("inboxStatusMessage").textContent = copy.message;
-  document.getElementById("inboxReference").textContent = inboxState.reference_code || "-";
-  document.getElementById("inboxDestination").textContent = inboxState.destination || "-";
-  document.getElementById("inboxPackage").textContent = inboxState.package_name || "-";
-  document.getElementById("inboxPayment").textContent = inboxState.payment_status || "pending";
-  renderInboxHistory();
+  updateAuthUI();
+}
 
-  var refreshButton = document.getElementById("inboxRefreshButton");
-  var refreshNote = document.getElementById("inboxRefreshNote");
-  var canRefresh = !!(supabaseClient && inboxState.lookup_token);
-  if (refreshButton) refreshButton.hidden = !canRefresh;
-  if (refreshNote) {
-    refreshNote.textContent = canRefresh
-      ? "This inbox checks for updates while it is open."
-      : "This inbox is saved on this device. New registrations will update here after review.";
+async function handleSignedIn(action) {
+  closeModals();
+  updateAuthUI();
+  if (action === "register") openRegistrationModal();
+  if (action === "dashboard") openDashboard();
+}
+
+async function signInUser(form) {
+  if (!supabaseClient) {
+    showSiteNotice("Login is not available right now. Please try again later.", "error");
+    return;
+  }
+
+  var button = document.getElementById("signinSubmit");
+  var username = normalizeUsername(document.getElementById("signinUsername").value);
+  var password = document.getElementById("signinPassword").value;
+  if (!username || !password) return;
+
+  button.disabled = true;
+  button.textContent = "Logging in...";
+  try {
+    var result = await supabaseClient.auth.signInWithPassword({
+      email: usernameToEmail(username),
+      password: password
+    });
+    if (result.error) throw result.error;
+    currentUser = result.data.user;
+    try {
+      currentProfile = await ensureProfile(currentUser, username);
+    } catch (profileError) {
+      console.warn("Profile setup failed:", profileError);
+      currentProfile = { username:username, phone:"" };
+    }
+    form.reset();
+    await handleSignedIn(pendingAuthAction);
+    pendingAuthAction = null;
+  } catch (error) {
+    console.error("Login failed:", error);
+    showSiteNotice("Username or password is incorrect.", "error");
+  } finally {
+    button.disabled = false;
+    button.textContent = "Login";
   }
 }
 
-function openInboxModal() {
-  renderInboxModal();
-  openModal("inboxModal");
-  startInboxLiveRefresh();
+async function signUpUser(form) {
+  if (!supabaseClient) {
+    showSiteNotice("Sign up is not available right now. Please try again later.", "error");
+    return;
+  }
+
+  var button = document.getElementById("signupSubmit");
+  var username = normalizeUsername(document.getElementById("signupUsername").value);
+  var phone = document.getElementById("signupPhone").value.trim();
+  var password = document.getElementById("signupPassword").value;
+  var confirm = document.getElementById("signupConfirmPassword").value;
+
+  if (username.length < 3) {
+    showSiteNotice("Username must be at least 3 characters.", "error");
+    return;
+  }
+  if (password.length < 6) {
+    showSiteNotice("Password must be at least 6 characters.", "error");
+    return;
+  }
+  if (password !== confirm) {
+    showSiteNotice("Passwords do not match.", "error");
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = "Creating...";
+  try {
+    var availability = await supabaseClient.rpc("is_username_available", { p_username:username });
+    if (!availability.error && availability.data === false) {
+      throw new Error("Username already exists.");
+    }
+
+    var result = await supabaseClient.auth.signUp({
+      email: usernameToEmail(username),
+      password: password,
+      options: { data:{ username:username, phone:phone } }
+    });
+    if (result.error) throw result.error;
+
+    var user = result.data.user;
+    if (!result.data.session) {
+      var login = await supabaseClient.auth.signInWithPassword({
+        email: usernameToEmail(username),
+        password: password
+      });
+      if (login.error) throw login.error;
+      user = login.data.user;
+    }
+
+    currentUser = user;
+    try {
+      currentProfile = await ensureProfile(currentUser, username, phone);
+    } catch (profileError) {
+      console.warn("Profile setup failed:", profileError);
+      currentProfile = { username:username, phone:phone };
+    }
+    form.reset();
+    await handleSignedIn(pendingAuthAction);
+    pendingAuthAction = null;
+  } catch (error) {
+    console.error("Sign up failed:", error);
+    showSiteNotice(error.message === "Username already exists." ? "That username is already taken." : "Could not create account. Please try another username.", "error");
+  } finally {
+    button.disabled = false;
+    button.textContent = "Create Account";
+  }
 }
 
-function startInboxLiveRefresh() {
-  stopInboxLiveRefresh();
-  if (!inboxState || !supabaseClient || !inboxState.lookup_token) return;
+async function signOutUser() {
+  stopDashboardLiveRefresh();
+  userBookings = [];
+  if (supabaseClient) await supabaseClient.auth.signOut();
+  currentUser = null;
+  currentProfile = null;
+  updateAuthUI();
+  closeModals();
+  showSiteNotice("Logged out.", "success");
+}
 
-  refreshInboxStatus(false);
-  inboxRefreshTimer = setInterval(function() {
-    var inboxModal = document.getElementById("inboxModal");
-    if (!inboxModal || !inboxModal.classList.contains("open")) {
-      stopInboxLiveRefresh();
+async function loadUserBookings() {
+  if (!supabaseClient || !currentUser) {
+    userBookings = [];
+    return userBookings;
+  }
+
+  var response = await supabaseClient
+    .from("registrations")
+    .select("id,hike_id,user_id,username,full_name,phone,participants_count,destination,package_name,trip_date,price,currency,payment_method,sender_account,transaction_id,payment_status,status,admin_message,created_at,updated_at")
+    .eq("user_id", currentUser.id)
+    .order("created_at", { ascending:false });
+
+  if (response.error) throw response.error;
+  userBookings = (response.data || []).map(normalizeBooking);
+  return userBookings;
+}
+
+function renderDashboard() {
+  var list = document.getElementById("dashboardBookings");
+  var empty = document.getElementById("dashboardEmpty");
+  if (!list || !empty) return;
+
+  if (!userBookings.length) {
+    list.innerHTML = "";
+    empty.hidden = false;
+    return;
+  }
+
+  empty.hidden = true;
+  list.innerHTML = userBookings.map(function(booking) {
+    var copy = statusCopy(booking.status);
+    var price = formatBookingPrice(booking);
+    var adminMessage = booking.admin_message || copy.message;
+    var paymentAccount = paymentAccountFor(booking.payment_method);
+    return '<article class="booking-card">' +
+      '<div class="booking-card-top">' +
+        '<div><span class="booking-label">Hike ID</span><div class="hike-id-inline"><strong id="hike-' + esc(booking.hike_id) + '">' + esc(booking.hike_id) + '</strong><button class="copy-btn" type="button" data-copy-value="' + esc(booking.hike_id) + '">Copy</button></div></div>' +
+        '<span class="status-badge ' + statusBadgeClass(booking.status) + '">' + esc(copy.label) + '</span>' +
+      '</div>' +
+      '<div class="booking-details">' +
+        '<div><span>Trip</span><strong>' + esc(booking.destination || booking.package_name) + '</strong></div>' +
+        '<div><span>Package</span><strong>' + esc(booking.package_name || '-') + '</strong></div>' +
+        '<div><span>People</span><strong>' + esc(booking.participants_count || 1) + '</strong></div>' +
+        '<div><span>Price</span><strong>' + esc(price) + '</strong></div>' +
+        '<div><span>Trip Date</span><strong>' + esc(booking.trip_date || 'Not set') + '</strong></div>' +
+        '<div><span>Payment Option</span><strong>' + esc(booking.payment_method || '-') + '</strong></div>' +
+        '<div><span>Payment Status</span><strong>' + esc(booking.payment_status || 'pending') + '</strong></div>' +
+        '<div><span>Your Sender</span><strong>' + esc(booking.sender_account || 'Not submitted yet') + '</strong></div>' +
+        '<div><span>Transaction ID</span><strong>' + esc(booking.transaction_id || 'Not submitted yet') + '</strong></div>' +
+      '</div>' +
+      (paymentAccount ? '<div class="payment-guide-card compact">' + paymentGuideHtml(paymentAccount, booking.hike_id) + '</div>' : '') +
+      '<p class="payment-instruction">Your Hike ID is <strong>' + esc(booking.hike_id) + '</strong>. When sending the payment, copy this exact Hike ID and write it in the payment note/description/reference. This helps us confirm your payment faster.</p>' +
+      '<p class="payment-warning small">If you pay without writing your Hike ID in the payment note, your confirmation may be delayed. You may need to contact us manually.</p>' +
+      '<div class="admin-message"><strong>Status message</strong><span>' + esc(adminMessage) + '</span></div>' +
+      '<form class="payment-update-form" data-hike-id="' + esc(booking.hike_id) + '">' +
+        '<label>Sender account / phone<input name="sender_account" value="' + esc(booking.sender_account || '') + '" placeholder="Account or phone used to pay"></label>' +
+        '<label>Transaction ID / reference<input name="transaction_id" value="' + esc(booking.transaction_id || '') + '" placeholder="Payment reference"></label>' +
+        '<button class="btn btn-orange full" type="submit">Submit Payment Details</button>' +
+      '</form>' +
+    '</article>';
+  }).join("");
+}
+
+async function openDashboard() {
+  if (!currentUser) {
+    openAuthModal("signin", "dashboard");
+    return;
+  }
+
+  openModal("dashboardModal");
+  await refreshDashboard(true);
+  startDashboardLiveRefresh();
+}
+
+async function refreshDashboard(silent) {
+  if (!currentUser) return;
+  var btn = document.getElementById("dashboardRefreshButton");
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Refreshing...";
+  }
+  try {
+    await loadUserBookings();
+    renderDashboard();
+    if (!silent) showSiteNotice("Dashboard refreshed.", "success");
+  } catch (error) {
+    console.error("Dashboard refresh failed:", error);
+    if (!silent) showSiteNotice("Could not refresh dashboard right now.", "error");
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "Refresh Dashboard";
+    }
+  }
+}
+
+function startDashboardLiveRefresh() {
+  stopDashboardLiveRefresh();
+  dashboardRefreshTimer = setInterval(function() {
+    var modal = document.getElementById("dashboardModal");
+    if (!modal || !modal.classList.contains("open")) {
+      stopDashboardLiveRefresh();
       return;
     }
-    refreshInboxStatus(false);
+    refreshDashboard(true);
   }, 10000);
 }
 
-function stopInboxLiveRefresh() {
-  if (inboxRefreshTimer) {
-    clearInterval(inboxRefreshTimer);
-    inboxRefreshTimer = null;
+function stopDashboardLiveRefresh() {
+  if (dashboardRefreshTimer) {
+    clearInterval(dashboardRefreshTimer);
+    dashboardRefreshTimer = null;
   }
 }
 
-async function refreshInboxStatus(showMessage) {
-  if (!inboxState) return;
-  if (!supabaseClient || !inboxState.lookup_token) {
-    renderInboxButton();
-    renderInboxModal();
-    if (showMessage) showSiteNotice("Your status is saved here. Please check again later.", "info");
+async function submitPaymentDetails(form) {
+  if (!supabaseClient || !currentUser) return;
+  var hikeId = form.dataset.hikeId;
+  var sender = form.elements.sender_account.value.trim();
+  var tx = form.elements.transaction_id.value.trim();
+  if (!sender && !tx) {
+    showSiteNotice("Add sender account/phone or transaction ID first.", "error");
     return;
   }
-
-  var result = await supabaseClient.rpc("get_registration_status", {
-    p_lookup_token: inboxState.lookup_token
-  });
-
-  if (result.error) {
-    if (showMessage) showSiteNotice("We could not refresh the status right now. Please try again later.", "error");
-    return;
-  }
-
-  var row = Array.isArray(result.data) ? result.data[0] : result.data;
-  if (row) {
-    var refreshedInbox = Object.assign({}, inboxState, normalizeInboxRow(row, inboxState));
-    saveInboxState(refreshedInbox);
-    saveRegistrationHistory(refreshedInbox);
-    renderInboxModal();
-    if (showMessage) showSiteNotice("Inbox status refreshed.", "success");
+  var button = form.querySelector("button");
+  button.disabled = true;
+  button.textContent = "Saving...";
+  try {
+    var result = await supabaseClient.rpc("submit_booking_payment", {
+      p_hike_id:hikeId,
+      p_sender_account:sender,
+      p_transaction_id:tx
+    });
+    if (result.error) throw result.error;
+    await refreshDashboard(true);
+    showSiteNotice("Payment details submitted.", "success");
+  } catch (error) {
+    console.error("Payment detail update failed:", error);
+    showSiteNotice("Could not submit payment details.", "error");
+  } finally {
+    button.disabled = false;
+    button.textContent = "Submit Payment Details";
   }
 }
 
-function clearInbox() {
-  stopInboxLiveRefresh();
-  saveInboxState(null);
-  localStorage.removeItem(registrationHistoryKey);
-  closeModals();
-  showSiteNotice("Inbox cleared on this device.", "success");
+function renderSuccessBooking(booking) {
+  var id = booking && booking.hike_id ? booking.hike_id : "";
+  var account = booking ? paymentAccountFor(booking.payment_method) : null;
+  var instruction = document.getElementById("successInstruction");
+  var wrap = document.getElementById("successHikeIdWrap");
+  var idEl = document.getElementById("successHikeId");
+  var guide = document.getElementById("successPaymentGuide");
+  if (instruction) instruction.textContent = id
+    ? "Your Hike ID is " + id + ". When sending the payment, copy this exact Hike ID and write it in the payment note/description/reference. This helps us confirm your payment faster."
+    : "Your booking was created. Use your Hike ID when sending payment.";
+  if (wrap && idEl) {
+    wrap.hidden = !id;
+    idEl.textContent = id;
+  }
+  if (guide) {
+    guide.hidden = !account;
+    guide.innerHTML = account ? paymentGuideHtml(account, id) : "";
+  }
 }
 
-function renderInboxHistory() {
-  var historyWrap = document.getElementById("inboxHistory");
-  var historyList = document.getElementById("inboxHistoryList");
-  if (!historyWrap || !historyList) return;
-  var history = loadRegistrationHistory().filter(item => item.reference_code !== inboxState.reference_code);
-
-  if (!history.length) {
-    historyWrap.hidden = true;
-    historyList.innerHTML = "";
-    return;
+function copyText(value) {
+  if (!value) return;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(value).then(function() {
+      showSiteNotice("Copied.", "success");
+    });
+  } else {
+    showSiteNotice(value, "info");
   }
-
-  historyWrap.hidden = false;
-  historyList.className = "inbox-history-list";
-  historyList.innerHTML = history.slice(0, 3).map(item => `
-    <div class="inbox-history-item">
-      <strong>${esc(item.destination || "Registration")}</strong>
-      <span>${esc(item.status || "pending")}</span>
-      <span>${esc(item.reference_code || "")}</span>
-      <span>${esc(item.submitted_date || "")}</span>
-    </div>
-  `).join("");
-}
-
-function renderSuccessReference() {
-  var ref = document.getElementById("successReferenceId");
-  if (!ref) return;
-  if (!inboxState || !inboxState.reference_code) {
-    ref.hidden = true;
-    ref.textContent = "";
-    return;
-  }
-  ref.hidden = false;
-  ref.textContent = "Reference ID: " + inboxState.reference_code;
 }
 
 function findTrip(name) {
@@ -363,6 +701,7 @@ function renderPackageCards() {
   document.querySelectorAll(".choose-package").forEach((button) => {
     button.addEventListener("click", () => {
       selectedPackage = button.dataset.package;
+      selectedPackageMeta = getPackageByName(selectedPackage);
       openRegistrationModal();
     });
   });
@@ -445,7 +784,7 @@ function openModal(id) {
 }
 
 function closeModals() {
-  stopInboxLiveRefresh();
+  stopDashboardLiveRefresh();
   document.querySelectorAll(".modal.open").forEach(modal => {
     modal.classList.remove("open");
     modal.setAttribute("aria-hidden", "true");
@@ -459,7 +798,7 @@ function showSiteNotice(message, type) {
   var notice = document.createElement("div");
   var noticeType = type || "success";
   var title = noticeType === "error" ? "Something went wrong" : noticeType === "info" ? "Notice" : "Done";
-  var icon = noticeType === "error" ? "!" : noticeType === "info" ? "i" : "✓";
+  var icon = noticeType === "error" ? "!" : noticeType === "info" ? "i" : "OK";
   notice.className = "site-notice site-notice-" + noticeType;
   notice.setAttribute("role", noticeType === "error" ? "alert" : "status");
 
@@ -485,6 +824,10 @@ function showSiteNotice(message, type) {
 }
 
 function openRegistrationModal() {
+  if (!currentUser) {
+    openAuthModal("signin", "register");
+    return;
+  }
   if (!hikingDestinations.length) {
     showSiteNotice("Trips are not available right now. Please check again soon.", "error");
     return;
@@ -496,6 +839,9 @@ function openRegistrationModal() {
   renderDestinationOptions();
   destinationSelect.value = selectedDestination;
   packageInput.value = selectedPackage;
+  selectedPackageMeta = getPackageByName(selectedPackage);
+  if (packagePriceInput) packagePriceInput.value = selectedPackageMeta ? formatPackagePrice(selectedPackageMeta) : "";
+  updatePaymentGuide();
   openModal("registrationModal");
 }
 
@@ -526,11 +872,14 @@ function scrollToSection(id, updateHash = true) {
 }
 
 function setupNavigation() {
-  document.querySelectorAll(".main-nav a, .mobile-nav-item").forEach(link => {
+  document.querySelectorAll(".main-nav a").forEach(link => {
     link.addEventListener("click", (e) => {
       const href = link.getAttribute("href");
       if (href && href.startsWith("#")) {
         e.preventDefault();
+        document.querySelector(".main-nav")?.classList.remove("open");
+        document.getElementById("menuToggle")?.classList.remove("open");
+        document.getElementById("menuToggle")?.setAttribute("aria-expanded", "false");
         scrollToSection(href.slice(1));
       }
     });
@@ -540,7 +889,6 @@ function setupNavigation() {
 function setupActiveNavOnScroll() {
   const sections = document.querySelectorAll(".section-anchor");
   const navLinks = document.querySelectorAll(".main-nav a");
-  const mobileLinks = document.querySelectorAll(".mobile-nav-item");
   if (!sections.length) return;
 
   const observer = new IntersectionObserver((entries) => {
@@ -548,7 +896,6 @@ function setupActiveNavOnScroll() {
       if (entry.isIntersecting) {
         const id = entry.target.id;
         navLinks.forEach(link => link.classList.toggle("active", link.getAttribute("href") === "#" + id));
-        mobileLinks.forEach(link => link.classList.toggle("active", link.getAttribute("href") === "#" + id));
       }
     });
   }, { rootMargin: "-38% 0px -55% 0px", threshold: 0 });
@@ -587,8 +934,49 @@ function setupNavSmoothScroll() {
 }
 
 function setupFormsAndModals() {
-  var inboxButton = document.getElementById("registrationInboxButton");
-  if (inboxButton) inboxButton.addEventListener("click", openInboxModal);
+  document.getElementById("loginOpenButton").addEventListener("click", () => openAuthModal("signin"));
+  document.getElementById("dashboardOpenButton").addEventListener("click", openDashboard);
+  document.getElementById("logoutButton").addEventListener("click", signOutUser);
+  document.getElementById("dashboardRefreshButton").addEventListener("click", () => refreshDashboard(false));
+  document.getElementById("successViewDashboardButton").addEventListener("click", function() {
+    closeModals();
+    openDashboard();
+  });
+  if (paymentMethodSelect) paymentMethodSelect.addEventListener("change", () => updatePaymentGuide());
+  if (otherPaymentNameInput) otherPaymentNameInput.addEventListener("input", () => updatePaymentGuide());
+  document.getElementById("menuToggle").addEventListener("click", function() {
+    var nav = document.querySelector(".main-nav");
+    var open = nav.classList.toggle("open");
+    this.classList.toggle("open", open);
+    this.setAttribute("aria-expanded", open ? "true" : "false");
+  });
+  document.querySelectorAll(".auth-tab").forEach(function(tab) {
+    tab.addEventListener("click", function() { switchAuthTab(tab.dataset.authTab); });
+  });
+  document.getElementById("signinForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    await signInUser(e.currentTarget);
+  });
+  document.getElementById("signupForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    await signUpUser(e.currentTarget);
+  });
+  document.getElementById("dashboardBookings").addEventListener("submit", async (e) => {
+    var form = e.target.closest(".payment-update-form");
+    if (!form) return;
+    e.preventDefault();
+    await submitPaymentDetails(form);
+  });
+  document.addEventListener("click", function(e) {
+    var copyButton = e.target.closest("[data-copy-target], [data-copy-value]");
+    if (!copyButton) return;
+    var value = copyButton.dataset.copyValue;
+    if (!value && copyButton.dataset.copyTarget) {
+      var target = document.getElementById(copyButton.dataset.copyTarget);
+      value = target ? target.textContent.trim() : "";
+    }
+    copyText(value);
+  });
   document.querySelectorAll("[data-close-modal]").forEach(btn => btn.addEventListener("click", closeModals));
   document.querySelectorAll(".modal").forEach(modal => modal.addEventListener("click", (e) => {
     if (e.target === modal) closeModals();
@@ -692,14 +1080,18 @@ function applySharedData(shared) {
     if (rulesList && w.rules) {
       rulesList.innerHTML = w.rules.map(function(r) { return '<li>' + esc(r) + '</li>' }).join('');
     }
-      var footerContact = document.querySelectorAll('.contact-phone, .footer-links-col a[href^="tel"]');
+    var footerContact = document.querySelectorAll('.contact-phone, .footer-links-col a[href^="tel"]');
+    function updatePhoneLink(link, phone) {
+      if (!link || !phone) return;
+      var icon = link.querySelector('svg');
+      link.href = 'tel:' + phone.replace(/\s+/g, '');
+      link.innerHTML = (icon ? icon.outerHTML : '') + esc(phone);
+    }
     if (footerContact.length > 0 && w.contactPhone) {
-      footerContact[0].textContent = w.contactPhone;
-      footerContact[0].href = 'tel:' + w.contactPhone.replace(/\s+/g, '');
+      updatePhoneLink(footerContact[0], w.contactPhone);
     }
     if (footerContact.length > 1 && w.contactPhone2) {
-      footerContact[1].textContent = w.contactPhone2;
-      footerContact[1].href = 'tel:' + w.contactPhone2.replace(/\s+/g, '');
+      updatePhoneLink(footerContact[1], w.contactPhone2);
     }
   }
 }
@@ -724,82 +1116,105 @@ async function loadSharedData() {
 }
 
 async function submitRegistration(form) {
+  if (!currentUser) {
+    openAuthModal("signin", "register");
+    return;
+  }
   if (!destinationSelect.value || !packageInput.value) {
     showSiteNotice("Choose a destination and package before submitting.", "error");
     return;
   }
 
-  var localReferenceCode = buildRegistrationReference();
+  selectedPackageMeta = getPackageByName(packageInput.value);
+  var trip = findTrip(destinationSelect.value);
+  var localHikeId = buildLocalHikeId();
   var payload = {
     full_name: document.getElementById("fullName").value.trim(),
     age: Number(document.getElementById("age").value),
     phone: document.getElementById("phone").value.trim(),
+    participants_count: cleanPeopleCount(participantsCountInput ? participantsCountInput.value : 1),
     gender: document.getElementById("gender").value,
     destination: destinationSelect.value,
     package_name: packageInput.value,
-    payment_method: document.getElementById("paymentMethod").value,
+    trip_date: trip ? trip.date || "" : "",
+    price: selectedPackageMeta ? Number(selectedPackageMeta.price || 0) : 0,
+    currency: selectedPackageMeta ? selectedPackageMeta.currency || "ETB" : "ETB",
+    payment_method: selectedPaymentLabel(),
+    sender_account: document.getElementById("senderAccount").value.trim(),
+    transaction_id: document.getElementById("transactionId").value.trim(),
     payment_status: "pending",
     status: "pending"
   };
+  if (!payload.full_name || !payload.phone || !payload.payment_method) {
+    showSiteNotice("Please complete the required booking fields.", "error");
+    return;
+  }
 
+  var submitButton = document.getElementById("registrationSubmitButton");
+  submitButton.disabled = true;
+  submitButton.textContent = "Creating Booking...";
   try {
-    var inboxRow = null;
+    var booking = null;
     if (supabaseClient) {
-      var rpcResponse = await supabaseClient.rpc('create_registration', {
+      var rpcPayload = {
         p_full_name: payload.full_name,
         p_phone: payload.phone,
         p_age: payload.age,
+        p_participants_count: payload.participants_count,
         p_gender: payload.gender,
         p_destination: payload.destination,
         p_package_name: payload.package_name,
-        p_payment_method: payload.payment_method
-      });
+        p_trip_date: payload.trip_date,
+        p_price: payload.price,
+        p_currency: payload.currency,
+        p_payment_method: payload.payment_method,
+        p_sender_account: payload.sender_account,
+        p_transaction_id: payload.transaction_id
+      };
+      var rpcResponse = await supabaseClient.rpc('create_booking', rpcPayload);
+
+      if (rpcResponse.error && String(rpcResponse.error.message || '').includes('p_participants_count')) {
+        delete rpcPayload.p_participants_count;
+        rpcResponse = await supabaseClient.rpc('create_booking', rpcPayload);
+      }
 
       if (!rpcResponse.error && rpcResponse.data) {
-        inboxRow = Array.isArray(rpcResponse.data) ? rpcResponse.data[0] : rpcResponse.data;
+        booking = normalizeBooking(Array.isArray(rpcResponse.data) ? rpcResponse.data[0] : rpcResponse.data);
       } else {
-        var response = await supabaseClient.from('registrations').insert(payload);
-        if (response.error) throw response.error;
-        inboxRow = Object.assign({}, payload, {
-          id: Date.now(),
-          reference_code: localReferenceCode,
-          submitted_date: new Date().toISOString().slice(0, 10)
-        });
+        throw rpcResponse.error || new Error("Booking could not be created.");
       }
     } else {
-      var saved = JSON.parse(localStorage.getItem('ereft_hiking_registrations') || '[]');
-      inboxRow = Object.assign({}, payload, {
+      booking = normalizeBooking(Object.assign({}, payload, {
         id: Date.now(),
-        reference_code: localReferenceCode,
-        status: "pending",
-        payment_status: "pending",
-        submittedDate: new Date().toISOString().slice(0, 10)
-      });
-      saved.push(Object.assign({}, inboxRow, {
-        fullName: payload.full_name,
-        package: payload.package_name
+        hike_id: localHikeId,
+        user_id: "local",
+        username: currentProfile?.username || "",
+        created_at: new Date().toISOString()
       }));
-      localStorage.setItem('ereft_hiking_registrations', JSON.stringify(saved));
+      var saved = JSON.parse(localStorage.getItem('ereft_hiking_bookings') || '[]');
+      saved.unshift(booking);
+      localStorage.setItem('ereft_hiking_bookings', JSON.stringify(saved));
     }
 
-    var normalizedInbox = normalizeInboxRow(inboxRow, Object.assign({}, payload, {
-      reference_code: localReferenceCode
-    }));
-    saveInboxState(normalizedInbox);
-    saveRegistrationHistory(normalizedInbox);
+    userBookings.unshift(booking);
     closeModals();
-    renderSuccessReference();
+    renderSuccessBooking(booking);
     openModal("successModal");
     form.reset();
+    await refreshDashboard(true).catch(function(){});
   } catch (error) {
-    console.error('Registration failed:', error);
-    showSiteNotice('Your registration could not be submitted. Please try again or contact Ereft Hiking directly.', 'error');
+    console.error('Booking failed:', error);
+    showSiteNotice('Your booking could not be submitted. Please try again or contact Ereft Hiking directly.', 'error');
+  } finally {
+    submitButton.disabled = false;
+    submitButton.textContent = "Submit Booking";
   }
 }
 
 async function initSite() {
   try {
     await loadSharedData();
+    await loadCurrentUser();
   } catch(e) {
     console.warn('Website content load issue:', e);
     showSiteNotice('Some website content could not load. Please refresh the page.', 'error');
@@ -817,8 +1232,6 @@ async function initSite() {
   setupNavSmoothScroll();
   setupFaqAccordion();
   updateSelectedDestination();
-  renderInboxButton();
-  refreshInboxStatus(false);
 }
 
 initSite();

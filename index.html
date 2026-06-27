@@ -38,11 +38,15 @@
         </a>
       </nav>
 
-      <button class="inbox-nav-button" id="registrationInboxButton" type="button" aria-label="Open registration inbox">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h3.4l3.9 3.25c.4.33 1 .05 1-.47V18H20a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 12h-9.7v2.65L8.1 16H4V6h16v10Z"/></svg>
-        <span>Inbox</span>
-        <span class="inbox-dot" aria-hidden="true" hidden></span>
+      <button class="menu-toggle" id="menuToggle" type="button" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
       </button>
+
+      <div class="auth-actions">
+        <button class="auth-btn auth-btn-ghost" id="loginOpenButton" type="button">Login / Sign Up</button>
+        <button class="auth-btn auth-btn-primary" id="dashboardOpenButton" type="button" hidden>Dashboard</button>
+        <button class="auth-btn auth-btn-ghost" id="logoutButton" type="button" hidden>Logout</button>
+      </div>
     </div>
   </header>
 
@@ -230,33 +234,6 @@
     </section>
   </main>
 
-  <nav class="mobile-bottom-nav" aria-label="Mobile navigation">
-    <a href="#home" class="mobile-nav-item">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L4 9v12h5v-7h6v7h5V9z"/></svg>
-      <span>Home</span>
-    </a>
-    <a href="#hikings" class="mobile-nav-item">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 22h20l-6-8-4 5-4-5zM10 2l-4 6h3v4h2V8h3z"/></svg>
-      <span>Hikings</span>
-    </a>
-    <a href="#register" class="mobile-nav-item">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 12c2.2 0 4-1.8 4-4s-1.8-4-4-4-4 1.8-4 4 1.8 4 4 4zm0-6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 8c-3.9 0-7 1.6-7 3.6V18h14v-.4c0-2-3.1-3.6-7-3.6z"/></svg>
-      <span>Register</span>
-    </a>
-    <a href="#gallery" class="mobile-nav-item">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-10.6-2l-2.4-3-2.4 3H6l4-5.3 2.4 3.2 2.4-3.2L18 14h-6.6zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6z"/></svg>
-      <span>Gallery</span>
-    </a>
-    <a href="#about" class="mobile-nav-item">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
-      <span>About</span>
-    </a>
-    <a href="#contact" class="mobile-nav-item">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h3.4l3.9 3.25c.4.33 1 .05 1-.47V18H20a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 12h-9.7v2.65L8.1 16H4V6h16v10Z"/></svg>
-      <span>Contact</span>
-    </a>
-  </nav>
-
   <footer class="site-footer">
     <div class="container">
       <div class="footer-grid">
@@ -271,6 +248,34 @@
       <div class="footer-bottom">&copy; 2026 Ereft Hiking. All rights reserved.</div>
     </div>
   </footer>
+
+  <div class="modal" id="authModal" aria-hidden="true">
+    <div class="modal-panel auth-panel small-panel">
+      <button class="modal-close" data-close-modal aria-label="Close">&times;</button>
+      <div class="auth-tabs" role="tablist" aria-label="Account access">
+        <button class="auth-tab active" type="button" data-auth-tab="signin">Login</button>
+        <button class="auth-tab" type="button" data-auth-tab="signup">Sign Up</button>
+      </div>
+
+      <form class="simple-form auth-form" id="signinForm">
+        <h3>Login</h3>
+        <p class="modal-subtitle">Login is only needed to register or view your dashboard.</p>
+        <label>Username<input id="signinUsername" type="text" required autocomplete="username" placeholder="yourusername"></label>
+        <label>Password<input id="signinPassword" type="password" required autocomplete="current-password" placeholder="Password"></label>
+        <button class="btn btn-orange full" id="signinSubmit" type="submit">Login</button>
+      </form>
+
+      <form class="simple-form auth-form" id="signupForm" hidden>
+        <h3>Create Account</h3>
+        <p class="modal-subtitle">Use a username and password. No Google login is used.</p>
+        <label>Username<input id="signupUsername" type="text" required autocomplete="username" placeholder="yourusername" minlength="3" maxlength="30"></label>
+        <label>Phone Number <span class="label-note">optional but recommended</span><input id="signupPhone" type="tel" autocomplete="tel" placeholder="+251..."></label>
+        <label>Password<input id="signupPassword" type="password" required autocomplete="new-password" placeholder="At least 6 characters" minlength="6"></label>
+        <label>Confirm Password<input id="signupConfirmPassword" type="password" required autocomplete="new-password" placeholder="Repeat password" minlength="6"></label>
+        <button class="btn btn-orange full" id="signupSubmit" type="submit">Create Account</button>
+      </form>
+    </div>
+  </div>
 
   <div class="modal" id="tripDetailsModal" aria-hidden="true">
     <div class="modal-panel trip-panel">
@@ -305,18 +310,34 @@
       <button class="modal-close" data-close-modal aria-label="Close">&times;</button>
       <span class="eyebrow">Final step</span>
       <h3>Hiking Registration</h3>
-      <p class="modal-subtitle">Fill in your information. Ereft Hiking will contact you soon.</p>
+      <p class="modal-subtitle">Submit your booking, then pay manually using your Hike ID in the payment note.</p>
       <form class="simple-form" id="registrationForm">
         <div class="form-grid">
           <label>Full Name<input id="fullName" type="text" required placeholder="Full name"></label>
-          <label>Age<input id="age" type="number" min="1" required placeholder="Age"></label>
+          <label>Age<input id="age" type="number" min="1" max="120" required placeholder="Age"></label>
           <label>Phone Number<input id="phone" type="tel" required placeholder="+251..."></label>
+          <label>Number of People<input id="participantsCount" type="number" min="1" max="100" required value="1" placeholder="1"></label>
           <label>Gender<select id="gender" required><option value="">Select gender</option><option>Female</option><option>Male</option><option>Prefer not to say</option></select></label>
           <label>Selected Destination<select id="destinationSelect" required></select></label>
           <label>Selected Package<input id="packageInput" type="text" readonly></label>
-          <label>Payment Method<select id="paymentMethod" required><option value="">Select payment</option><option>Bank Transfer</option><option>Telebirr</option><option>Cash</option></select></label>
+          <label>Fixed Price<input id="packagePriceInput" type="text" readonly></label>
+          <label>Payment Option<select id="paymentMethod" required>
+            <option value="">Choose payment option</option>
+            <option value="cbe">Commercial Bank of Ethiopia (CBE)</option>
+            <option value="telebirr">Telebirr</option>
+            <option value="boa">Bank of Abyssinia (BOA)</option>
+            <option value="awash">Awash Bank</option>
+            <option value="dashen">Dashen Bank</option>
+            <option value="other">Other bank / wallet</option>
+            <option value="cash">Cash</option>
+          </select></label>
+          <label id="otherPaymentWrap" hidden>Other Bank / Wallet Name<input id="otherPaymentName" type="text" placeholder="Bank or wallet name"></label>
+          <label>Sender Account / Phone<input id="senderAccount" type="text" placeholder="Account or phone used to pay"></label>
+          <label>Transaction ID <span class="label-note">optional after payment</span><input id="transactionId" type="text" placeholder="Payment reference"></label>
         </div>
-        <button class="btn btn-orange full" type="submit">Submit Registration</button>
+        <div class="payment-guide-card" id="paymentReceiverGuide" hidden></div>
+        <p class="payment-warning">If you pay without writing your Hike ID in the payment note, your confirmation may be delayed. You may need to contact us manually.</p>
+        <button class="btn btn-orange full" id="registrationSubmitButton" type="submit">Submit Booking</button>
       </form>
     </div>
   </div>
@@ -324,42 +345,34 @@
   <div class="modal" id="successModal" aria-hidden="true">
     <div class="modal-panel success-panel small-panel">
       <div class="success-icon">&#10003;</div>
-      <h3>Registration Successful</h3>
-      <p>Thank you for registering. Use the inbox icon to check your registration status.</p>
-      <p class="success-reference" id="successReferenceId" hidden></p>
+      <h3>Booking Created</h3>
+      <p id="successInstruction">Your booking was created. Use your Hike ID when sending payment.</p>
+      <div class="hike-id-copy" id="successHikeIdWrap" hidden>
+        <strong id="successHikeId"></strong>
+        <button class="copy-btn" type="button" data-copy-target="successHikeId">Copy</button>
+      </div>
+      <div class="payment-guide-card success-payment-guide" id="successPaymentGuide" hidden></div>
+      <p class="payment-warning small">When sending payment, copy this exact Hike ID and write it in the payment note/description/reference.</p>
+      <button class="btn btn-soft full" id="successViewDashboardButton" type="button">View My Booking</button>
       <button class="btn btn-orange full" data-close-modal>Done</button>
     </div>
   </div>
 
-  <div class="modal" id="inboxModal" aria-hidden="true">
-    <div class="modal-panel inbox-panel small-panel">
+  <div class="modal" id="dashboardModal" aria-hidden="true">
+    <div class="modal-panel dashboard-panel">
       <button class="modal-close" data-close-modal aria-label="Close">&times;</button>
-      <span class="eyebrow">Registration Inbox</span>
-      <div class="inbox-empty" id="inboxEmpty" hidden>
-        <div class="inbox-status-icon empty">0</div>
-        <h3>No registrations yet</h3>
-        <p>After you submit a hiking registration on this device, your status and reference ID will appear here.</p>
-        <a class="btn btn-orange full" href="#register" data-close-modal>Choose a Package</a>
+      <span class="eyebrow">User Dashboard</span>
+      <h3>Registered Hikes</h3>
+      <p class="modal-subtitle" id="dashboardSubtitle">Your bookings and payment confirmation status appear here.</p>
+      <div class="dashboard-actions">
+        <button class="btn btn-orange" id="dashboardRefreshButton" type="button">Refresh Dashboard</button>
       </div>
-      <div class="inbox-content" id="inboxContent">
-        <div class="inbox-status-icon" id="inboxStatusIcon"></div>
-        <h3 id="inboxStatusTitle">Registration status</h3>
-        <p id="inboxStatusMessage">Your registration status will appear here.</p>
-        <div class="inbox-detail-list">
-          <div><span>Reference ID</span><strong id="inboxReference">-</strong></div>
-          <div><span>Destination</span><strong id="inboxDestination">-</strong></div>
-          <div><span>Package</span><strong id="inboxPackage">-</strong></div>
-          <div><span>Payment</span><strong id="inboxPayment">-</strong></div>
-        </div>
-        <div class="inbox-history" id="inboxHistory" hidden>
-          <h4>Previous registrations</h4>
-          <div id="inboxHistoryList"></div>
-        </div>
-        <p class="inbox-note" id="inboxRefreshNote"></p>
-        <div class="inbox-actions">
-          <button class="btn btn-orange full" id="inboxRefreshButton" type="button" onclick="refreshInboxStatus(true)">Refresh Status</button>
-          <button class="inbox-clear" type="button" onclick="clearInbox()">Clear inbox from this device</button>
-        </div>
+      <div class="dashboard-list" id="dashboardBookings"></div>
+      <div class="empty-dashboard" id="dashboardEmpty" hidden>
+        <div class="inbox-status-icon empty">0</div>
+        <h3>No bookings yet</h3>
+        <p>Choose a package and submit your first hiking registration.</p>
+        <a class="btn btn-orange full" href="#register" data-close-modal>Choose a Package</a>
       </div>
     </div>
   </div>
