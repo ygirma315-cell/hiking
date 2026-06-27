@@ -1,352 +1,15 @@
-const hikingDestinations = [
-  {
-    "name": "Langano",
-    "duration": "1–2 days",
-    "price": "4,000 ETB",
-    "image": "assets/hikings/langano.webp",
-    "description": "A relaxing short trip with lake views, photography, games, and group fun.",
-    "category": "langano",
-    "start": "A.A (Mexico, Wabi Shebelle)",
-    "date": "Jun 21–22",
-    "spotsLeft": 8,
-    "expect": [
-      "Fresh lake breeze and scenic shoreline views",
-      "Swimming and relaxing by the water",
-      "Beautiful sunset photography at the lake",
-      "Bird watching near the lakeside"
-    ]
-  },
-  {
-    "name": "Wenchi Crater Lake",
-    "duration": "1 day",
-    "price": "4,000 ETB",
-    "image": "assets/hikings/wenchi.webp",
-    "description": "Green scenery, crater lake views, fresh air, and peaceful walking routes.",
-    "category": "wenchi",
-    "start": "A.A (Mexico, Wabi Shebelle)",
-    "date": "Jun 28–28",
-    "spotsLeft": 12,
-    "expect": [
-      "Fresh highland air and cool mountain climate",
-      "Crater lake with stunning volcanic views",
-      "Green walking trails through farmland",
-      "Local village coffee ceremony experience"
-    ]
-  },
-  {
-    "name": "Abijata Shala",
-    "duration": "1–2 days",
-    "price": "4,000 ETB",
-    "image": "assets/hikings/abijata-shala.webp",
-    "description": "Open landscapes, lake scenery, group photos, and a simple outdoor escape.",
-    "category": "abijata-shala",
-    "start": "A.A (Mexico, Wabi Shebelle)",
-    "date": "Jul 5–6",
-    "spotsLeft": 6,
-    "expect": [
-      "Hot springs and natural steam vents",
-      "Flamingos and other lake birds",
-      "Wide open Rift Valley landscapes",
-      "Sandy lakeshore walking paths"
-    ]
-  },
-  {
-    "name": "Afar Doho & Benuna Village",
-    "duration": "2 days",
-    "price": "4,000 ETB",
-    "image": "assets/hikings/afar-doho-benuna.webp",
-    "description": "Warm cultural experience, lodge moments, local scenery, and guided travel.",
-    "category": "afar-doho-benuna",
-    "start": "A.A (Mexico, Wabi Shebelle)",
-    "date": "Jul 12–13",
-    "spotsLeft": 4,
-    "expect": [
-      "Warm geothermal hot springs",
-      "Traditional Afar village lifestyle",
-      "Afar food and cultural hospitality",
-      "Stunning desert and lowland scenery"
-    ]
-  },
-  {
-    "name": "Doho Lodge & Harar",
-    "duration": "3 days",
-    "price": "4,000 ETB",
-    "image": "assets/hikings/doho-harar.webp",
-    "description": "A mix of lodge relaxation, Harar culture, traditional scenes, and photography.",
-    "category": "doho-harar",
-    "start": "A.A (Mexico, Wabi Shebelle)",
-    "date": "Jul 19–21",
-    "spotsLeft": 10,
-    "expect": [
-      "Colorful Harar walled city streets",
-      "Traditional coffee and spice markets",
-      "Hyena feeding experience at dusk",
-      "Lodge relaxation with panoramic views"
-    ]
-  },
-  {
-    "name": "Insisaal",
-    "duration": "1 day",
-    "price": "4,000 ETB",
-    "image": "assets/hikings/langano.webp",
-    "description": "A scenic day trip with beautiful landscapes and group adventure.",
-    "category": "insisaal",
-    "start": "A.A (Mexico, Wabi Shebelle)",
-    "date": "Jul 26–26",
-    "spotsLeft": 15,
-    "expect": [
-      "Fresh countryside air and green hills",
-      "Open meadow walking trails",
-      "Wildflower and plant spotting",
-      "Panoramic views from hilltop spots"
-    ]
-  }
-];
+const hikingDestinations = [];
+const galleryCategories = [];
+const galleryImages = [];
+const nativeFeatures = [];
+const nativeOvernightFeatures = [];
+const foreignerFeatures = [];
+const foreignerOvernightFeatures = [];
 
-const galleryCategories = [
-  {
-    "slug": "afar-doho-benuna",
-    "name": "Afar Doho & Benuna Village"
-  },
-  {
-    "slug": "doho-harar",
-    "name": "Doho Lodge & Harar"
-  },
-  {
-    "slug": "langano",
-    "name": "Langano"
-  },
-  {
-    "slug": "abijata-shala",
-    "name": "Abijata Shala"
-  },
-  {
-    "slug": "wenchi",
-    "name": "Wenchi Crater Lake"
-  }
-];
-
-const galleryImages = [
-  {
-    "place": "Afar Doho & Benuna Village",
-    "category": "afar-doho-benuna",
-    "src": "assets/gallery/afar-doho-benuna/afar-doho-benuna-01.jpg"
-  },
-  {
-    "place": "Afar Doho & Benuna Village",
-    "category": "afar-doho-benuna",
-    "src": "assets/gallery/afar-doho-benuna/afar-doho-benuna-02.jpg"
-  },
-  {
-    "place": "Afar Doho & Benuna Village",
-    "category": "afar-doho-benuna",
-    "src": "assets/gallery/afar-doho-benuna/afar-doho-benuna-03.jpg"
-  },
-  {
-    "place": "Afar Doho & Benuna Village",
-    "category": "afar-doho-benuna",
-    "src": "assets/gallery/afar-doho-benuna/afar-doho-benuna-04.jpg"
-  },
-  {
-    "place": "Afar Doho & Benuna Village",
-    "category": "afar-doho-benuna",
-    "src": "assets/gallery/afar-doho-benuna/afar-doho-benuna-05.jpg"
-  },
-  {
-    "place": "Afar Doho & Benuna Village",
-    "category": "afar-doho-benuna",
-    "src": "assets/gallery/afar-doho-benuna/afar-doho-benuna-06.jpg"
-  },
-  {
-    "place": "Afar Doho & Benuna Village",
-    "category": "afar-doho-benuna",
-    "src": "assets/gallery/afar-doho-benuna/afar-doho-benuna-07.jpg"
-  },
-  {
-    "place": "Afar Doho & Benuna Village",
-    "category": "afar-doho-benuna",
-    "src": "assets/gallery/afar-doho-benuna/afar-doho-benuna-08.jpg"
-  },
-  {
-    "place": "Afar Doho & Benuna Village",
-    "category": "afar-doho-benuna",
-    "src": "assets/gallery/afar-doho-benuna/afar-doho-benuna-09.jpg"
-  },
-  {
-    "place": "Doho Lodge & Harar",
-    "category": "doho-harar",
-    "src": "assets/gallery/doho-harar/doho-harar-01.jpg"
-  },
-  {
-    "place": "Doho Lodge & Harar",
-    "category": "doho-harar",
-    "src": "assets/gallery/doho-harar/doho-harar-02.jpg"
-  },
-  {
-    "place": "Doho Lodge & Harar",
-    "category": "doho-harar",
-    "src": "assets/gallery/doho-harar/doho-harar-03.jpg"
-  },
-  {
-    "place": "Doho Lodge & Harar",
-    "category": "doho-harar",
-    "src": "assets/gallery/doho-harar/doho-harar-04.jpg"
-  },
-  {
-    "place": "Doho Lodge & Harar",
-    "category": "doho-harar",
-    "src": "assets/gallery/doho-harar/doho-harar-05.jpg"
-  },
-  {
-    "place": "Doho Lodge & Harar",
-    "category": "doho-harar",
-    "src": "assets/gallery/doho-harar/doho-harar-06.jpg"
-  },
-  {
-    "place": "Doho Lodge & Harar",
-    "category": "doho-harar",
-    "src": "assets/gallery/doho-harar/doho-harar-07.jpg"
-  },
-  {
-    "place": "Doho Lodge & Harar",
-    "category": "doho-harar",
-    "src": "assets/gallery/doho-harar/doho-harar-08.jpg"
-  },
-  {
-    "place": "Doho Lodge & Harar",
-    "category": "doho-harar",
-    "src": "assets/gallery/doho-harar/doho-harar-09.jpg"
-  },
-  {
-    "place": "Langano",
-    "category": "langano",
-    "src": "assets/gallery/langano/langano-01.jpg"
-  },
-  {
-    "place": "Langano",
-    "category": "langano",
-    "src": "assets/gallery/langano/langano-02.jpg"
-  },
-  {
-    "place": "Langano",
-    "category": "langano",
-    "src": "assets/gallery/langano/langano-03.jpg"
-  },
-  {
-    "place": "Langano",
-    "category": "langano",
-    "src": "assets/gallery/langano/langano-04.jpg"
-  },
-  {
-    "place": "Abijata Shala",
-    "category": "abijata-shala",
-    "src": "assets/gallery/abijata-shala/abijata-shala-01.jpg"
-  },
-  {
-    "place": "Abijata Shala",
-    "category": "abijata-shala",
-    "src": "assets/gallery/abijata-shala/abijata-shala-02.jpg"
-  },
-  {
-    "place": "Wenchi Crater Lake",
-    "category": "wenchi",
-    "src": "assets/gallery/wenchi/wenchi-01.jpg"
-  },
-  {
-    "place": "Wenchi Crater Lake",
-    "category": "wenchi",
-    "src": "assets/gallery/wenchi/wenchi-02.jpg"
-  },
-  {
-    "place": "Wenchi Crater Lake",
-    "category": "wenchi",
-    "src": "assets/gallery/wenchi/wenchi-03.jpg"
-  },
-  {
-    "place": "Wenchi Crater Lake",
-    "category": "wenchi",
-    "src": "assets/gallery/wenchi/wenchi-04.jpg"
-  },
-  {
-    "place": "Wenchi Crater Lake",
-    "category": "wenchi",
-    "src": "assets/gallery/wenchi/wenchi-05.jpg"
-  },
-  {
-    "place": "Wenchi Crater Lake",
-    "category": "wenchi",
-    "src": "assets/gallery/wenchi/wenchi-06.jpg"
-  },
-  {
-    "place": "Wenchi Crater Lake",
-    "category": "wenchi",
-    "src": "assets/gallery/wenchi/wenchi-07.jpg"
-  },
-  {
-    "place": "Wenchi Crater Lake",
-    "category": "wenchi",
-    "src": "assets/gallery/wenchi/wenchi-08.jpg"
-  },
-  {
-    "place": "Wenchi Crater Lake",
-    "category": "wenchi",
-    "src": "assets/gallery/wenchi/wenchi-09.jpg"
-  },
-  {
-    "place": "Wenchi Crater Lake",
-    "category": "wenchi",
-    "src": "assets/gallery/wenchi/wenchi-10.jpg"
-  },
-  {
-    "place": "Wenchi Crater Lake",
-    "category": "wenchi",
-    "src": "assets/gallery/wenchi/wenchi-11.jpg"
-  },
-  {
-    "place": "Wenchi Crater Lake",
-    "category": "wenchi",
-    "src": "assets/gallery/wenchi/wenchi-12.jpg"
-  }
-];
-
-const nativeFeatures = [
-  "ትራንስፖርት ቱሪስት ስታንዳርድ (ኮስተር ባስ)",
-  "ቁርስ፣ ምሳ፣ እራት፣ ቁርስ፣ ምሳ",
-  "የካምፕ ምሽት (የፍዩል ጥብስ)",
-  "የታሸገ ውሃ",
-  "ድንሽ (ክፍል)",
-  "የፓርክ የመግቢያ ዋጋ",
-  "አስጎብኚ",
-  "የፓርክ ጠባቂ",
-  "ፎቶግራፍ",
-  "የተለያዩ ጨዋታዎች እና ሽልማቶች"
-];
-
-const nativeOvernightFeatures = [
-  "ትራንስፖርት ቱሪስት ስታንዳርድ (ኮስተር ባስ)",
-  "ቁርስ፣ ምሳ፣ እራት፣ ቁርስ፣ ምሳ",
-  "የካምፕ ምሽት (የፍዩል ጥብስ)",
-  "የካምፕ መሳሪያ (ድንኳን፣ ብርድ ልብስ)",
-  "የታሸገ ውሃ እና መጠጥ",
-  "ድንሽ (ክፍል)",
-  "የፓርክ የመግቢያ ዋጋ",
-  "አስጎብኚ እና የፓርክ ጠባቂ",
-  "ፎቶግራፍ",
-  "የእሳት ምሽት እና ዘፈን",
-  "የተለያዩ ጨዋታዎች እና ሽልማቶች"
-];
-
-const foreignerFeatures = [
-  "Transport with coaster bus",
-  "Meals: breakfast, lunch, dinner",
-  "Packed water and potatoes",
-  "Park entry fee",
-  "Guide and ranger",
-  "Photography and games"
-];
-
-let selectedDestination = hikingDestinations[0]?.name || "Langano";
-let selectedPackage = "Native / Local Package";
+let selectedDestination = "";
+// Populated from saved website content when available.
+var sharedPkgData = null;
+let selectedPackage = "";
 let activePackageView = "native";
 let activeGalleryCategory = "all";
 
@@ -357,28 +20,182 @@ const galleryFilters = document.getElementById("galleryFilters");
 const galleryGrid = document.getElementById("galleryGrid");
 const destinationSelect = document.getElementById("destinationSelect");
 const packageInput = document.getElementById("packageInput");
+const supabaseClient = window.ereftSupabaseClient ? window.ereftSupabaseClient() : null;
+var inboxState = loadInboxState();
+
+function esc(value) {
+  return String(value == null ? "" : value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function formatPackagePrice(pkg) {
+  if (!pkg || pkg.price == null || pkg.price === "") return "";
+  var price = Number(pkg.price);
+  var amount = Number.isFinite(price) ? price.toLocaleString() : String(pkg.price);
+  if (pkg.currency === "USD") return "$" + amount;
+  return amount + " " + (pkg.currency || "ETB");
+}
+
+function loadInboxState() {
+  try {
+    return JSON.parse(localStorage.getItem("ereft_registration_inbox") || "null");
+  } catch (_) {
+    return null;
+  }
+}
+
+function saveInboxState(data) {
+  inboxState = data;
+  if (data) localStorage.setItem("ereft_registration_inbox", JSON.stringify(data));
+  else localStorage.removeItem("ereft_registration_inbox");
+  renderInboxButton();
+}
+
+function inboxCopy(status) {
+  if (status === "accepted") {
+    return {
+      title:"Registration accepted",
+      message:"Your registration has been accepted. Keep your phone available because Ereft Hiking may contact you with payment or meeting details.",
+      icon:"A"
+    };
+  }
+  if (status === "rejected") {
+    return {
+      title:"Registration rejected",
+      message:"Your registration was not accepted. Contact Ereft Hiking directly if you need help or want to choose another trip.",
+      icon:"R"
+    };
+  }
+  return {
+    title:"Registration pending",
+    message:"Your registration is being reviewed. Check this inbox later for acceptance or rejection updates.",
+    icon:"P"
+  };
+}
+
+function normalizeInboxRow(row, payload) {
+  row = row || {};
+  payload = payload || {};
+  return {
+    id: row.id || payload.id || Date.now(),
+    lookup_token: row.lookup_token || payload.lookup_token || null,
+    status: row.status || payload.status || "pending",
+    payment_status: row.payment_status || payload.payment_status || "pending",
+    destination: row.destination || payload.destination || "",
+    package_name: row.package_name || payload.package_name || "",
+    submitted_date: row.submitted_date || new Date().toISOString().slice(0, 10),
+    updated_at: row.updated_at || new Date().toISOString()
+  };
+}
+
+function renderInboxButton() {
+  var button = document.getElementById("registrationInboxButton");
+  if (!button) return;
+  if (!inboxState) {
+    button.hidden = true;
+    return;
+  }
+
+  button.hidden = false;
+  button.title = inboxCopy(inboxState.status).title;
+  var dot = button.querySelector(".inbox-dot");
+  if (dot) dot.className = "inbox-dot " + (inboxState.status || "pending");
+}
+
+function renderInboxModal() {
+  if (!inboxState) return;
+  var copy = inboxCopy(inboxState.status);
+  var icon = document.getElementById("inboxStatusIcon");
+  if (icon) {
+    icon.className = "inbox-status-icon " + (inboxState.status || "pending");
+    icon.textContent = copy.icon;
+  }
+  document.getElementById("inboxStatusTitle").textContent = copy.title;
+  document.getElementById("inboxStatusMessage").textContent = copy.message;
+  document.getElementById("inboxDestination").textContent = inboxState.destination || "-";
+  document.getElementById("inboxPackage").textContent = inboxState.package_name || "-";
+  document.getElementById("inboxPayment").textContent = inboxState.payment_status || "pending";
+
+  var refreshButton = document.getElementById("inboxRefreshButton");
+  var refreshNote = document.getElementById("inboxRefreshNote");
+  var canRefresh = !!(supabaseClient && inboxState.lookup_token);
+  if (refreshButton) refreshButton.hidden = !canRefresh;
+  if (refreshNote) {
+    refreshNote.textContent = canRefresh
+      ? "Refresh after payment or review to see the latest status."
+      : "This inbox is saved on this device. New registrations will update here after review.";
+  }
+}
+
+function openInboxModal() {
+  if (!inboxState) return;
+  renderInboxModal();
+  openModal("inboxModal");
+  refreshInboxStatus(false);
+}
+
+async function refreshInboxStatus(showMessage) {
+  if (!inboxState) return;
+  if (!supabaseClient || !inboxState.lookup_token) {
+    renderInboxButton();
+    renderInboxModal();
+    if (showMessage) showSiteNotice("Your status is saved here. Please check again later.", "info");
+    return;
+  }
+
+  var result = await supabaseClient.rpc("get_registration_status", {
+    p_lookup_token: inboxState.lookup_token
+  });
+
+  if (result.error) {
+    if (showMessage) showSiteNotice("We could not refresh the status right now. Please try again later.", "error");
+    return;
+  }
+
+  var row = Array.isArray(result.data) ? result.data[0] : result.data;
+  if (row) {
+    saveInboxState(Object.assign({}, inboxState, normalizeInboxRow(row, inboxState)));
+    renderInboxModal();
+    if (showMessage) showSiteNotice("Inbox status refreshed.", "success");
+  }
+}
+
+function clearInbox() {
+  saveInboxState(null);
+  closeModals();
+  showSiteNotice("Inbox cleared on this device.", "success");
+}
 
 function findTrip(name) {
   return hikingDestinations.find(trip => trip.name === name) || hikingDestinations[0];
 }
 
 function renderDestinations() {
+  if (!hikingDestinations.length) {
+    destinationGrid.innerHTML = '<div class="empty-state">Trips are not available right now. Please check again soon.</div>';
+    return;
+  }
+
   destinationGrid.innerHTML = hikingDestinations.map((trip) => `
     <article class="destination-card fade-up">
       <div class="destination-image">
-        <img src="${trip.image}" alt="${trip.name} trip photo" loading="lazy" decoding="async">
-        <span class="duration-badge">${trip.duration}</span>
+        ${trip.image ? `<img src="${esc(trip.image)}" alt="${esc(trip.name)} trip photo" loading="lazy" decoding="async">` : ""}
+        <span class="duration-badge">${esc(trip.duration || "Trip")}</span>
       </div>
       <div class="destination-body">
-        <h3>${trip.name}</h3>
-        <p>${trip.description}</p>
+        <h3>${esc(trip.name)}</h3>
+        <p>${esc(trip.description || "")}</p>
         <div class="card-info-row">
-          <span class="card-date">${trip.date}</span>
-          <span class="card-spots">${trip.spotsLeft} spots left</span>
+          <span class="card-date">${esc(trip.date || "")}</span>
+          <span class="card-spots">${Number(trip.spotsLeft || 0)} spots left</span>
         </div>
         <div class="card-actions">
-          <button class="card-details" data-destination="${trip.name}">View Details</button>
-          <button class="card-register" data-destination="${trip.name}">Packages</button>
+          <button class="card-details" data-destination="${esc(trip.name)}">View Details</button>
+          <button class="card-register" data-destination="${esc(trip.name)}">Packages</button>
         </div>
       </div>
     </article>
@@ -399,50 +216,39 @@ function renderDestinations() {
 }
 
 function updateSelectedDestination() {
-  selectedDestinationLabel.textContent = selectedDestination;
+  if (!selectedDestination && hikingDestinations[0]) selectedDestination = hikingDestinations[0].name;
+  selectedDestinationLabel.textContent = selectedDestination || "No destination selected";
   if (destinationSelect) destinationSelect.value = selectedDestination;
 }
 
 function renderPackageCards() {
-  if (activePackageView === "native") {
-    const features = nativeFeatures.map(item => `<li>${item}</li>`).join("");
-    const overnightFeatures = nativeOvernightFeatures.map(item => `<li>${item}</li>`).join("");
-    pricingGrid.className = "pricing-grid native";
-    pricingGrid.innerHTML = `
-      <article class="pricing-card featured">
-        <h3>ደርሶ መልስ</h3>
-        <p>ለአንድ ቀን ጉዞ የተዘጋጀ ፓኬጅ።</p>
-        <div class="price">4,000 ETB <small>/ ሰው</small></div>
-        <ul class="check-list compact">${features}</ul>
-        <button class="btn btn-orange full choose-package" data-package="Native / Local Package">ይምረጡ</button>
-      </article>
-      <article class="pricing-card">
-        <h3>አዳር (Overnight)</h3>
-        <p>ለአንድ ሌሊት ካምፕ የተዘጋጀ ፓኬጅ።</p>
-        <div class="price">9,999 ETB <small>/ ሰው</small></div>
-        <ul class="check-list compact">${overnightFeatures}</ul>
-        <button class="btn btn-orange full choose-package" data-package="Native Overnight">ይምረጡ</button>
-      </article>
-    `;
-  } else {
-    const features = foreignerFeatures.map(item => `<li>${item}</li>`).join("");
-    pricingGrid.className = "pricing-grid foreigner";
-    pricingGrid.innerHTML = `
-      <article class="pricing-card featured">
-        <h3>Foreigner Day Trip</h3>
-        <p>For visitors who want a safe, organized single-day experience.</p>
-        <div class="price">$60 <small>/ person</small></div>
-        <ul class="check-list">${features}</ul>
-        <button class="btn btn-orange full choose-package" data-package="Foreigner Day Trip">Choose Package</button>
-      </article>
-      <article class="pricing-card">
-        <h3>Foreigner Overnight</h3>
-        <p>For visitors who want a longer guided trip with overnight planning.</p>
-        <div class="price">$120 <small>/ person</small></div>
-        <ul class="check-list">${features}</ul>
-        <button class="btn btn-orange full choose-package" data-package="Foreigner Overnight">Choose Package</button>
-      </article>
-    `;
+  var nd = sharedPkgData ? sharedPkgData.nativeDay : null;
+  var no = sharedPkgData ? sharedPkgData.nativeOvernight : null;
+  var fd = sharedPkgData ? sharedPkgData.foreignerDay : null;
+  var fo = sharedPkgData ? sharedPkgData.foreignerOvernight : null;
+
+  function card(pkg, features, featured) {
+    if (!pkg || !pkg.name) return "";
+    var price = formatPackagePrice(pkg);
+    var list = (features || []).map(function(item) { return '<li>' + esc(item) + '</li>'; }).join("");
+    return '<article class="pricing-card' + (featured ? ' featured' : '') + '">' +
+      '<h3>' + esc(pkg.name) + '</h3>' +
+      (pkg.sub ? '<p>' + esc(pkg.sub) + '</p>' : '') +
+      (price ? '<div class="price">' + esc(price) + ' <small>/ person</small></div>' : '') +
+      '<ul class="check-list compact">' + list + '</ul>' +
+      '<button class="btn btn-orange full choose-package" data-package="' + esc(pkg.name) + '">Choose Package</button>' +
+    '</article>';
+  }
+
+  pricingGrid.className = "pricing-grid " + activePackageView;
+  pricingGrid.innerHTML = activePackageView === "native"
+    ? card(nd, nativeFeatures, true) + card(no, nativeOvernightFeatures, false)
+    : card(fd, foreignerFeatures, true) + card(fo, foreignerOvernightFeatures, false);
+
+  if (!pricingGrid.innerHTML) {
+    pricingGrid.className = "pricing-grid";
+    pricingGrid.innerHTML = '<div class="empty-state">Packages are not available right now. Please check again soon.</div>';
+    return;
   }
 
   document.querySelectorAll(".choose-package").forEach((button) => {
@@ -454,14 +260,14 @@ function renderPackageCards() {
 }
 
 function renderDestinationOptions() {
-  destinationSelect.innerHTML = hikingDestinations.map(trip => `<option value="${trip.name}">${trip.name}</option>`).join("");
+  destinationSelect.innerHTML = hikingDestinations.map(trip => `<option value="${esc(trip.name)}">${esc(trip.name)}</option>`).join("");
   destinationSelect.value = selectedDestination;
 }
 
 function renderGalleryFilters() {
   const buttons = [{ slug: "all", name: "All" }, ...galleryCategories];
   galleryFilters.innerHTML = buttons.map(cat => `
-    <button class="filter-btn ${cat.slug === activeGalleryCategory ? "active" : ""}" data-category="${cat.slug}">${cat.name}</button>
+    <button class="filter-btn ${cat.slug === activeGalleryCategory ? "active" : ""}" data-category="${esc(cat.slug)}">${esc(cat.name)}</button>
   `).join("");
 
   document.querySelectorAll(".filter-btn").forEach((button) => {
@@ -474,6 +280,8 @@ function renderGalleryFilters() {
 }
 
 function thumbPath(src) {
+  if (!src) return "";
+  if (/^https?:/i.test(src)) return src;
   return src.replace(/\.(jpg|jpeg|png)$/i, ".webp").replace(/\/([^/]+)$/, "/thumb/$1");
 }
 
@@ -482,10 +290,15 @@ function renderGallery() {
     ? galleryImages
     : galleryImages.filter(img => img.category === activeGalleryCategory);
 
+  if (!items.length) {
+    galleryGrid.innerHTML = '<div class="empty-state">No gallery images are published yet.</div>';
+    return;
+  }
+
   galleryGrid.innerHTML = items.map((img) => `
-    <button class="gallery-item" data-src="${img.src}" data-place="${img.place}">
-      <img src="${thumbPath(img.src)}" alt="${img.place} gallery photo" loading="lazy" decoding="async">
-      <span>${img.place}</span>
+    <button class="gallery-item" data-src="${esc(img.src)}" data-place="${esc(img.place)}">
+      <img src="${esc(thumbPath(img.src))}" alt="${esc(img.place)} gallery photo" loading="lazy" decoding="async">
+      <span>${esc(img.place)}</span>
     </button>
   `).join("");
 
@@ -496,15 +309,19 @@ function renderGallery() {
 
 function openTripDetails(name) {
   const trip = findTrip(name);
+  if (!trip) {
+    showSiteNotice("No trip is selected yet.", "error");
+    return;
+  }
   document.getElementById("tripDetailImage").src = trip.image;
   document.getElementById("tripDetailImage").alt = `${trip.name} hiking image`;
   document.getElementById("tripDetailTitle").textContent = trip.name;
   document.getElementById("tripDetailDescription").textContent = trip.description;
   document.getElementById("tripDetailDuration").textContent = trip.duration;
-  document.getElementById("tripDetailStart").textContent = trip.start || "A.A (Mexico, Wabi Shebelle)";
-  document.getElementById("tripExpectList").innerHTML = (trip.expect || []).map(item => `<li>${item}</li>`).join("");
+  document.getElementById("tripDetailStart").textContent = trip.start || "Not specified";
+  document.getElementById("tripExpectList").innerHTML = (trip.expect || []).map(item => `<li>${esc(item)}</li>`).join("");
   const features = activePackageView === "native" ? nativeFeatures : foreignerFeatures;
-  document.getElementById("tripIncludedList").innerHTML = features.map(item => `<li>${item}</li>`).join("");
+  document.getElementById("tripIncludedList").innerHTML = features.map(item => `<li>${esc(item)}</li>`).join("");
   selectedDestination = trip.name;
   updateSelectedDestination();
   openModal("tripDetailsModal");
@@ -526,7 +343,46 @@ function closeModals() {
   document.body.classList.remove("modal-open");
 }
 
+function showSiteNotice(message, type) {
+  var old = document.querySelector(".site-notice");
+  if (old) old.remove();
+  var notice = document.createElement("div");
+  var noticeType = type || "success";
+  var title = noticeType === "error" ? "Something went wrong" : noticeType === "info" ? "Notice" : "Done";
+  var icon = noticeType === "error" ? "!" : noticeType === "info" ? "i" : "✓";
+  notice.className = "site-notice site-notice-" + noticeType;
+  notice.setAttribute("role", noticeType === "error" ? "alert" : "status");
+
+  var iconEl = document.createElement("span");
+  iconEl.className = "site-notice-icon";
+  iconEl.textContent = icon;
+
+  var copy = document.createElement("span");
+  copy.className = "site-notice-copy";
+
+  var titleEl = document.createElement("strong");
+  titleEl.textContent = title;
+
+  var msgEl = document.createElement("span");
+  msgEl.textContent = message;
+
+  copy.appendChild(titleEl);
+  copy.appendChild(msgEl);
+  notice.appendChild(iconEl);
+  notice.appendChild(copy);
+  document.body.appendChild(notice);
+  setTimeout(function() { notice.remove(); }, 3600);
+}
+
 function openRegistrationModal() {
+  if (!hikingDestinations.length) {
+    showSiteNotice("Trips are not available right now. Please check again soon.", "error");
+    return;
+  }
+  if (!selectedPackage) {
+    showSiteNotice("Choose a package first.", "error");
+    return;
+  }
   renderDestinationOptions();
   destinationSelect.value = selectedDestination;
   packageInput.value = selectedPackage;
@@ -622,6 +478,8 @@ function setupNavSmoothScroll() {
 
 function setupFormsAndModals() {
   document.querySelectorAll(".signup-open").forEach(btn => btn.addEventListener("click", () => openModal("signupModal")));
+  var inboxButton = document.getElementById("registrationInboxButton");
+  if (inboxButton) inboxButton.addEventListener("click", openInboxModal);
   document.querySelectorAll("[data-close-modal]").forEach(btn => btn.addEventListener("click", closeModals));
   document.querySelectorAll(".modal").forEach(modal => modal.addEventListener("click", (e) => {
     if (e.target === modal) closeModals();
@@ -644,11 +502,9 @@ function setupFormsAndModals() {
     openModal("successModal");
   });
 
-  document.getElementById("registrationForm").addEventListener("submit", (e) => {
+  document.getElementById("registrationForm").addEventListener("submit", async (e) => {
     e.preventDefault();
-    closeModals();
-    openModal("successModal");
-    e.currentTarget.reset();
+    await submitRegistration(e.currentTarget);
   });
 
   document.querySelectorAll(".toggle-option").forEach(button => {
@@ -680,18 +536,177 @@ function setupFaqAccordion() {
   });
 }
 
-renderDestinations();
-renderPackageCards();
-renderDestinationOptions();
-renderGalleryFilters();
-renderGallery();
-setupNavigation();
-setupFormsAndModals();
-setupActiveNavOnScroll();
-setupFadeUpAnimations();
-setupNavSmoothScroll();
-setupFaqAccordion();
-updateSelectedDestination();
+function applySharedData(shared) {
+  if (!shared) return;
+
+  if (Array.isArray(shared.trips)) {
+    hikingDestinations.length = 0;
+    shared.trips.forEach(function(t) {
+      if (!t.status || t.status === 'active') hikingDestinations.push(t);
+    });
+  }
+
+  if (Array.isArray(shared.galleryCategories)) {
+    galleryCategories.length = 0;
+    shared.galleryCategories.forEach(function(c) { galleryCategories.push(c) });
+  }
+
+  if (Array.isArray(shared.galleryImages)) {
+    galleryImages.length = 0;
+    shared.galleryImages.forEach(function(g) {
+      if (g.active !== false) galleryImages.push(g);
+    });
+  }
+
+  if (shared.packages) {
+    sharedPkgData = shared.packages;
+    var p = shared.packages;
+    if (p.nativeDay && p.nativeDay.features) {
+      nativeFeatures.length = 0;
+      p.nativeDay.features.forEach(function(f) { nativeFeatures.push(f) });
+    }
+    if (p.nativeOvernight && p.nativeOvernight.features) {
+      nativeOvernightFeatures.length = 0;
+      p.nativeOvernight.features.forEach(function(f) { nativeOvernightFeatures.push(f) });
+    }
+    if (p.foreignerDay && p.foreignerDay.features) {
+      foreignerFeatures.length = 0;
+      p.foreignerDay.features.forEach(function(f) { foreignerFeatures.push(f) });
+    }
+    if (p.foreignerOvernight && p.foreignerOvernight.features) {
+      foreignerOvernightFeatures.length = 0;
+      p.foreignerOvernight.features.forEach(function(f) { foreignerOvernightFeatures.push(f) });
+    }
+  }
+
+  if (shared.website) {
+    var w = shared.website;
+    var tagline = document.querySelector('.brand-text small');
+    if (tagline && w.tagline) tagline.textContent = w.tagline;
+    var aboutP = document.querySelector('.main-about p');
+    if (aboutP && w.aboutText) aboutP.textContent = w.aboutText;
+    var rulesList = document.querySelector('.rules-list');
+    if (rulesList && w.rules) {
+      rulesList.innerHTML = w.rules.map(function(r) { return '<li>' + esc(r) + '</li>' }).join('');
+    }
+      var footerContact = document.querySelectorAll('.contact-phone, .footer-links-col a[href^="tel"]');
+    if (footerContact.length > 0 && w.contactPhone) {
+      footerContact[0].textContent = w.contactPhone;
+      footerContact[0].href = 'tel:' + w.contactPhone.replace(/\s+/g, '');
+    }
+    if (footerContact.length > 1 && w.contactPhone2) {
+      footerContact[1].textContent = w.contactPhone2;
+      footerContact[1].href = 'tel:' + w.contactPhone2.replace(/\s+/g, '');
+    }
+  }
+}
+
+async function loadSharedData() {
+  if (supabaseClient) {
+    var response = await supabaseClient
+      .from('site_content')
+      .select('payload')
+      .eq('id', 'main')
+      .maybeSingle();
+
+    if (response.error) throw response.error;
+    if (response.data && response.data.payload && Object.keys(response.data.payload).length) {
+      applySharedData(response.data.payload);
+    }
+    return;
+  }
+
+  var sharedRaw = localStorage.getItem('ereft_hiking_data');
+  if (sharedRaw) applySharedData(JSON.parse(sharedRaw));
+}
+
+async function submitRegistration(form) {
+  if (!destinationSelect.value || !packageInput.value) {
+    showSiteNotice("Choose a destination and package before submitting.", "error");
+    return;
+  }
+
+  var payload = {
+    full_name: document.getElementById("fullName").value.trim(),
+    age: Number(document.getElementById("age").value),
+    phone: document.getElementById("phone").value.trim(),
+    gender: document.getElementById("gender").value,
+    destination: destinationSelect.value,
+    package_name: packageInput.value,
+    payment_method: document.getElementById("paymentMethod").value,
+    payment_status: "pending",
+    status: "pending"
+  };
+
+  try {
+    var inboxRow = null;
+    if (supabaseClient) {
+      var rpcResponse = await supabaseClient.rpc('create_registration', {
+        p_full_name: payload.full_name,
+        p_phone: payload.phone,
+        p_age: payload.age,
+        p_gender: payload.gender,
+        p_destination: payload.destination,
+        p_package_name: payload.package_name,
+        p_payment_method: payload.payment_method
+      });
+
+      if (!rpcResponse.error && rpcResponse.data) {
+        inboxRow = Array.isArray(rpcResponse.data) ? rpcResponse.data[0] : rpcResponse.data;
+      } else {
+        var response = await supabaseClient.from('registrations').insert(payload);
+        if (response.error) throw response.error;
+      }
+    } else {
+      var saved = JSON.parse(localStorage.getItem('ereft_hiking_registrations') || '[]');
+      inboxRow = Object.assign({}, payload, {
+        id: Date.now(),
+        status: "pending",
+        payment_status: "pending",
+        submittedDate: new Date().toISOString().slice(0, 10)
+      });
+      saved.push(Object.assign({}, inboxRow, {
+        fullName: payload.full_name,
+        package: payload.package_name
+      }));
+      localStorage.setItem('ereft_hiking_registrations', JSON.stringify(saved));
+    }
+
+    saveInboxState(normalizeInboxRow(inboxRow, payload));
+    closeModals();
+    openModal("successModal");
+    form.reset();
+  } catch (error) {
+    console.error('Registration failed:', error);
+    showSiteNotice('Your registration could not be submitted. Please try again or contact Ereft Hiking directly.', 'error');
+  }
+}
+
+async function initSite() {
+  try {
+    await loadSharedData();
+  } catch(e) {
+    console.warn('Website content load issue:', e);
+    showSiteNotice('Some website content could not load. Please refresh the page.', 'error');
+  }
+
+  renderDestinations();
+  renderPackageCards();
+  renderDestinationOptions();
+  renderGalleryFilters();
+  renderGallery();
+  setupNavigation();
+  setupFormsAndModals();
+  setupActiveNavOnScroll();
+  setupFadeUpAnimations();
+  setupNavSmoothScroll();
+  setupFaqAccordion();
+  updateSelectedDestination();
+  renderInboxButton();
+  refreshInboxStatus(false);
+}
+
+initSite();
 
 window.addEventListener("load", () => {
   setTimeout(() => {

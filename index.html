@@ -32,7 +32,10 @@
         <a href="#register">Register</a>
         <a href="#gallery">Gallery</a>
         <a href="#about">About Us</a>
-        <a href="#faq">FAQ</a>
+        <a href="#contact" class="nav-contact-link">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h3.4l3.9 3.25c.4.33 1 .05 1-.47V18H20a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 12h-9.7v2.65L8.1 16H4V6h16v10Z"/></svg>
+          Contact
+        </a>
       </nav>
 
       <button class="btn btn-small btn-orange signup-open">Sign Up</button>
@@ -48,6 +51,9 @@
         <div class="hero-actions">
           <a class="btn btn-orange" href="#register">Register for Hiking</a>
           <a class="btn btn-ghost" href="#hikings">Explore Destinations</a>
+        </div>
+        <div class="hero-lower-action">
+          <a class="btn btn-orange hero-contact-btn" href="#contact">Contact Us</a>
         </div>
         <p class="hero-promo">Refreshments • Group games • Photography • Trusted guides • Safe transport</p>
       </div>
@@ -81,7 +87,7 @@
 
           <div class="selected-strip">
             <span>Selected destination:</span>
-            <strong id="selectedDestinationLabel">Langano</strong>
+            <strong id="selectedDestinationLabel">No destination selected</strong>
           </div>
 
           <div class="pricing-grid" id="pricingGrid"></div>
@@ -126,7 +132,7 @@
       </div>
     </section>
 
-    <section class="section section-warm fade-up section-anchor" id="faq">
+    <section class="section section-warm about-faq-section fade-up" id="faq">
       <div class="container">
         <div class="section-heading">
           <span class="eyebrow">Help</span>
@@ -184,6 +190,32 @@
         </div>
       </div>
     </section>
+
+    <section class="contact-section section-anchor fade-up" id="contact">
+      <div class="container contact-inner">
+        <div class="contact-copy">
+          <h2>Contact Us</h2>
+        </div>
+        <div class="contact-actions">
+          <a class="contact-phone" href="tel:+251966752720">+251 966 752 720</a>
+          <a class="contact-phone" href="tel:+251927928407">+251 927 928 407</a>
+          <div class="footer-social contact-social">
+            <a href="https://www.instagram.com/ereft_ethiopia?igsh=MWxqY2Z3MjZldW94NA==" target="_blank" rel="noopener" aria-label="Instagram" class="social-instagram">
+              <svg class="social-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.75 2h8.5A5.76 5.76 0 0 1 22 7.75v8.5A5.76 5.76 0 0 1 16.25 22h-8.5A5.76 5.76 0 0 1 2 16.25v-8.5A5.76 5.76 0 0 1 7.75 2Zm0 2A3.75 3.75 0 0 0 4 7.75v8.5A3.75 3.75 0 0 0 7.75 20h8.5A3.75 3.75 0 0 0 20 16.25v-8.5A3.75 3.75 0 0 0 16.25 4h-8.5ZM12 7.35A4.65 4.65 0 1 1 7.35 12 4.65 4.65 0 0 1 12 7.35Zm0 2A2.65 2.65 0 1 0 14.65 12 2.65 2.65 0 0 0 12 9.35Zm5.1-2.2a1.1 1.1 0 1 1-1.1 1.1 1.1 1.1 0 0 1 1.1-1.1Z"/></svg>
+              Instagram
+            </a>
+            <a href="https://www.tiktok.com/@ereft_ethiopia" target="_blank" rel="noopener" aria-label="TikTok" class="social-tiktok">
+              <svg class="social-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M16.6 5.82a5.9 5.9 0 0 0 3.48 1.1v3.24a9.35 9.35 0 0 1-3.45-.7v6.32A6.22 6.22 0 1 1 10.4 9.6c.36 0 .72.03 1.06.1v3.44a2.92 2.92 0 1 0 2.01 2.77V2h3.17c.3 1.62 1.25 2.98 2.44 3.82h-2.48Z"/></svg>
+              TikTok
+            </a>
+            <a href="https://t.me/ereft_hiking" target="_blank" rel="noopener" aria-label="Telegram" class="social-telegram">
+              <svg class="social-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.78 15.66 9.4 20.8c.54 0 .78-.23 1.06-.51l2.54-2.43 5.27 3.86c.97.53 1.65.25 1.91-.9l3.46-16.2h.01c.31-1.43-.52-1.99-1.46-1.64L1.85 10.78c-1.39.54-1.37 1.31-.24 1.66l5.2 1.62L18.9 6.5c.57-.38 1.09-.17.66.21l-9.78 8.95Z"/></svg>
+              Telegram
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
 
   <nav class="mobile-bottom-nav" aria-label="Mobile navigation">
@@ -199,6 +231,10 @@
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 12c2.2 0 4-1.8 4-4s-1.8-4-4-4-4 1.8-4 4 1.8 4 4 4zm0-6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 8c-3.9 0-7 1.6-7 3.6V18h14v-.4c0-2-3.1-3.6-7-3.6z"/></svg>
       <span>Register</span>
     </a>
+    <a href="#contact" class="mobile-nav-item">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h3.4l3.9 3.25c.4.33 1 .05 1-.47V18H20a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 12h-9.7v2.65L8.1 16H4V6h16v10Z"/></svg>
+      <span>Contact</span>
+    </a>
     <a href="#gallery" class="mobile-nav-item">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-10.6-2l-2.4-3-2.4 3H6l4-5.3 2.4 3.2 2.4-3.2L18 14h-6.6zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6z"/></svg>
       <span>Gallery</span>
@@ -207,11 +243,12 @@
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
       <span>About</span>
     </a>
-    <a href="#faq" class="mobile-nav-item">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-      <span>FAQ</span>
-    </a>
   </nav>
+
+  <button class="inbox-fab" id="registrationInboxButton" type="button" hidden aria-label="Open registration inbox">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h3.4l3.9 3.25c.4.33 1 .05 1-.47V18H20a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 12h-9.7v2.65L8.1 16H4V6h16v10Z"/></svg>
+    <span class="inbox-dot" aria-hidden="true"></span>
+  </button>
 
   <footer class="site-footer">
     <div class="container">
@@ -222,25 +259,6 @@
             <span>Ereft Hiking</span>
           </a>
           <p>Safe, organized Ethiopian hiking trips from Addis Ababa. Friendship at the peak.</p>
-        </div>
-        <div class="footer-links-col">
-          <h4>Contact Us</h4>
-          <a href="tel:+251966752720">+251 966 752 720</a>
-          <a href="tel:+251927928407">+251 927 928 407</a>
-          <div class="footer-social">
-            <a href="https://www.instagram.com/ereft_ethiopia?igsh=MWxqY2Z3MjZldW94NA==" target="_blank" rel="noopener" aria-label="Instagram" class="social-instagram">
-              <svg class="social-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.8 2h8.4A5.8 5.8 0 0 1 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8A5.8 5.8 0 0 1 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2Zm0 2A3.8 3.8 0 0 0 4 7.8v8.4A3.8 3.8 0 0 0 7.8 20h8.4a3.8 3.8 0 0 0 3.8-3.8V7.8A3.8 3.8 0 0 0 16.2 4H7.8Zm4.2 3.5A4.5 4.5 0 1 1 7.5 12 4.5 4.5 0 0 1 12 7.5Zm0 2A2.5 2.5 0 1 0 14.5 12 2.5 2.5 0 0 0 12 9.5Zm5.2-2.6a1.1 1.1 0 1 1-1.1 1.1 1.1 1.1 0 0 1 1.1-1.1Z"/></svg>
-              Instagram
-            </a>
-            <a href="https://www.tiktok.com/@ereft_ethiopia" target="_blank" rel="noopener" aria-label="TikTok" class="social-tiktok">
-              <svg class="social-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.6 6.2c-1.1-.7-1.8-1.8-2-3.2h-3.1v12.2a2.7 2.7 0 1 1-2.1-2.6V9.4a6 6 0 1 0 5.2 5.9V8.9c1.2.9 2.6 1.3 4.1 1.4V7.2c-.8 0-1.5-.3-2.1-1Z"/></svg>
-              TikTok
-            </a>
-            <a href="https://t.me/ereft_hiking" target="_blank" rel="noopener" aria-label="Telegram" class="social-telegram">
-              <svg class="social-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M11.94 1.94A10 10 0 1 0 22 12a10 10 0 0 0-10.06-10.06Zm6.26 7.27-1.7 8.03a.77.77 0 0 1-1.13.54l-3.12-2.07-1.5 1.46a.77.77 0 0 1-.7.48l.28-3.86 7.03-6.35a.32.32 0 0 0-.37-.55l-8.7 3.76-3.53-1.1a.77.77 0 0 1-.07-1.47l13.76-5.3a.77.77 0 0 1 .96.66l1.33 6.77Z"/></svg>
-              Telegram
-            </a>
-          </div>
         </div>
       </div>
       <div class="footer-bottom">&copy; 2026 Ereft Hiking. All rights reserved.</div>
@@ -303,6 +321,7 @@
           <label>Gender<select id="gender" required><option value="">Select gender</option><option>Female</option><option>Male</option><option>Prefer not to say</option></select></label>
           <label>Selected Destination<select id="destinationSelect" required></select></label>
           <label>Selected Package<input id="packageInput" type="text" readonly></label>
+          <label>Payment Method<select id="paymentMethod" required><option value="">Select payment</option><option>Bank Transfer</option><option>Telebirr</option><option>Cash</option></select></label>
         </div>
         <button class="btn btn-orange full" type="submit">Submit Registration</button>
       </form>
@@ -313,8 +332,28 @@
     <div class="modal-panel success-panel small-panel">
       <div class="success-icon">&#10003;</div>
       <h3>Registration Successful</h3>
-      <p>Thank you for registering. Ereft Hiking will contact you soon.</p>
+      <p>Thank you for registering. Use the inbox icon to check your registration status.</p>
       <button class="btn btn-orange full" data-close-modal>Done</button>
+    </div>
+  </div>
+
+  <div class="modal" id="inboxModal" aria-hidden="true">
+    <div class="modal-panel inbox-panel small-panel">
+      <button class="modal-close" data-close-modal aria-label="Close">&times;</button>
+      <span class="eyebrow">Registration Inbox</span>
+      <div class="inbox-status-icon" id="inboxStatusIcon"></div>
+      <h3 id="inboxStatusTitle">Registration status</h3>
+      <p id="inboxStatusMessage">Your registration status will appear here.</p>
+      <div class="inbox-detail-list">
+        <div><span>Destination</span><strong id="inboxDestination">-</strong></div>
+        <div><span>Package</span><strong id="inboxPackage">-</strong></div>
+        <div><span>Payment</span><strong id="inboxPayment">-</strong></div>
+      </div>
+      <p class="inbox-note" id="inboxRefreshNote"></p>
+      <div class="inbox-actions">
+        <button class="btn btn-orange full" id="inboxRefreshButton" type="button" onclick="refreshInboxStatus(true)">Refresh Status</button>
+        <button class="inbox-clear" type="button" onclick="clearInbox()">Clear inbox from this device</button>
+      </div>
     </div>
   </div>
 
@@ -324,6 +363,8 @@
     <p id="lightboxCaption"></p>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
