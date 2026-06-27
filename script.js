@@ -410,19 +410,38 @@ async function signUpUser(form) {
       password: password,
       options: { data:{ username:username, phone:phone } }
     });
-    if (result.error) throw result.error;
 
-    var user = result.data.user;
-    if (!result.data.session) {
+    var user = null;
+    if (result.error) {
+      var errMsg = (result.error.message || result.error.name || "").toLowerCase();
+      if (errMsg.includes("rate") || errMsg.includes("limit") || errMsg.includes("email") || errMsg.includes("too many")) {
+        console.warn("SignUp rate limited, trying to sign in instead");
+      } else {
+        throw result.error;
+      }
+    } else {
+      user = result.data.user;
+      if (result.data.session) {
+        currentUser = user;
+      }
+    }
+
+    if (!currentUser) {
       var login = await supabaseClient.auth.signInWithPassword({
         email: usernameToEmail(username),
         password: password
       });
-      if (login.error) throw login.error;
-      user = login.data.user;
+      if (login.error) {
+        var loginMsg = (login.error.message || login.error.name || "").toLowerCase();
+        if (loginMsg.includes("email not confirmed") || loginMsg.includes("email_not_confirmed")) {
+          showSiteNotice("Account created but needs email confirmation. Ask the admin to disable 'Confirm email' in Supabase Auth settings, then try again.", "error");
+          return;
+        }
+        throw login.error;
+      }
+      currentUser = login.data.user;
     }
 
-    currentUser = user;
     try {
       currentProfile = await ensureProfile(currentUser, username, phone);
     } catch (profileError) {
@@ -441,6 +460,8 @@ async function signUpUser(form) {
       showSiteNotice("This username already exists. Try a different username.", "error");
     } else if (msg.includes("network") || msg.includes("fetch")) {
       showSiteNotice("Network error. Check your connection and try again.", "error");
+    } else if (msg.toLowerCase().includes("rate") || msg.toLowerCase().includes("limit") || msg.toLowerCase().includes("too many")) {
+      showSiteNotice("Too many signup attempts. Please wait a minute and try again, or try logging in if you already have an account.", "error");
     } else {
       showSiteNotice(msg || "Could not create account. Please try again.", "error");
     }
