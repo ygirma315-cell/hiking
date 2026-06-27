@@ -767,7 +767,6 @@ function renderSidebar(page) {
 function renderHeader() {
   return '<header class="header">' +
     '<button class="header-menu-btn" onclick="toggleSidebar()" aria-label="Menu"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>' +
-    '<div class="header-search"><svg class="header-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" placeholder="Search..." class="header-search-input"></div>' +
     '<div class="header-right">' +
 
       '<div class="header-user"><div class="header-avatar">A</div><div class="header-user-info"><span class="header-user-name">' + esc(state.user?.name || 'Admin') + '</span><span class="header-user-role">Administrator</span></div></div>' +
@@ -800,8 +799,8 @@ function closeSidebar() { state.sidebarOpen = false; render(); }
 function renderNotices() {
   var d = state.data;
   var trips = d.trips.filter(function(t){ return t.status === 'active' });
-  var tripOpts = '<option value="">-- Select trip --</option>' + trips.map(function(t){
-    return '<option value="' + esc(t.destination) + '">' + esc(t.destination) + ' (' + esc(t.date) + ')</option>';
+  var tripOpts = '<option value="">-- Select destination --</option>' + trips.map(function(t){
+    return '<option value="' + esc(t.destination) + '">' + esc(t.destination) + '</option>';
   }).join('');
 
   var templates = [
@@ -817,7 +816,7 @@ function renderNotices() {
     '<div class="page-header"><h1>Send Trip Notice</h1><p>Send a message to all users registered for a specific trip.</p></div>' +
     '<div class="card" style="max-width:700px;margin:0 auto">' +
       '<div class="card-body">' +
-        '<div class="form-group"><label>Trip</label><select id="notice-trip-select" class="form-input" onchange="updateNoticeTemplate()">' + tripOpts + '</select></div>' +
+        '<div class="form-group"><label>Destination</label><select id="notice-trip-select" class="form-input" onchange="updateNoticeTemplate()">' + tripOpts + '</select></div>' +
         '<div class="form-group"><label>Message Template</label><select id="notice-template-select" class="form-input" onchange="updateNoticeTemplate()">' + tplOpts + '</select></div>' +
         '<div class="form-group"><label>Message <span class="text-muted">(supports {destination}, {meetingPoint}, {meetingTime}, {departureTime})</span></label><textarea id="notice-message" class="form-input" rows="6" placeholder="Write your notice message here..."></textarea></div>' +
         '<div class="form-actions"><button class="btn btn-primary" onclick="sendNotice()">Send Notice</button></div>' +

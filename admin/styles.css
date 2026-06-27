@@ -313,43 +313,6 @@ input, select, textarea {
   background: var(--bg);
 }
 
-.header-search {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex: 1;
-  max-width: 420px;
-  padding: 8px 14px;
-  border-radius: var(--radius-sm);
-  background: var(--bg);
-  border: 1px solid transparent;
-  transition: var(--transition-fast);
-}
-
-.header-search:focus-within {
-  border-color: var(--primary);
-  background: var(--card-bg);
-  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
-}
-
-.header-search-icon {
-  color: var(--text-muted);
-  flex-shrink: 0;
-}
-
-.header-search-input {
-  flex: 1;
-  border: none;
-  background: transparent;
-  outline: none;
-  font-size: 14px;
-  color: var(--text);
-}
-
-.header-search-input::placeholder {
-  color: var(--text-muted);
-}
-
 .header-right {
   display: flex;
   align-items: center;
@@ -2331,11 +2294,6 @@ code {
   .header {
     padding: 0 14px;
     gap: 10px;
-  }
-
-  .header-search {
-    max-width: none;
-    flex: 1;
   }
 
   .header-user-info {
