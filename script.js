@@ -323,20 +323,21 @@ async function ensureProfile(user, username, phone) {
 
   var existing = await supabaseClient
     .from("profiles")
-    .select("user_id, username, phone")
+    .select("user_id, username, phone, last_login")
     .eq("user_id", user.id)
     .maybeSingle();
 
   if (existing.data) return existing.data;
 
+  // Profile not found — try inserting (new user or re-created account)
   var inserted = await supabaseClient
     .from("profiles")
     .insert({ user_id:user.id, username:username, phone:phone })
     .select("user_id, username, phone")
-    .single();
+    .maybeSingle();
 
-  if (inserted.error) throw inserted.error;
-  return inserted.data;
+  if (inserted.error) return null;
+  return inserted.data || null;
 }
 
 async function loadCurrentUser() {
@@ -351,6 +352,13 @@ async function loadCurrentUser() {
   if (currentUser) {
     try {
       currentProfile = await ensureProfile(currentUser);
+      if (!currentProfile) {
+        // User was deleted by admin
+        await supabaseClient.auth.signOut();
+        currentUser = null;
+        currentProfile = null;
+        showSiteNotice("Your account has been deactivated by the administrator.", "error");
+      }
     } catch (error) {
       console.warn("Profile load failed:", error);
       currentProfile = { username:(currentUser.email || "").split("@")[0], phone:"" };
