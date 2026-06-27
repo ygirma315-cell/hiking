@@ -538,6 +538,9 @@ begin
   if p_user_id = auth.uid() then
     raise exception 'You cannot delete your own account';
   end if;
+  if exists (select 1 from public.admin_users where user_id = p_user_id) then
+    raise exception 'Cannot delete an admin user. Remove from admin_users first.';
+  end if;
   delete from auth.users where id = p_user_id;
   return found;
 end;
