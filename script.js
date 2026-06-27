@@ -441,57 +441,41 @@ async function signUpUser(form) {
       throw new Error("Username already exists.");
     }
 
-    // Step 1: Try RPC (creates user + profile in one go, auto-confirmed)
-    var rpcResult = await supabaseClient.rpc("create_user_with_confirmed_email", {
-      p_username: username, p_password: password, p_phone: phone
+    // Create user via Supabase Auth
+    var result = await supabaseClient.auth.signUp({
+      email: usernameToEmail(username),
+      password: password,
+      options: { data:{ username:username, phone:phone } }
     });
+    if (result.error) throw result.error;
 
-    if (rpcResult.error) {
-      console.warn("RPC signup not available:", rpcResult.error);
-      // Step 2: Fallback to regular auth.signUp
-      var result = await supabaseClient.auth.signUp({
-        email: usernameToEmail(username),
-        password: password,
-        options: { data:{ username:username, phone:phone } }
-      });
-      if (result.error) throw result.error;
-
-      // Step 3: Create profile even without session (via definer-privilege RPC)
+    // Create profile (try RPC first, fallback to direct insert)
+    try {
       var profileOk = await supabaseClient.rpc("create_profile_for_email", {
         p_email: usernameToEmail(username),
         p_username: username,
         p_phone: phone
       });
-      if (profileOk.error) console.warn("Profile RPC also failed:", profileOk.error);
+      if (profileOk.error) console.warn("Profile RPC failed:", profileOk.error);
+    } catch(_) {}
 
-      // Step 4: Try to login
-      if (result.data.session) {
-        currentUser = result.data.user;
-      } else {
-        var loginRes = await supabaseClient.auth.signInWithPassword({
-          email: usernameToEmail(username),
-          password: password
-        });
-        if (loginRes.error) {
-          var loginMsg = (loginRes.error.message || "").toLowerCase();
-          if (loginMsg.includes("invalid login") || loginMsg.includes("invalid credential")) {
-            showSiteNotice("Account created! But email confirmation is ON. Go to Supabase Dashboard → Authentication → Settings → turn OFF 'Confirm email' to login.", "success");
-            return;
-          }
-          throw loginRes.error;
-        }
-        currentUser = loginRes.data.user;
-      }
-    } else if (rpcResult.data && rpcResult.data.success) {
-      // RPC succeeded — login
+    // Login
+    if (result.data.session) {
+      currentUser = result.data.user;
+    } else {
       var loginRes = await supabaseClient.auth.signInWithPassword({
         email: usernameToEmail(username),
         password: password
       });
-      if (loginRes.error) throw loginRes.error;
+      if (loginRes.error) {
+        var loginMsg = (loginRes.error.message || "").toLowerCase();
+        if (loginMsg.includes("invalid login") || loginMsg.includes("invalid credential")) {
+          showSiteNotice("Account created! But email confirmation is ON. Go to Supabase Dashboard → Authentication → Settings → turn OFF 'Confirm email' to login.", "success");
+          return;
+        }
+        throw loginRes.error;
+      }
       currentUser = loginRes.data.user;
-    } else {
-      throw new Error("Account could not be created. Check if the SQL script has been run.");
     }
 
     // Step 5: Ensure profile and track login
