@@ -255,8 +255,8 @@ function paymentGuideHtml(account, hikeId) {
     ? '<div><span>' + esc(account.accountLabel) + '</span><strong>' + esc(account.accountNumber) + '</strong><button class="copy-btn" type="button" data-copy-value="' + esc(account.accountNumber) + '">Copy</button></div>'
     : '<div><span>' + esc(account.accountLabel) + '</span><strong>Contact Ereft Hiking for this account</strong></div>';
   var hikeLine = hikeId
-    ? '<p class="payment-guide-warning">Your Hike ID is <strong>' + esc(hikeId) + '</strong>. If you pay without writing your Hike ID in the payment note, your confirmation may be delayed. You may need to contact us manually.</p>'
-    : '<p class="payment-guide-warning">If you pay without writing your Hike ID in the payment note, your confirmation may be delayed. You may need to contact us manually.</p>';
+    ? '<div class="payment-guide-reminder"><span>Payment note reminder</span><p>Write <strong>' + esc(hikeId) + '</strong> in the payment note/description. Without it, confirmation may be delayed and you may need to contact us manually.</p></div>'
+    : '<div class="payment-guide-reminder"><span>Payment note reminder</span><p>After booking, write your Hike ID in the payment note/description. Without it, confirmation may be delayed and you may need to contact us manually.</p></div>';
   return '<div class="payment-guide-title">' +
       '<span>Payment method</span><strong>' + esc(account.label) + '</strong>' +
     '</div>' +
@@ -569,7 +569,6 @@ function renderDashboard() {
       '</div>' +
       (paymentAccount ? '<div class="payment-guide-card compact">' + paymentGuideHtml(paymentAccount, booking.hike_id) + '</div>' : '') +
       '<p class="payment-instruction">Your Hike ID is <strong>' + esc(booking.hike_id) + '</strong>. When sending the payment, write this exact Hike ID in the payment note. This helps us confirm your payment faster.</p>' +
-      '<p class="payment-warning small">If you pay without writing your Hike ID in the payment note, your confirmation may be delayed. You may need to contact us manually.</p>' +
       '<div class="admin-message"><strong>Status message</strong><span>' + esc(adminMessage) + '</span></div>' +
       '<form class="payment-update-form" data-hike-id="' + esc(booking.hike_id) + '">' +
         '<label>Your transferring account / phone<input name="sender_account" value="' + esc(booking.sender_account || '') + '" placeholder="Account or phone you paid from"></label>' +
