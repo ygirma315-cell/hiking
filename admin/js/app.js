@@ -1804,9 +1804,7 @@ async function loadAdmins() {
   if (!supabaseClient || !adminSessionToken) return [];
   var res = await supabaseClient.rpc('admin_list_admins', { p_admin_token: adminSessionToken });
   if (res.error) {
-    var msg = res.error.message || 'Could not load admins';
-    state.adminsSetupWarning = msg;
-    if (msg.indexOf('admin_list_admins') === -1) showToast(msg, 'error');
+    console.warn('Could not load admin list:', res.error);
     return state.user ? [{
       id: state.user.id,
       username: state.user.username,
@@ -1816,16 +1814,12 @@ async function loadAdmins() {
       _fallback: true
     }] : [];
   }
-  state.adminsSetupWarning = '';
   return res.data || [];
 }
 
 function renderAdmins() {
   var isManager = state.user && Number(state.user.id) === 1;
   var admins = state._admins || [];
-  var setupWarning = state.adminsSetupWarning
-    ? '<div class="admin-note" style="margin-bottom:14px">Admin list function is not available in Supabase yet. Run the latest <strong>supabase-schema.sql</strong> so admin add/delete/list works. Showing your current login for now.</div>'
-    : '';
   var rows = admins.length === 0
     ? '<tr><td colspan="6" class="table-empty">No admins found.</td></tr>'
     : admins.map(function(a) {
@@ -1834,7 +1828,7 @@ function renderAdmins() {
         var isSelf = state.user && Number(state.user.id) === Number(a.id);
         return '<tr>' +
           '<td data-label="Username"><strong>' + esc(a.username || '-') + '</strong>' + (Number(a.id) === 1 ? ' <span class="badge badge-info">Manager</span>' : '') + '</td>' +
-          '<td data-label="Name">' + esc(a.display_name || '-') + (a._fallback ? ' <span class="badge badge-warning">Setup needed</span>' : '') + '</td>' +
+          '<td data-label="Name">' + esc(a.display_name || '-') + '</td>' +
           '<td data-label="ID">' + esc(formatDisplayId(a.id)) + '</td>' +
           '<td data-label="Last Login">' + lastLogin + '</td>' +
           '<td data-label="Created">' + created + '</td>' +
@@ -1847,16 +1841,14 @@ function renderAdmins() {
 
   var addForm = isManager
     ? '<div class="card" style="margin-top:16px"><h2 class="card-title">Add New Admin</h2>' +
-      (state.adminsSetupWarning ? '<div class="admin-note" style="margin-bottom:12px">Finish the Supabase admin functions setup before adding more admins.</div>' : '') +
       '<div class="form-group"><label class="form-label">Username</label><input type="text" class="form-input" id="new-admin-user" placeholder="choose a username"></div>' +
       '<div class="form-group"><label class="form-label">Password <small style="color:var(--text-muted);font-weight:400">(8+ chars, uppercase, lowercase, digit, special)</small></label><input type="password" class="form-input" id="new-admin-pass" placeholder="strong password"></div>' +
       '<div class="form-group"><label class="form-label">Display Name</label><input type="text" class="form-input" id="new-admin-name" placeholder="optional display name"></div>' +
-      '<div class="form-actions"><button class="btn btn-primary" onclick="addAdminFromPage()" ' + (state.adminsSetupWarning ? 'disabled' : '') + '>Add Admin</button></div></div>'
+      '<div class="form-actions"><button class="btn btn-primary" onclick="addAdminFromPage()">Add Admin</button></div></div>'
     : '';
 
   return '<div class="page">' +
     '<div class="page-header"><div><h1 class="page-title">Admins</h1><p class="page-subtitle">' + (isManager ? 'You are the manager. You can add and remove admins.' : 'You are an admin. Only the manager can add or remove admins.') + '</p></div><div class="page-header-actions"><span class="badge badge-info">Total: ' + admins.length + '</span><button class="btn btn-sm btn-primary" onclick="refreshAdmins()">Refresh</button></div></div>' +
-    setupWarning +
     '<div class="table-wrapper"><table class="data-table"><thead><tr><th>Username</th><th>Name</th><th>ID</th><th>Last Login</th><th>Created</th><th class="th-actions">Actions</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
     addForm +
   '</div>';
