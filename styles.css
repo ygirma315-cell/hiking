@@ -74,6 +74,7 @@ a{color:inherit;text-decoration:none}img{max-width:100%;display:block}
 .profile-menu .profile-head{padding:10px 10px 6px;display:flex;flex-direction:column;gap:1px}
 .profile-menu .profile-name{font-weight:800;font-size:.85rem;color:var(--text)}
 .profile-menu .profile-user{font-size:.72rem;color:var(--muted)}
+.profile-menu .profile-user-id{font-size:.68rem;color:var(--green);font-weight:900}
 .profile-menu .profile-divr{height:1px;background:var(--line);margin:6px 8px}
 .profile-menu .profile-item{display:flex;align-items:center;gap:8px;width:100%;border:0;background:transparent;padding:9px 10px;border-radius:10px;font-weight:700;font-size:.82rem;color:var(--text);cursor:pointer;transition:all .15s}
 .profile-menu .profile-item:hover{background:#fff7ed;color:var(--orange)}
@@ -309,6 +310,7 @@ a{color:inherit;text-decoration:none}img{max-width:100%;display:block}
 .dashboard-table tbody tr:hover{background:#fafaf5}
 .hike-id-cell{display:flex;align-items:center;gap:4px}
 .hike-id-cell strong{font-size:.76rem;color:var(--green-2)}
+.user-id-cell{display:inline-flex;align-items:center;min-width:34px;font-family:monospace;font-size:.76rem;color:var(--green);font-weight:900}
 .copy-btn-sm{font-size:.6rem;padding:1px 5px;border-radius:5px;border:1px solid var(--line);background:white;cursor:pointer;color:var(--muted);white-space:nowrap}
 .copy-btn-sm:hover{background:#eefaf6;border-color:var(--green)}
 .status-badge{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:3px 7px;font-size:.64rem;font-weight:900;white-space:nowrap}

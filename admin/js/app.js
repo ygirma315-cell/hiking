@@ -218,7 +218,7 @@ function isLiveRefreshPage() {
 function shouldAutoRefreshAdmin() {
   if (!state.user || state.refreshingRegistrations) return false;
   if (!isLiveRefreshPage()) return false;
-  return state.viewRegId == null && state.editingTripIdx < 0 && !state.editingPackageKey && !state.editingWebsite && !state.addingGalleryItem;
+  return state.viewRegId == null && state.editingTripIdx < 0 && !state.editingPackageKey && !state.editingWebsiteSection && !state.addingGalleryItem;
 }
 
 function startAdminLiveRefresh() {
@@ -301,7 +301,7 @@ var state = {
   editingFaqIdx: -1,
   faqFormVisible: false,
   editingPackages: false,
-  editingWebsite: false,
+  editingWebsiteSection: '',
   websiteChanged: false,
   refreshingRegistrations: false,
   lastRegistrationRefresh: '',
@@ -336,6 +336,12 @@ function esc(s) {
   var d = document.createElement('div');
   d.appendChild(document.createTextNode(String(s)));
   return d.innerHTML;
+}
+
+function formatDisplayId(value) {
+  if (value == null || value === '') return '-';
+  var raw = String(value).trim();
+  return /^\d+$/.test(raw) ? raw.padStart(3, '0') : raw;
 }
 
 function formatDate(d) {
@@ -800,8 +806,13 @@ function renderNotices() {
   var d = state.data;
   var trips = d.trips.filter(function(t){ return t.status === 'active' });
   var tripOpts = '<option value="">-- Select destination --</option>' + trips.map(function(t){
-    return '<option value="' + esc(t.destination) + '">' + esc(t.destination) + '</option>';
+    var destination = t.name || t.destination || t.category || '';
+    if (!destination) return '';
+    return '<option value="' + esc(destination) + '">' + esc(destination) + '</option>';
   }).join('');
+  var emptyTrips = trips.length
+    ? ''
+    : '<div class="admin-note notice-empty-note">No active trips found. Set a trip status to Active before sending a notice.</div>';
 
   var templates = [
     { label:'Trip Reminder – Tomorrow', msg:'Hello everyone! This is a reminder that your trip to {destination} is tomorrow. Please meet at {meetingPoint} at {meetingTime}. Departure is at {departureTime}. Don\'t forget to bring comfortable hiking shoes, a jacket, and sunscreen. See you there!' },
@@ -816,7 +827,8 @@ function renderNotices() {
     '<div class="page-header"><h1>Send Trip Notice</h1><p>Send a message to all users registered for a specific trip.</p></div>' +
     '<div class="card" style="max-width:700px;margin:0 auto">' +
       '<div class="card-body">' +
-        '<div class="form-group"><label>Destination</label><select id="notice-trip-select" class="form-input" onchange="updateNoticeTemplate()">' + tripOpts + '</select></div>' +
+        emptyTrips +
+        '<div class="form-group"><label>Destination</label><select id="notice-trip-select" class="form-input notice-select" onchange="updateNoticeTemplate()" ' + (!trips.length ? 'disabled' : '') + '>' + tripOpts + '</select></div>' +
         '<div class="form-group"><label>Message Template</label><select id="notice-template-select" class="form-input" onchange="updateNoticeTemplate()">' + tplOpts + '</select></div>' +
         '<div class="form-group"><label>Message <span class="text-muted">(supports {destination}, {meetingPoint}, {meetingTime}, {departureTime})</span></label><textarea id="notice-message" class="form-input" rows="6" placeholder="Write your notice message here..."></textarea></div>' +
         '<div class="form-actions"><button class="btn btn-primary" onclick="sendNotice()">Send Notice</button></div>' +
@@ -941,7 +953,7 @@ function renderTrips() {
         '<div class="trip-admin-meta"><span>\uD83D\uDCC5 ' + esc(t.date) + '</span><span>\uD83D\uDCCD ' + esc(t.category) + '</span><span>\uD83D\uDC65 ' + t.spotsLeft + ' spots</span><span>' + esc(t.duration) + '</span></div>' +
         '<p class="trip-admin-desc">' + esc(t.description) + '</p>' +
         '<div class="trip-admin-actions">' +
-          '<button class="btn btn-sm btn-primary" onclick="openTripForm(' + idx + ')">Edit</button>' +
+          '<button class="btn btn-sm btn-soft admin-icon-btn" onclick="openTripForm(' + idx + ')" title="Edit trip">' + iconSvg('edit') + '</button>' +
           '<button class="btn btn-sm btn-secondary" onclick="toggleTripStatus(' + idx + ')">' + (t.status === 'active' ? 'Hide' : 'Show') + '</button>' +
           '<button class="btn btn-sm btn-danger" onclick="deleteTrip(' + idx + ')">Delete</button>' +
         '</div>' +
@@ -1161,7 +1173,7 @@ function savePackageChanges() {
 async function discardUnsavedChanges() {
   try {
     state.editingPackageKey = '';
-    state.editingWebsite = false;
+    state.editingWebsiteSection = '';
     if (supabaseClient) {
       await refreshDataFromSupabase();
     } else {
@@ -1287,7 +1299,7 @@ function renderGallery() {
         '</div>' +
         '<div class="gallery-info"><div class="gallery-title">' + esc(g.place) + '</div><span class="gallery-location">' + esc(catNames[g.category] || g.category) + '</span></div>' +
         '<div class="gallery-actions">' +
-          '<button class="btn btn-sm btn-secondary btn-icon-text" onclick="openGalleryEdit(' + idx + ')" title="Edit image">' + iconSvg('edit') + ' Edit</button>' +
+          '<button class="btn btn-sm btn-secondary admin-icon-btn" onclick="openGalleryEdit(' + idx + ')" title="Edit image">' + iconSvg('edit') + '</button>' +
           '<button class="btn btn-sm btn-danger btn-icon-text" onclick="deleteGalleryItem(' + idx + ')" title="Delete image">' + iconSvg('trash') + ' Delete</button>' +
         '</div>' +
       '</div>';
@@ -1441,48 +1453,64 @@ async function deleteGallerySection(slug) {
 // ==============================
 function renderWebsite() {
   var w = state.data.website;
-  var editing = state.editingWebsite;
-  var disabled = editing ? '' : ' disabled';
+  var editing = state.editingWebsiteSection || '';
+  function sectionActions(section) {
+    var isEditing = editing === section;
+    var busyElsewhere = editing && !isEditing;
+    return '<div class="section-edit-actions">' +
+      (isEditing
+        ? '<button class="btn btn-sm btn-primary admin-icon-btn" onclick="saveWebsiteSection()" title="Save">' + iconSvg('check') + '</button><button class="btn btn-sm btn-secondary admin-icon-btn" onclick="cancelWebsiteEdit()" title="Cancel">' + iconSvg('x') + '</button>'
+        : '<button class="btn btn-sm btn-soft admin-icon-btn" onclick="startWebsiteEdit(\'' + section + '\')" title="Edit"' + (busyElsewhere ? ' disabled' : '') + '>' + iconSvg('edit') + '</button>') +
+    '</div>';
+  }
+  function sectionClass(section) {
+    return editing === section ? ' editor-active' : ' editor-locked';
+  }
+  function disabledFor(section) {
+    return editing === section ? '' : ' disabled';
+  }
+  var rulesDisabled = disabledFor('rules');
   var rulesHtml = (w.rules || []).map(function(r, i) {
-    return '<div class="web-field-row"><input class="form-input" value="' + esc(r) + '" onchange="updateRule(' + i + ',this.value)" maxlength="200"' + disabled + '>' + (editing ? '<button class="btn btn-sm btn-danger" onclick="removeRule(' + i + ')" style="padding:6px 8px">' + iconSvg('x') + '</button>' : '') + '</div>';
+    return '<div class="web-field-row"><input class="form-input" value="' + esc(r) + '" onchange="updateRule(' + i + ',this.value)" maxlength="200"' + rulesDisabled + '>' + (editing === 'rules' ? '<button class="btn btn-sm btn-danger admin-icon-btn" onclick="removeRule(' + i + ')" title="Remove rule">' + iconSvg('x') + '</button>' : '') + '</div>';
   }).join('');
 
+  var faqDisabled = disabledFor('faq');
   var faqHtml = (w.faq || []).map(function(f, i) {
-    return '<div class="faq-edit-card"><div class="faq-edit-header"><input class="form-input" value="' + esc(f.q) + '" placeholder="Question" onchange="updateFaqQ(' + i + ',this.value)" maxlength="200"' + disabled + '>' + (editing ? '<button class="btn btn-sm btn-danger" onclick="removeFaq(' + i + ')" style="padding:6px 8px">' + iconSvg('x') + '</button>' : '') + '</div><textarea class="form-input" rows="2" placeholder="Answer" onchange="updateFaqA(' + i + ',this.value)" maxlength="500"' + disabled + '>' + esc(f.a || '') + '</textarea></div>';
+    return '<div class="faq-edit-card"><div class="faq-edit-header"><input class="form-input" value="' + esc(f.q) + '" placeholder="Question" onchange="updateFaqQ(' + i + ',this.value)" maxlength="200"' + faqDisabled + '>' + (editing === 'faq' ? '<button class="btn btn-sm btn-danger admin-icon-btn" onclick="removeFaq(' + i + ')" title="Remove question">' + iconSvg('x') + '</button>' : '') + '</div><textarea class="form-input" rows="2" placeholder="Answer" onchange="updateFaqA(' + i + ',this.value)" maxlength="500"' + faqDisabled + '>' + esc(f.a || '') + '</textarea></div>';
   }).join('');
 
   return '<div class="page">' +
-    '<div class="page-header"><div><h1 class="page-title">Website Content</h1><p class="page-subtitle">Edit text content shown on the public website</p></div><div class="page-actions">' + (editing ? '<button class="btn btn-secondary" onclick="cancelWebsiteEdit()">' + iconSvg('x') + ' Cancel</button><button class="btn btn-primary" onclick="saveWebsiteContent()">' + iconSvg('check') + ' Save Content</button>' : '<button class="btn btn-primary" onclick="startWebsiteEdit()">' + iconSvg('edit') + ' Edit Content</button>') + '</div></div>' +
-    '<div class="settings-grid ' + (editing ? 'editor-active' : 'editor-locked') + '">' +
-      '<div class="card"><h2 class="card-title">Brand & Contact</h2>' +
-        '<div class="form-group"><label class="form-label">Website Name</label><input class="form-input" value="' + esc(w.name || '') + '" onchange="updateWeb(\'name\',this.value)" maxlength="60"' + disabled + '></div>' +
-        '<div class="form-group"><label class="form-label">Tagline</label><input class="form-input" value="' + esc(w.tagline || '') + '" onchange="updateWeb(\'tagline\',this.value)" maxlength="100"' + disabled + '></div>' +
-        '<div class="form-row-2"><div class="form-group"><label class="form-label">Contact Email</label><input class="form-input" value="' + esc(w.contactEmail || '') + '" onchange="updateWeb(\'contactEmail\',this.value)" maxlength="100"' + disabled + '></div>' +
-        '<div class="form-group"><label class="form-label">Contact Phone</label><input class="form-input" value="' + esc(w.contactPhone || '') + '" onchange="updateWeb(\'contactPhone\',this.value)" maxlength="30"' + disabled + '></div></div>' +
-        '<div class="form-group"><label class="form-label">Phone 2</label><input class="form-input" value="' + esc(w.contactPhone2 || '') + '" onchange="updateWeb(\'contactPhone2\',this.value)" maxlength="30"' + disabled + '></div>' +
+    '<div class="page-header"><div><h1 class="page-title">Website Content</h1><p class="page-subtitle">Edit one public website section at a time</p></div></div>' +
+    '<div class="settings-grid">' +
+      '<div class="card' + sectionClass('brand') + '"><div class="card-title-row"><h2 class="card-title">Brand & Contact</h2>' + sectionActions('brand') + '</div>' +
+        '<div class="form-group"><label class="form-label">Website Name</label><input class="form-input" value="' + esc(w.name || '') + '" onchange="updateWeb(\'name\',this.value)" maxlength="60"' + disabledFor('brand') + '></div>' +
+        '<div class="form-group"><label class="form-label">Tagline</label><input class="form-input" value="' + esc(w.tagline || '') + '" onchange="updateWeb(\'tagline\',this.value)" maxlength="100"' + disabledFor('brand') + '></div>' +
+        '<div class="form-row-2"><div class="form-group"><label class="form-label">Contact Email</label><input class="form-input" value="' + esc(w.contactEmail || '') + '" onchange="updateWeb(\'contactEmail\',this.value)" maxlength="100"' + disabledFor('brand') + '></div>' +
+        '<div class="form-group"><label class="form-label">Contact Phone</label><input class="form-input" value="' + esc(w.contactPhone || '') + '" onchange="updateWeb(\'contactPhone\',this.value)" maxlength="30"' + disabledFor('brand') + '></div></div>' +
+        '<div class="form-group"><label class="form-label">Phone 2</label><input class="form-input" value="' + esc(w.contactPhone2 || '') + '" onchange="updateWeb(\'contactPhone2\',this.value)" maxlength="30"' + disabledFor('brand') + '></div>' +
       '</div>' +
-      '<div class="card"><h2 class="card-title">Meeting Point</h2>' +
-        '<div class="form-group"><label class="form-label">Location</label><input class="form-input" value="' + esc(w.meetingPoint || '') + '" onchange="updateWeb(\'meetingPoint\',this.value)" maxlength="200"' + disabled + '></div>' +
-        '<div class="form-row-2"><div class="form-group"><label class="form-label">Meeting Time</label><input class="form-input" value="' + esc(w.meetingTime || '') + '" onchange="updateWeb(\'meetingTime\',this.value)" maxlength="20"' + disabled + '></div>' +
-        '<div class="form-group"><label class="form-label">Departure Time</label><input class="form-input" value="' + esc(w.departureTime || '') + '" onchange="updateWeb(\'departureTime\',this.value)" maxlength="20"' + disabled + '></div></div>' +
+      '<div class="card' + sectionClass('meeting') + '"><div class="card-title-row"><h2 class="card-title">Meeting Point</h2>' + sectionActions('meeting') + '</div>' +
+        '<div class="form-group"><label class="form-label">Location</label><input class="form-input" value="' + esc(w.meetingPoint || '') + '" onchange="updateWeb(\'meetingPoint\',this.value)" maxlength="200"' + disabledFor('meeting') + '></div>' +
+        '<div class="form-row-2"><div class="form-group"><label class="form-label">Meeting Time</label><input class="form-input" value="' + esc(w.meetingTime || '') + '" onchange="updateWeb(\'meetingTime\',this.value)" maxlength="20"' + disabledFor('meeting') + '></div>' +
+        '<div class="form-group"><label class="form-label">Departure Time</label><input class="form-input" value="' + esc(w.departureTime || '') + '" onchange="updateWeb(\'departureTime\',this.value)" maxlength="20"' + disabledFor('meeting') + '></div></div>' +
       '</div>' +
-      '<div class="card"><h2 class="card-title">Social Links</h2>' +
-        '<div class="form-group"><label class="form-label">Instagram URL</label><input class="form-input" value="' + esc(w.instagram || '') + '" onchange="updateWeb(\'instagram\',this.value)" maxlength="300"' + disabled + '></div>' +
-        '<div class="form-group"><label class="form-label">TikTok URL</label><input class="form-input" value="' + esc(w.tiktok || '') + '" onchange="updateWeb(\'tiktok\',this.value)" maxlength="300"' + disabled + '></div>' +
-        '<div class="form-group"><label class="form-label">Telegram URL</label><input class="form-input" value="' + esc(w.telegram || '') + '" onchange="updateWeb(\'telegram\',this.value)" maxlength="300"' + disabled + '></div>' +
+      '<div class="card' + sectionClass('social') + '"><div class="card-title-row"><h2 class="card-title">Social Links</h2>' + sectionActions('social') + '</div>' +
+        '<div class="form-group"><label class="form-label">Instagram URL</label><input class="form-input" value="' + esc(w.instagram || '') + '" onchange="updateWeb(\'instagram\',this.value)" maxlength="300"' + disabledFor('social') + '></div>' +
+        '<div class="form-group"><label class="form-label">TikTok URL</label><input class="form-input" value="' + esc(w.tiktok || '') + '" onchange="updateWeb(\'tiktok\',this.value)" maxlength="300"' + disabledFor('social') + '></div>' +
+        '<div class="form-group"><label class="form-label">Telegram URL</label><input class="form-input" value="' + esc(w.telegram || '') + '" onchange="updateWeb(\'telegram\',this.value)" maxlength="300"' + disabledFor('social') + '></div>' +
       '</div>' +
-      '<div class="card card-full"><h2 class="card-title">About Section</h2>' +
-        '<div class="form-group"><label class="form-label">About Text</label><textarea class="form-input" rows="3" onchange="updateWeb(\'aboutText\',this.value)" maxlength="1000"' + disabled + '>' + esc(w.aboutText || '') + '</textarea><span class="form-hint">Max 1000 characters</span></div>' +
+      '<div class="card card-full' + sectionClass('about') + '"><div class="card-title-row"><h2 class="card-title">About Section</h2>' + sectionActions('about') + '</div>' +
+        '<div class="form-group"><label class="form-label">About Text</label><textarea class="form-input" rows="3" onchange="updateWeb(\'aboutText\',this.value)" maxlength="1000"' + disabledFor('about') + '>' + esc(w.aboutText || '') + '</textarea><span class="form-hint">Max 1000 characters</span></div>' +
       '</div>' +
-      '<div class="card"><h2 class="card-title">Rules & Regulations ' + (editing ? '<button class="btn btn-sm btn-secondary" onclick="addRule()" style="margin-left:8px">+ Add Rule</button>' : '') + '</h2><div class="web-fields-list">' + (rulesHtml || '<p class="text-muted">No rules yet</p>') + '</div></div>' +
-      '<div class="card card-full"><h2 class="card-title">FAQ ' + (editing ? '<button class="btn btn-sm btn-secondary" onclick="addFaq()" style="margin-left:8px">+ Add Question</button>' : '') + '</h2><div class="faq-list-edit">' + (faqHtml || '<p class="text-muted">No FAQ items yet</p>') + '</div></div>' +
+      '<div class="card' + sectionClass('rules') + '"><div class="card-title-row"><h2 class="card-title">Rules & Regulations</h2><div class="section-edit-actions">' + (editing === 'rules' ? '<button class="btn btn-sm btn-secondary" onclick="addRule()">+ Add</button>' : '') + sectionActions('rules') + '</div></div><div class="web-fields-list">' + (rulesHtml || '<p class="text-muted">No rules yet</p>') + '</div></div>' +
+      '<div class="card card-full' + sectionClass('faq') + '"><div class="card-title-row"><h2 class="card-title">FAQ</h2><div class="section-edit-actions">' + (editing === 'faq' ? '<button class="btn btn-sm btn-secondary" onclick="addFaq()">+ Add</button>' : '') + sectionActions('faq') + '</div></div><div class="faq-list-edit">' + (faqHtml || '<p class="text-muted">No FAQ items yet</p>') + '</div></div>' +
     '</div></div>';
 }
 
-function startWebsiteEdit() { state.editingWebsite = true; render(); }
+function startWebsiteEdit(section) { state.editingWebsiteSection = section || ''; render(); }
 
 function cancelWebsiteEdit() {
-  state.editingWebsite = false;
+  state.editingWebsiteSection = '';
   discardUnsavedChanges();
 }
 
@@ -1497,13 +1525,15 @@ function removeFaq(i) { state.data.website.faq.splice(i, 1); render(); }
 function updateFaqQ(i, val) { state.data.website.faq[i].q = val; }
 function updateFaqA(i, val) { state.data.website.faq[i].a = val; }
 
-function saveWebsiteContent() {
+function saveWebsiteSection() {
   saveData();
   state.websiteChanged = false;
-  state.editingWebsite = false;
-  showToast('Website content saved. User site will reflect on refresh.', 'success');
+  state.editingWebsiteSection = '';
+  showToast('Website section saved. User site will reflect on refresh.', 'success');
   render();
 }
+
+function saveWebsiteContent() { saveWebsiteSection(); }
 
 // ==============================
 // REGISTRATIONS PAGE
@@ -1554,12 +1584,14 @@ function renderRegistrations() {
   var refreshDisabled = state.refreshingRegistrations ? ' disabled' : '';
 
   var rows = regs.length === 0
-    ? '<tr><td colspan="11" class="table-empty">No matching registrations.</td></tr>'
+    ? '<tr><td colspan="13" class="table-empty">No matching registrations.</td></tr>'
     : regs.map(function(r) {
         var cls = 'reg-row-' + r.status;
         var badge = registrationBadgeClass(r.status);
         var refId = r.hikeId || (r.id ? r.id.toString().slice(0, 8).toUpperCase() : '-');
         return '<tr class="' + cls + '">' +
+          '<td class="td-registration-id" data-label="Registration ID">' + esc(formatDisplayId(r.id)) + '</td>' +
+          '<td class="td-userid" data-label="User ID">' + esc(formatDisplayId(r.userId)) + '</td>' +
           '<td class="td-id" data-label="Hike ID">' + esc(refId) + '</td>' +
           '<td class="td-name" data-label="Name">' + esc(r.fullName || '-') + '</td>' +
           '<td data-label="Destination">' + esc(r.destination || '-') + '</td>' +
@@ -1585,7 +1617,7 @@ function renderRegistrations() {
     '<div class="page-header"><div><h1 class="page-title">Registrations</h1><p class="page-subtitle">Match payments using Hike ID, transferring account, amount, and name.</p></div><div class="page-header-actions"><div class="page-header-badges"><span class="badge badge-warning">Pending: ' + pending + '</span><span class="badge badge-info">Review: ' + needsReview + '</span><span class="badge badge-success">Accepted: ' + accepted + '</span><span class="badge badge-danger">Rejected: ' + rejected + '</span></div><div class="refresh-control"><button class="btn btn-sm btn-primary btn-icon-text" onclick="refreshRegistrationsFromSupabase(true)"' + refreshDisabled + ' title="Check for new registrations">' + refreshIcon + ' ' + refreshText + '</button>' + refreshMeta + '</div></div></div>' +
     renderRegFilters() +
     '<div class="admin-note">Never approve only by name, phone, or sender account. Match the Hike ID, transferring account/phone, amount, and customer name before accepting.</div>' +
-    '<div class="table-wrapper"><table class="data-table reg-table"><thead><tr><th>ID</th><th>Name</th><th>Destination</th><th>Package</th><th>Phone</th><th>Pax</th><th>Price</th><th>Payment</th><th>Status</th><th>Date</th><th class="th-actions">Actions</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+    '<div class="table-wrapper"><table class="data-table reg-table"><thead><tr><th>Registration ID</th><th>User ID</th><th>Hike ID</th><th>Name</th><th>Destination</th><th>Package</th><th>Phone</th><th>Pax</th><th>Price</th><th>Payment</th><th>Status</th><th>Date</th><th class="th-actions">Actions</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
     modalHtml +
   '</div>';
 }
@@ -1602,7 +1634,7 @@ function renderUsers() {
         return '<tr>' +
           '<td data-label="Username"><strong>' + esc(u.username || '-') + '</strong></td>' +
           '<td data-label="Phone">' + esc(u.phone || '-') + '</td>' +
-          '<td class="td-userid" data-label="User ID">' + esc(u.id || '-') + '</td>' +
+          '<td class="td-userid" data-label="User ID">' + esc(formatDisplayId(u.id)) + '</td>' +
           '<td data-label="Signed Up">' + formatDate(u.created_at || u.createdAt) + '</td>' +
           '<td data-label="Last Login">' + lastLogin + '</td>' +
           '<td class="td-actions" data-label="Actions"><button class="btn btn-sm btn-danger" onclick="deleteUser(' + Number(u.id || 0) + ')" title="Delete user">' + iconSvg('trash') + '</button></td>' +
@@ -1712,7 +1744,8 @@ function renderRegDetail(id) {
   return '<div class="modal-overlay" onclick="closeViewReg()"><div class="modal modal-xl" onclick="event.stopPropagation()">' +
     '<div class="modal-header"><h2>Registration Details</h2><button class="modal-close" onclick="closeViewReg()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>' +
     '<div class="modal-body"><div class="detail-grid reg-detail-grid">' +
-    '<div class="detail-item"><span class="detail-label">ID</span><span class="detail-value">' + esc(r.id || '-') + '</span></div>' +
+    '<div class="detail-item"><span class="detail-label">Registration ID</span><span class="detail-value">' + esc(formatDisplayId(r.id)) + '</span></div>' +
+      '<div class="detail-item"><span class="detail-label">User ID</span><span class="detail-value">' + esc(formatDisplayId(r.userId)) + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Hike ID</span><span class="detail-value">' + esc(r.hikeId || '-') + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Full Name</span><span class="detail-value">' + esc(r.fullName) + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Username</span><span class="detail-value">' + esc(r.username || '-') + '</span></div>' +
@@ -1770,13 +1803,29 @@ async function deleteUser(userId, username) {
 async function loadAdmins() {
   if (!supabaseClient || !adminSessionToken) return [];
   var res = await supabaseClient.rpc('admin_list_admins', { p_admin_token: adminSessionToken });
-  if (res.error) { showToast(res.error.message || 'Could not load admins', 'error'); return []; }
+  if (res.error) {
+    var msg = res.error.message || 'Could not load admins';
+    state.adminsSetupWarning = msg;
+    if (msg.indexOf('admin_list_admins') === -1) showToast(msg, 'error');
+    return state.user ? [{
+      id: state.user.id,
+      username: state.user.username,
+      display_name: state.user.name || state.user.display_name || 'Current Admin',
+      last_login: null,
+      created_at: null,
+      _fallback: true
+    }] : [];
+  }
+  state.adminsSetupWarning = '';
   return res.data || [];
 }
 
 function renderAdmins() {
   var isManager = state.user && Number(state.user.id) === 1;
   var admins = state._admins || [];
+  var setupWarning = state.adminsSetupWarning
+    ? '<div class="admin-note" style="margin-bottom:14px">Admin list function is not available in Supabase yet. Run the latest <strong>supabase-schema.sql</strong> so admin add/delete/list works. Showing your current login for now.</div>'
+    : '';
   var rows = admins.length === 0
     ? '<tr><td colspan="6" class="table-empty">No admins found.</td></tr>'
     : admins.map(function(a) {
@@ -1785,8 +1834,8 @@ function renderAdmins() {
         var isSelf = state.user && Number(state.user.id) === Number(a.id);
         return '<tr>' +
           '<td data-label="Username"><strong>' + esc(a.username || '-') + '</strong>' + (Number(a.id) === 1 ? ' <span class="badge badge-info">Manager</span>' : '') + '</td>' +
-          '<td data-label="Name">' + esc(a.display_name || '-') + '</td>' +
-          '<td data-label="ID">' + esc(a.id) + '</td>' +
+          '<td data-label="Name">' + esc(a.display_name || '-') + (a._fallback ? ' <span class="badge badge-warning">Setup needed</span>' : '') + '</td>' +
+          '<td data-label="ID">' + esc(formatDisplayId(a.id)) + '</td>' +
           '<td data-label="Last Login">' + lastLogin + '</td>' +
           '<td data-label="Created">' + created + '</td>' +
           '<td class="td-actions" data-label="Actions">' +
@@ -1798,14 +1847,16 @@ function renderAdmins() {
 
   var addForm = isManager
     ? '<div class="card" style="margin-top:16px"><h2 class="card-title">Add New Admin</h2>' +
+      (state.adminsSetupWarning ? '<div class="admin-note" style="margin-bottom:12px">Finish the Supabase admin functions setup before adding more admins.</div>' : '') +
       '<div class="form-group"><label class="form-label">Username</label><input type="text" class="form-input" id="new-admin-user" placeholder="choose a username"></div>' +
       '<div class="form-group"><label class="form-label">Password <small style="color:var(--text-muted);font-weight:400">(8+ chars, uppercase, lowercase, digit, special)</small></label><input type="password" class="form-input" id="new-admin-pass" placeholder="strong password"></div>' +
       '<div class="form-group"><label class="form-label">Display Name</label><input type="text" class="form-input" id="new-admin-name" placeholder="optional display name"></div>' +
-      '<div class="form-actions"><button class="btn btn-primary" onclick="addAdminFromPage()">Add Admin</button></div></div>'
+      '<div class="form-actions"><button class="btn btn-primary" onclick="addAdminFromPage()" ' + (state.adminsSetupWarning ? 'disabled' : '') + '>Add Admin</button></div></div>'
     : '';
 
   return '<div class="page">' +
     '<div class="page-header"><div><h1 class="page-title">Admins</h1><p class="page-subtitle">' + (isManager ? 'You are the manager. You can add and remove admins.' : 'You are an admin. Only the manager can add or remove admins.') + '</p></div><div class="page-header-actions"><span class="badge badge-info">Total: ' + admins.length + '</span><button class="btn btn-sm btn-primary" onclick="refreshAdmins()">Refresh</button></div></div>' +
+    setupWarning +
     '<div class="table-wrapper"><table class="data-table"><thead><tr><th>Username</th><th>Name</th><th>ID</th><th>Last Login</th><th>Created</th><th class="th-actions">Actions</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
     addForm +
   '</div>';

@@ -703,6 +703,47 @@ input, select, textarea {
   grid-column: 1 / -1;
 }
 
+.card-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.card-title-row .card-title {
+  margin-bottom: 0;
+}
+
+.section-edit-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.admin-icon-btn {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.admin-icon-btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+.admin-icon-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
 /* ===== Data Table ===== */
 .table-wrapper {
   background: var(--card-bg);
@@ -795,6 +836,44 @@ input, select, textarea {
   font-size: 13px;
 }
 
+.reg-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: 1180px;
+  border: 1px solid var(--border);
+}
+
+.reg-table th,
+.reg-table td {
+  border-right: 1px solid var(--border-light);
+}
+
+.reg-table th:last-child,
+.reg-table td:last-child {
+  border-right: 0;
+}
+
+.reg-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.reg-table tbody tr:nth-child(even) {
+  background: rgba(246, 248, 250, 0.58);
+}
+
+.reg-table tbody tr:hover {
+  background: var(--primary-very-light);
+}
+
+.reg-table .td-registration-id,
+.reg-table .td-userid {
+  font-family: monospace;
+  font-weight: 700;
+  font-size: 11px;
+  white-space: nowrap;
+  color: var(--primary-dark);
+}
+
 .reg-table .td-id {
   font-family: monospace;
   font-weight: 700;
@@ -840,19 +919,19 @@ input, select, textarea {
 }
 
 .reg-row-accepted {
-  border-left: 3px solid var(--success);
+  box-shadow: inset 3px 0 0 var(--success);
 }
 
 .reg-row-rejected {
-  border-left: 3px solid var(--danger);
+  box-shadow: inset 3px 0 0 var(--danger);
 }
 
 .reg-row-pending {
-  border-left: 3px solid var(--warning);
+  box-shadow: inset 3px 0 0 var(--warning);
 }
 
 .reg-row-needs_review {
-  border-left: 3px solid var(--info);
+  box-shadow: inset 3px 0 0 var(--info);
 }
 
 .admin-note {
@@ -1100,6 +1179,21 @@ select.form-input {
   background-repeat: no-repeat;
   background-position: right 12px center;
   padding-right: 36px;
+}
+
+select.form-input option {
+  color: var(--text);
+  background: #fff;
+}
+
+.notice-select {
+  min-height: 42px;
+  color: var(--text);
+  background-color: #fff;
+}
+
+.notice-empty-note {
+  margin-bottom: 12px;
 }
 
 /* ===== File Upload ===== */
@@ -2558,6 +2652,10 @@ code {
     font-size: 13px;
     text-align: right;
     word-break: break-word;
+  }
+
+  .reg-table td {
+    border-right: 0;
   }
 
   .reg-table td:last-child,

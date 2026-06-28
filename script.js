@@ -92,6 +92,12 @@ function esc(value) {
     .replace(/'/g, "&#039;");
 }
 
+function formatDisplayId(value) {
+  if (value == null || value === "") return "-";
+  var raw = String(value).trim();
+  return /^\d+$/.test(raw) ? raw.padStart(3, "0") : raw;
+}
+
 function formatPriceAmount(price, currency) {
   var numeric = Number(price);
   var amount = Number.isFinite(numeric) ? numeric.toLocaleString() : String(price || 0);
@@ -398,6 +404,7 @@ function updateAuthUI() {
   var profileDropdown = document.getElementById("profileDropdown");
   var profileName = document.getElementById("profileName");
   var profileUsername = document.getElementById("profileUsername");
+  var profileUserId = document.getElementById("profileUserId");
   var profileAvatar = document.getElementById("profileAvatar");
 
   if (loginButton) loginButton.hidden = loggedIn;
@@ -408,6 +415,7 @@ function updateAuthUI() {
     var initial = name.charAt(0).toUpperCase();
     if (profileName) profileName.textContent = name;
     if (profileUsername) profileUsername.textContent = "@" + name;
+    if (profileUserId) profileUserId.textContent = "User ID: " + formatDisplayId(currentUser.id);
     if (profileAvatar) profileAvatar.textContent = initial;
   }
 }
@@ -675,6 +683,7 @@ function renderDashboard() {
 
     if (isRejected) {
       return '<tr>' +
+        '<td data-label="User ID"><strong class="user-id-cell">' + esc(formatDisplayId(booking.user_id || currentUser.id)) + '</strong></td>' +
         '<td data-label="Hike ID"><div class="hike-id-cell"><strong>' + esc(booking.hike_id) + '</strong><button class="copy-btn-sm" type="button" data-copy-value="' + esc(booking.hike_id) + '" title="Copy Hike ID">Copy</button></div></td>' +
         '<td colspan="9"><div class="rejected-info">' +
           '<span class="rejected-msg">Rejected — make sure you paid to the correct account and wrote your Hike ID in the payment note.</span>' +
@@ -694,6 +703,7 @@ function renderDashboard() {
 
     if (hasSender) {
       return '<tr>' +
+        '<td data-label="User ID"><strong class="user-id-cell">' + esc(formatDisplayId(booking.user_id || currentUser.id)) + '</strong></td>' +
         '<td data-label="Hike ID"><div class="hike-id-cell"><strong>' + esc(booking.hike_id) + '</strong><button class="copy-btn-sm" type="button" data-copy-value="' + esc(booking.hike_id) + '" title="Copy Hike ID">Copy</button></div></td>' +
         '<td colspan="9"><div class="submitted-info">' +
           tag('\uD83D\uDC64', 'Name', booking.full_name) +
@@ -709,6 +719,7 @@ function renderDashboard() {
     }
 
     return '<tr>' +
+      '<td data-label="User ID"><strong class="user-id-cell">' + esc(formatDisplayId(booking.user_id || currentUser.id)) + '</strong></td>' +
       '<td data-label="Hike ID"><div class="hike-id-cell"><strong>' + esc(booking.hike_id) + '</strong><button class="copy-btn-sm" type="button" data-copy-value="' + esc(booking.hike_id) + '" title="Copy Hike ID">Copy</button></div></td>' +
       '<td colspan="9"><div class="pending-pay-info">' +
         tag('\uD83C\uDFD4\uFE0F', 'Trip', booking.destination || booking.package_name) +
