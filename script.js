@@ -125,6 +125,28 @@ function formatPackageTotalPrice(pkg, count) {
   return formatPriceAmount(total, pkg.currency || "ETB") + suffix;
 }
 
+function normalizePackageFeatures(features) {
+  var source = Array.isArray(features) ? features : [features];
+  var cleaned = [];
+  source.forEach(function(item) {
+    String(item == null ? "" : item)
+      .replace(/\r/g, "\n")
+      .split(/\n+|[\u2022\u00b7\u2023]\s*/g)
+      .forEach(function(part) {
+        var text = part.replace(/^[\s\-\u2022\u00b7\u2023]+/, "").trim();
+        if (text) cleaned.push(text);
+      });
+  });
+  return cleaned;
+}
+
+function replacePackageFeatures(target, features) {
+  target.length = 0;
+  normalizePackageFeatures(features).forEach(function(feature) {
+    target.push(feature);
+  });
+}
+
 function updatePackagePriceDisplay() {
   if (!packagePriceInput) return;
   selectedPackageMeta = selectedPackageMeta || getPackageByName(packageInput ? packageInput.value : "");
@@ -1154,7 +1176,7 @@ function renderPackageCards() {
   function card(pkg, features, featured) {
     if (!pkg || !pkg.name) return "";
     var price = formatPackagePrice(pkg);
-    var list = (features || []).map(function(item) { return '<li>' + esc(item) + '</li>'; }).join("");
+    var list = normalizePackageFeatures(features).map(function(item) { return '<li>' + esc(item) + '</li>'; }).join("");
     return '<article class="pricing-card' + (featured ? ' featured' : '') + '">' +
       '<h3>' + esc(pkg.name) + '</h3>' +
       (pkg.sub ? '<p>' + esc(pkg.sub) + '</p>' : '') +
@@ -1246,7 +1268,7 @@ function openTripDetails(name) {
   document.getElementById("tripDetailStart").textContent = trip.start || "Not specified";
   document.getElementById("tripExpectList").innerHTML = (trip.expect || []).map(item => `<li>${esc(item)}</li>`).join("");
   const features = activePackageView === "native" ? nativeFeatures : foreignerFeatures;
-  document.getElementById("tripIncludedList").innerHTML = features.map(item => `<li>${esc(item)}</li>`).join("");
+  document.getElementById("tripIncludedList").innerHTML = normalizePackageFeatures(features).map(item => `<li>${esc(item)}</li>`).join("");
   selectedDestination = trip.name;
   updateSelectedDestination();
   openModal("tripDetailsModal");
@@ -1561,20 +1583,16 @@ function applySharedData(shared) {
     sharedPkgData = shared.packages;
     var p = shared.packages;
     if (p.nativeDay && p.nativeDay.features) {
-      nativeFeatures.length = 0;
-      p.nativeDay.features.forEach(function(f) { nativeFeatures.push(f) });
+      replacePackageFeatures(nativeFeatures, p.nativeDay.features);
     }
     if (p.nativeOvernight && p.nativeOvernight.features) {
-      nativeOvernightFeatures.length = 0;
-      p.nativeOvernight.features.forEach(function(f) { nativeOvernightFeatures.push(f) });
+      replacePackageFeatures(nativeOvernightFeatures, p.nativeOvernight.features);
     }
     if (p.foreignerDay && p.foreignerDay.features) {
-      foreignerFeatures.length = 0;
-      p.foreignerDay.features.forEach(function(f) { foreignerFeatures.push(f) });
+      replacePackageFeatures(foreignerFeatures, p.foreignerDay.features);
     }
     if (p.foreignerOvernight && p.foreignerOvernight.features) {
-      foreignerOvernightFeatures.length = 0;
-      p.foreignerOvernight.features.forEach(function(f) { foreignerOvernightFeatures.push(f) });
+      replacePackageFeatures(foreignerOvernightFeatures, p.foreignerOvernight.features);
     }
   }
 
