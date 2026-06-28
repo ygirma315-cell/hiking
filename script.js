@@ -460,23 +460,35 @@ function openAuthModal(mode, afterLoginAction) {
 function readStoredSiteSession() {
   try {
     var saved = JSON.parse(localStorage.getItem(SITE_SESSION_KEY) || "null");
-    if (!saved || !saved.session_token || !saved.user) return null;
+    if (!saved || !saved.session_token) return null;
+    if (!saved.user && (saved.id || saved.username)) {
+      saved.user = { id:saved.id, username:saved.username, phone:saved.phone || "" };
+    }
+    if (!saved.user) return null;
     return saved;
   } catch (_) {
     return null;
   }
 }
 
-function saveSiteSession(payload) {
-  var token = payload && (payload.session_token || payload.token);
-  var user = payload && payload.user;
-  if (!token || !user) return false;
-  currentSessionToken = token;
-  currentUser = {
-    id:user.id,
-    username:user.username,
+function normalizeSessionUser(user) {
+  if (!user) return null;
+  var id = user.id || user.user_id || user.userId || "";
+  var username = normalizeUsername(user.username || user.name || "");
+  if (!id || !username || username === "user") return null;
+  return {
+    id:id,
+    username:username,
     phone:user.phone || ""
   };
+}
+
+function saveSiteSession(payload) {
+  var token = payload && (payload.session_token || payload.token);
+  var user = normalizeSessionUser(payload && payload.user);
+  if (!token || !user) return false;
+  currentSessionToken = token;
+  currentUser = user;
   currentProfile = currentUser;
   localStorage.setItem(SITE_SESSION_KEY, JSON.stringify({
     session_token:currentSessionToken,
@@ -501,8 +513,8 @@ async function loadCurrentUser() {
   }
 
   currentSessionToken = saved.session_token;
-  currentUser = saved.user;
-  currentProfile = saved.user;
+  currentUser = normalizeSessionUser(saved.user);
+  currentProfile = currentUser;
 
   if (supabaseClient && currentSessionToken) {
     try {
@@ -517,7 +529,10 @@ async function loadCurrentUser() {
       }
     } catch (error) {
       console.warn("User session check failed:", error);
+      if (!currentUser) clearSiteSession();
     }
+  } else if (!currentUser) {
+    clearSiteSession();
   }
   updateAuthUI();
 }
@@ -1330,7 +1345,7 @@ function setupFormsAndModals() {
   document.getElementById("profileInboxBtn").addEventListener("click", function() { toggleProfileMenu(false); openInbox(); });
   document.getElementById("profileDashBtn").addEventListener("click", function() { toggleProfileMenu(false); openDashboard(); });
   document.getElementById("profileSettingsBtn").addEventListener("click", function() { toggleProfileMenu(false); openUserSettings(); });
-  document.getElementById("profileLogoutBtn").addEventListener("click", function() { toggleProfileMenu(false); signOutUser(); });
+  document.getElementById("profileLogoutBtn").addEventListener("click", function(e) { e.preventDefault(); e.stopPropagation(); toggleProfileMenu(false); signOutUser(); });
   document.getElementById("dashboardRefreshButton").addEventListener("click", () => refreshDashboard(false));
   document.getElementById("successViewDashboardButton").addEventListener("click", function() {
     closeModals();
@@ -1382,6 +1397,12 @@ function setupFormsAndModals() {
     copyText(value);
   });
   document.addEventListener("click", function(e) {
+    if (e.target.closest("#profileLogoutBtn")) {
+      e.preventDefault();
+      toggleProfileMenu(false);
+      signOutUser();
+      return;
+    }
     if (!e.target.closest(".profile-dropdown")) toggleProfileMenu(false);
   });
   document.querySelectorAll("[data-close-modal]").forEach(btn => btn.addEventListener("click", closeModals));
