@@ -1811,6 +1811,11 @@ function renderRegDetail(id) {
   var badge = registrationBadgeClass(r.status);
   var displayUserId = userIdForRegistration(r);
   var displayHikeId = r.hikeId || (r.id ? 'HIK-' + String(r.id).padStart(6, '0') : '-');
+  var actionButtons = [
+    r.status !== 'accepted' ? '<button class="btn btn-success" onclick="acceptReg(' + r.id + ');closeViewReg()">Accept</button>' : '',
+    r.status !== 'needs_review' ? '<button class="btn btn-secondary" onclick="needsReviewReg(' + r.id + ');closeViewReg()">Needs Review</button>' : '',
+    r.status !== 'rejected' ? '<button class="btn btn-danger" onclick="rejectReg(' + r.id + ');closeViewReg()">Reject</button>' : ''
+  ].filter(Boolean).join('');
   var notify = r.status === 'pending'
     ? '\u23F3 Waiting for payment confirmation.'
     : r.status === 'accepted'
@@ -1847,7 +1852,7 @@ function renderRegDetail(id) {
     '<div class="admin-note" style="margin-top:16px">Manual match priority: Hike ID + transferring account/phone + amount + customer name. If anything looks duplicated or suspicious, mark Needs Review.</div>' +
     '<div class="detail-section"><h3>Message to user</h3><textarea class="form-input" id="admin-message-input" rows="3" placeholder="Optional message shown in user dashboard">' + esc(r.adminMessage || '') + '</textarea><div class="form-actions" style="margin-top:10px"><button class="btn btn-secondary" onclick="saveRegMessage(' + r.id + ')">Save Message</button></div></div>' +
     '<div class="detail-section"><h3>Notification Preview</h3><div class="notification-preview"><div class="notification-icon">' + notify.split(' ')[0] + '</div><div class="notification-text">' + esc(r.adminMessage || notify) + '</div></div></div>' +
-    '<div class="modal-actions"><button class="btn btn-success" onclick="acceptReg(' + r.id + ');closeViewReg()">Accept</button><button class="btn btn-secondary" onclick="needsReviewReg(' + r.id + ');closeViewReg()">Needs Review</button><button class="btn btn-danger" onclick="rejectReg(' + r.id + ');closeViewReg()">Reject</button></div>' +
+    (actionButtons ? '<div class="modal-actions">' + actionButtons + '</div>' : '') +
     '</div></div></div>';
 }
 

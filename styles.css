@@ -303,6 +303,18 @@ a{color:inherit;text-decoration:none}img{max-width:100%;display:block}
 .payment-guide-compact .pg-hike-note{color:var(--orange);font-weight:700}
 .dashboard-panel{width:min(860px,100%)}
 .dashboard-actions{display:flex;justify-content:flex-end;margin:12px 0}
+.dashboard-bookings-list{display:grid;gap:12px;margin-top:12px}
+.booking-card{border:1px solid var(--line);border-radius:16px;background:#fffdf9;padding:12px;display:grid;gap:10px;box-shadow:0 10px 24px rgba(6,43,22,.06)}
+.booking-card-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:8px}
+.booking-card-head div{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.booking-card-head span:not(.status-badge){font-size:.66rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:900}
+.booking-card-head strong{font-family:monospace;color:var(--green-2);font-size:.86rem}
+.booking-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.booking-detail{display:grid;gap:2px;padding:8px;border-radius:10px;background:#f8f5ec;border:1px solid rgba(11,77,36,.08)}
+.booking-detail span{font-size:.62rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:900}
+.booking-detail strong{font-size:.78rem;color:var(--text);word-break:break-word}
+.booking-card-actions{display:flex;justify-content:flex-end}
+.booking-alert{padding:8px 10px;border-radius:10px;background:#fee2e2;color:#991b1b;font-weight:800;font-size:.75rem}
 .dashboard-table-wrap{overflow-x:auto;margin-top:12px}
 .dashboard-table{width:100%;border-collapse:collapse;font-size:.74rem}
 .dashboard-table th{text-align:left;padding:5px 8px;font-size:.64rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:900;border-bottom:2px solid var(--line);white-space:nowrap}
@@ -724,10 +736,8 @@ body.modal-open{overflow:hidden;}
   .dashboard-panel{width:calc(100vw - 24px)}
   .dashboard-actions{justify-content:stretch}
   .dashboard-actions .btn{width:100%}
-  .dashboard-table thead{display:none}
-  .dashboard-table,.dashboard-table tbody,.dashboard-table tr,.dashboard-table td{display:block}
-  .dashboard-table tr{margin-bottom:8px;border:1px solid var(--line);border-radius:10px;padding:6px;background:#fffdf9}
-  .dashboard-table td{padding:3px 6px;border:none}
+  .booking-detail-grid{grid-template-columns:1fr}
+  .booking-card-head{align-items:flex-start}
   .submitted-info,.pending-pay-info,.rejected-info{flex-direction:row;flex-wrap:wrap;gap:3px;font-size:.7rem}
   .payment-update-form{flex-direction:column;align-items:stretch}
   .payment-update-form label{width:auto}

@@ -757,6 +757,67 @@ function togglePayForm(hikeId) {
   if (wrap) wrap.hidden = !wrap.hidden;
 }
 
+function renderDashboardCards() {
+  var wrap = document.getElementById("dashboardBookings");
+  var empty = document.getElementById("dashboardEmpty");
+  if (!wrap || !empty) return;
+  if (!userBookings.length) {
+    wrap.innerHTML = "";
+    empty.hidden = false;
+    return;
+  }
+
+  empty.hidden = true;
+  wrap.innerHTML = userBookings.map(function(booking) {
+    var copy = statusCopy(booking.status);
+    var price = formatBookingPrice(booking);
+    var paymentAccount = paymentAccountFor(booking.payment_method);
+    var accountLine = paymentAccount ? paymentAccount.accountLabel + ': ' + paymentAccount.accountNumber : '-';
+    var hasSender = !!booking.sender_account;
+    var isRejected = booking.status === 'rejected';
+    var canUpdatePayment = booking.status !== 'accepted' && (isRejected || !hasSender);
+
+    function item(label, val) {
+      return '<div class="booking-detail"><span>' + esc(label) + '</span><strong>' + esc(val || '-') + '</strong></div>';
+    }
+
+    var action = canUpdatePayment
+      ? '<button class="btn btn-sm btn-orange" onclick="togglePayForm(\'' + esc(booking.hike_id) + '\')">' + (isRejected ? 'Resubmit' : 'I\'ve Paid') + '</button>'
+      : '';
+    var alert = isRejected ? '<div class="booking-alert">Rejected. Check the payment account and resubmit your payment details.</div>' : '';
+    var formLabel = isRejected ? 'Correct account/phone you paid from' : 'Enter account/phone you paid from';
+    var formValue = isRejected ? booking.sender_account || '' : '';
+
+    return '<article class="booking-card">' +
+      '<div class="booking-card-head">' +
+        '<div><span>User ID</span><strong>' + esc(formatDisplayId(booking.user_id || currentUser.id)) + '</strong></div>' +
+        '<div><span>Hike ID</span><strong>' + esc(booking.hike_id) + '</strong><button class="copy-btn-sm" type="button" data-copy-value="' + esc(booking.hike_id) + '" title="Copy Hike ID">Copy</button></div>' +
+        '<span class="status-badge ' + statusBadgeClass(booking.status) + '">' + esc(copy.label) + '</span>' +
+      '</div>' +
+      alert +
+      '<div class="booking-detail-grid">' +
+        item('Name', booking.full_name) +
+        item('Phone', booking.phone) +
+        item('Trip', booking.destination || booking.package_name) +
+        item('Package', booking.package_name) +
+        item('People', booking.participants_count || 1) +
+        item('Price', price) +
+        item('Payment', booking.payment_method || '-') +
+        item('Pay to', accountLine) +
+        item('Paid from', booking.sender_account || '-') +
+        item('Registered', formatDate(booking.created_at || booking.submitted_date)) +
+      '</div>' +
+      (action ? '<div class="booking-card-actions">' + action + '</div>' : '') +
+      '<div class="pay-form-wrap" id="pay-form-' + esc(booking.hike_id) + '" hidden>' +
+        '<form class="payment-update-form" data-hike-id="' + esc(booking.hike_id) + '">' +
+          '<label>' + esc(formLabel) + '<input name="sender_account" value="' + esc(formValue) + '" placeholder="e.g. +251912345678"></label>' +
+          '<button class="btn btn-orange" type="submit">Confirm</button>' +
+          '<button class="btn btn-soft" type="button" onclick="togglePayForm(\'' + esc(booking.hike_id) + '\')">Cancel</button>' +
+        '</form></div>' +
+    '</article>';
+  }).join("");
+}
+
 function inboxKey() { return 'ereft_inbox_read_' + (currentUser ? currentUser.id : 'anon'); }
 
 function countUnread() {
@@ -924,7 +985,7 @@ async function refreshDashboard(silent) {
   }
   try {
     await loadUserBookings();
-    renderDashboard();
+    renderDashboardCards();
     if (!silent) showSiteNotice("Dashboard refreshed.", "success");
   } catch (error) {
     console.error("Dashboard refresh failed:", error);
@@ -1022,6 +1083,15 @@ function findTrip(name) {
   return hikingDestinations.find(trip => trip.name === name) || hikingDestinations[0];
 }
 
+function reduceLocalTripSeats(destination, count) {
+  var people = cleanPeopleCount(count || 1);
+  hikingDestinations.forEach(function(trip) {
+    if (trip.name === destination) {
+      trip.spotsLeft = Math.max(0, Number(trip.spotsLeft || 0) - people);
+    }
+  });
+}
+
 function renderDestinations() {
   if (!hikingDestinations.length) {
     destinationGrid.innerHTML = '<div class="empty-state">Trips are not available right now. Please check again soon.</div>';
@@ -1032,7 +1102,7 @@ function renderDestinations() {
     <article class="destination-card fade-up">
       <div class="destination-image">
         ${trip.image ? `<img src="${esc(trip.image)}" alt="${esc(trip.name)} trip photo" loading="lazy" decoding="async">` : ""}
-        <span class="duration-badge">${esc(trip.duration || "Trip")}</span>
+        <span class="duration-badge">${esc(trip.date || trip.duration || "Trip")}</span>
       </div>
       <div class="destination-body">
         <h3>${esc(trip.name)}</h3>
@@ -1636,6 +1706,8 @@ async function submitRegistration(form) {
     }
 
     userBookings.unshift(booking);
+    reduceLocalTripSeats(payload.destination, payload.participants_count);
+    renderDestinations();
     closeModals();
     renderSuccessBooking(booking);
     openModal("successModal");

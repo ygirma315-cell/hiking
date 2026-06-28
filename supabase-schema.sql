@@ -892,6 +892,40 @@ begin
       v_payment_status, 'pending'
     )
     returning id
+  ),
+  seat_update as (
+    update public.site_content sc
+    set payload = jsonb_set(
+      sc.payload,
+      '{trips}',
+      coalesce((
+        select jsonb_agg(
+          case
+            when trip_item ->> 'name' = p_destination then
+              jsonb_set(
+                trip_item,
+                '{spotsLeft}',
+                to_jsonb(greatest(
+                  0,
+                  (case
+                    when coalesce(trip_item ->> 'spotsLeft', '') ~ '^[0-9]+$'
+                      then (trip_item ->> 'spotsLeft')::int
+                    else 0
+                  end) - greatest(1, coalesce(p_participants_count, 1))
+                )),
+                true
+              )
+            else trip_item
+          end
+          order by ord
+        )
+        from jsonb_array_elements(coalesce(sc.payload -> 'trips', '[]'::jsonb)) with ordinality as trip_rows(trip_item, ord)
+      ), '[]'::jsonb),
+      true
+    )
+    where sc.id = 'main'
+      and sc.payload ? 'trips'
+    returning 1
   )
   update public.registrations r
   set hike_id = 'HIK-' || upper(substr(md5(ins.id::text), 1, 6))
