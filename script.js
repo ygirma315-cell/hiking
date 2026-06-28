@@ -433,10 +433,10 @@ function updateAuthUI() {
   if (profileDropdown) profileDropdown.hidden = !loggedIn;
 
   if (loggedIn && currentUser) {
-    var name = currentUser.username || "User";
-    var initial = name.charAt(0).toUpperCase();
-    if (profileName) profileName.textContent = name;
-    if (profileUsername) profileUsername.textContent = "@" + name;
+    var name = normalizeUsername(currentUser.username || currentUser.name || "");
+    var initial = name ? name.charAt(0).toUpperCase() : "?";
+    if (profileName) profileName.textContent = name || "Profile";
+    if (profileUsername) profileUsername.textContent = name ? "@" + name : "Signed in";
     if (profileUserId) profileUserId.textContent = "User ID: " + formatDisplayId(currentUser.id);
     if (profileAvatar) profileAvatar.textContent = initial;
   }
