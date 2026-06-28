@@ -501,6 +501,7 @@ function clearSiteSession() {
   currentUser = null;
   currentProfile = null;
   currentSessionToken = null;
+  userBookings = [];
   localStorage.removeItem(SITE_SESSION_KEY);
 }
 
@@ -513,25 +514,26 @@ async function loadCurrentUser() {
   }
 
   currentSessionToken = saved.session_token;
-  currentUser = normalizeSessionUser(saved.user);
-  currentProfile = currentUser;
+  currentUser = null;
+  currentProfile = null;
 
   if (supabaseClient && currentSessionToken) {
     try {
       var current = await supabaseClient.rpc("get_current_user", { p_session_token:currentSessionToken });
-      if (current.error || !current.data || !current.data.success) {
+      var verifiedUser = normalizeSessionUser(current && current.data && current.data.user);
+      if (current.error || !current.data || !current.data.success || !verifiedUser) {
         clearSiteSession();
       } else {
         saveSiteSession({
           session_token:currentSessionToken,
-          user:current.data.user
+          user:verifiedUser
         });
       }
     } catch (error) {
       console.warn("User session check failed:", error);
-      if (!currentUser) clearSiteSession();
+      clearSiteSession();
     }
-  } else if (!currentUser) {
+  } else {
     clearSiteSession();
   }
   updateAuthUI();
@@ -984,8 +986,12 @@ async function refreshDashboard(silent) {
     btn.textContent = "Refreshing...";
   }
   try {
+    var dashboardWrap = document.getElementById("dashboardBookings");
+    var needsInitialRender = !dashboardWrap || dashboardWrap.innerHTML.trim() === "";
+    var before = JSON.stringify(userBookings);
     await loadUserBookings();
-    renderDashboardCards();
+    var changed = before !== JSON.stringify(userBookings);
+    if (!silent || changed || needsInitialRender) renderDashboardCards();
     if (!silent) showSiteNotice("Dashboard refreshed.", "success");
   } catch (error) {
     console.error("Dashboard refresh failed:", error);
