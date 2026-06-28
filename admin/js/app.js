@@ -189,11 +189,17 @@ async function refreshRegistrationsFromSupabase(showMessage) {
   if (state.refreshingRegistrations) return;
 
   state.refreshingRegistrations = true;
-  if (isLiveRefreshPage()) render();
+  var beforeSnapshot = JSON.stringify({
+    registrations: state.data.registrations,
+    users: state.data.users
+  });
+  if (showMessage && isLiveRefreshPage()) render();
 
   try {
-    state.data.registrations = await fetchRegistrationsFromSupabase();
-    state.data.users = await fetchSiteUsersFromSupabase();
+    var nextRegistrations = await fetchRegistrationsFromSupabase();
+    var nextUsers = await fetchSiteUsersFromSupabase();
+    state.data.registrations = nextRegistrations;
+    state.data.users = nextUsers;
     state.lastRegistrationRefresh = new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
     if (state.viewRegId != null && !state.data.registrations.some(function(r){ return r.id === state.viewRegId; })) {
       state.viewRegId = null;
@@ -205,8 +211,13 @@ async function refreshRegistrationsFromSupabase(showMessage) {
     console.error('Could not refresh registrations:', err);
     if (showMessage) showToast('Could not refresh registrations', 'error');
   } finally {
+    var afterSnapshot = JSON.stringify({
+      registrations: state.data.registrations,
+      users: state.data.users
+    });
+    var dataChanged = beforeSnapshot !== afterSnapshot;
     state.refreshingRegistrations = false;
-    if (isLiveRefreshPage()) render();
+    if (isLiveRefreshPage() && (showMessage || dataChanged)) render();
   }
 }
 
@@ -686,6 +697,15 @@ function navigateTo(page) {
   window.location.hash = page === 'login' ? '' : page;
 }
 
+function navigateOverviewTarget(page, status) {
+  if (page === 'registrations') {
+    state.regFilterStatus = status || '';
+    state.regFilterDestination = '';
+    state.regFilterPayment = '';
+  }
+  navigateTo(page);
+}
+
 function getCurrentPage() {
   var h = window.location.hash.replace(/^#\/?/, '');
   return h || 'overview';
@@ -773,6 +793,7 @@ function renderSidebar(page) {
 function renderHeader() {
   return '<header class="header">' +
     '<button class="header-menu-btn" onclick="toggleSidebar()" aria-label="Menu"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>' +
+    '<a class="header-brand-mini" href="#overview" aria-label="Ereft Hiking admin overview"><img src="../assets/logo/logo.webp" alt="Ereft Hiking"><span>Admin Dashboard</span></a>' +
     '<div class="header-right">' +
 
       '<div class="header-user"><div class="header-avatar">A</div><div class="header-user-info"><span class="header-user-name">' + esc(state.user?.name || 'Admin') + '</span><span class="header-user-role">Administrator</span></div></div>' +
@@ -782,7 +803,7 @@ function renderHeader() {
 
 function renderPage(page) {
   switch(page) {
-    case 'overview': return renderOverview();
+    case 'overview': return renderOverviewLinked();
     case 'trips': return renderTrips();
     case 'packages': return renderPackages();
     case 'gallery': return renderGallery();
@@ -792,7 +813,7 @@ function renderPage(page) {
     case 'admins': return renderAdmins();
     case 'notices': return renderNotices();
     case 'settings': return renderSettings();
-    default: return renderOverview();
+    default: return renderOverviewLinked();
   }
 }
 
@@ -932,6 +953,48 @@ function renderOverview() {
     '<div class="overview-grid">' +
       '<div class="card"><h2 class="card-title">Recent Registrations</h2><div class="activity-list">' + recentHtml + '</div></div>' +
       '<div class="card"><h2 class="card-title">Active Trips</h2><div class="mini-trip-list">' + tripCards + '</div><div class="form-actions" style="margin-top:12px"><button class="btn btn-sm btn-secondary" onclick="navigateTo(\'trips\')">Manage Trips \u2192</button></div></div>' +
+    '</div></div>';
+}
+
+function renderOverviewLinked() {
+  var d = state.data;
+  var totalTrips = d.trips.length;
+  var activeTrips = d.trips.filter(function(t){ return t.status === 'active' }).length;
+  var totalRegs = d.registrations.length;
+  var pendingRegs = d.registrations.filter(function(r){ return r.status === 'pending' }).length;
+  var totalImages = d.galleryImages.length;
+  var totalUsers = d.users.length;
+  var activePct = totalTrips ? Math.round(activeTrips / totalTrips * 100) + '%' : '0%';
+  var now = new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  var stats = [
+    { label:'Total Trips', value:totalTrips, icon:'\uD83C\uDFD4\uFE0F', change:activeTrips + ' active', cls:'up', page:'trips' },
+    { label:'Active Trips', value:activeTrips, icon:'\u2705', change:activePct, cls:'up', page:'trips' },
+    { label:'Total Registrations', value:totalRegs, icon:'\uD83D\uDCDD', change:pendingRegs + ' pending', cls:pendingRegs > 0 ? 'down' : 'up', page:'registrations' },
+    { label:'Signup Users', value:totalUsers, icon:'\uD83D\uDC65', change:totalUsers + ' accounts', cls:'up', page:'users' },
+    { label:'Pending', value:pendingRegs, icon:'\u23F3', change:pendingRegs > 0 ? 'Needs review' : 'None', cls:pendingRegs > 0 ? 'down' : 'up', page:'registrations', status:'pending' },
+    { label:'Gallery Images', value:totalImages, icon:'\uD83D\uDDBC\uFE0F', change:d.galleryCategories.length + ' categories', cls:'up', page:'gallery' }
+  ];
+
+  var recentHtml = d.registrations.slice(-5).reverse().map(function(r) {
+    var cls = r.status === 'pending' ? 'registration' : r.status === 'accepted' ? 'trip' : 'payment';
+    return '<button type="button" class="activity-item activity-link" onclick="navigateOverviewTarget(\'registrations\',\'\')">' +
+      '<div class="activity-dot ' + cls + '"></div>' +
+      '<div class="activity-content"><p class="activity-text">' + esc(r.fullName || 'Unknown user') + ' registered for ' + esc(r.destination || 'a trip') + ' (' + esc(r.status || 'pending') + ')</p><span class="activity-time">' + formatDate(r.submittedDate || r.createdAt) + '</span></div>' +
+    '</button>';
+  }).join('') || '<div class="activity-item"><div class="activity-content"><p class="activity-text text-muted">No registrations yet</p></div></div>';
+
+  var tripCards = d.trips.filter(function(t){ return t.status === 'active' }).slice(0, 4).map(function(t) {
+    return '<button type="button" class="mini-trip-card mini-trip-link" onclick="navigateTo(\'trips\')"><div class="mini-trip-img" style="background:linear-gradient(135deg,var(--primary-light),var(--bg))"><span>\uD83C\uDFD4\uFE0F</span></div><div class="mini-trip-info"><strong>' + esc(t.name) + '</strong><span>' + esc(t.date || 'No date') + ' with ' + Number(t.spotsLeft || 0) + ' spots left</span></div></button>';
+  }).join('') || '<p class="text-muted">No active trips yet</p>';
+
+  return '<div class="page">' +
+    '<div class="page-header"><div><h1 class="page-title">Overview</h1><p class="page-subtitle">Your hiking website at a glance</p></div><div class="page-header-date">' + now + '</div></div>' +
+    '<div class="stats-grid">' + stats.map(function(s, i) {
+      return '<button type="button" class="stat-card stat-card-link" onclick="navigateOverviewTarget(\'' + s.page + '\',\'' + (s.status || '') + '\')" style="animation-delay:' + (0.05 * (i + 1)) + 's"><div class="stat-card-top"><div class="stat-icon">' + s.icon + '</div><span class="stat-change ' + s.cls + '">' + esc(s.change) + '</span></div><div class="stat-value">' + esc(s.value) + '</div><div class="stat-label">' + esc(s.label) + '</div></button>';
+    }).join('') + '</div>' +
+    '<div class="overview-grid">' +
+      '<div class="card"><h2 class="card-title">Recent Registrations</h2><div class="activity-list">' + recentHtml + '</div></div>' +
+      '<div class="card"><h2 class="card-title">Active Trips</h2><div class="mini-trip-list">' + tripCards + '</div><div class="form-actions" style="margin-top:12px"><button class="btn btn-sm btn-secondary" onclick="navigateTo(\'trips\')">Manage Trips</button></div></div>' +
     '</div></div>';
 }
 
@@ -1590,8 +1653,8 @@ function renderRegistrations() {
         var badge = registrationBadgeClass(r.status);
         var refId = r.hikeId || (r.id ? r.id.toString().slice(0, 8).toUpperCase() : '-');
         return '<tr class="' + cls + '">' +
-          '<td class="td-registration-id" data-label="Registration ID">' + esc(formatDisplayId(r.id)) + '</td>' +
           '<td class="td-userid" data-label="User ID">' + esc(formatDisplayId(r.userId)) + '</td>' +
+          '<td class="td-username" data-label="Username">' + esc(r.username || '-') + '</td>' +
           '<td class="td-id" data-label="Hike ID">' + esc(refId) + '</td>' +
           '<td class="td-name" data-label="Name">' + esc(r.fullName || '-') + '</td>' +
           '<td data-label="Destination">' + esc(r.destination || '-') + '</td>' +
@@ -1617,7 +1680,7 @@ function renderRegistrations() {
     '<div class="page-header"><div><h1 class="page-title">Registrations</h1><p class="page-subtitle">Match payments using Hike ID, transferring account, amount, and name.</p></div><div class="page-header-actions"><div class="page-header-badges"><span class="badge badge-warning">Pending: ' + pending + '</span><span class="badge badge-info">Review: ' + needsReview + '</span><span class="badge badge-success">Accepted: ' + accepted + '</span><span class="badge badge-danger">Rejected: ' + rejected + '</span></div><div class="refresh-control"><button class="btn btn-sm btn-primary btn-icon-text" onclick="refreshRegistrationsFromSupabase(true)"' + refreshDisabled + ' title="Check for new registrations">' + refreshIcon + ' ' + refreshText + '</button>' + refreshMeta + '</div></div></div>' +
     renderRegFilters() +
     '<div class="admin-note">Never approve only by name, phone, or sender account. Match the Hike ID, transferring account/phone, amount, and customer name before accepting.</div>' +
-    '<div class="table-wrapper"><table class="data-table reg-table"><thead><tr><th>Registration ID</th><th>User ID</th><th>Hike ID</th><th>Name</th><th>Destination</th><th>Package</th><th>Phone</th><th>Pax</th><th>Price</th><th>Payment</th><th>Status</th><th>Date</th><th class="th-actions">Actions</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+    '<div class="table-wrapper"><table class="data-table reg-table"><thead><tr><th>User ID</th><th>Username</th><th>Hike ID</th><th>Name</th><th>Destination</th><th>Package</th><th>Phone</th><th>Pax</th><th>Price</th><th>Payment</th><th>Status</th><th>Date</th><th class="th-actions">Actions</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
     modalHtml +
   '</div>';
 }
@@ -1744,7 +1807,6 @@ function renderRegDetail(id) {
   return '<div class="modal-overlay" onclick="closeViewReg()"><div class="modal modal-xl" onclick="event.stopPropagation()">' +
     '<div class="modal-header"><h2>Registration Details</h2><button class="modal-close" onclick="closeViewReg()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>' +
     '<div class="modal-body"><div class="detail-grid reg-detail-grid">' +
-    '<div class="detail-item"><span class="detail-label">Registration ID</span><span class="detail-value">' + esc(formatDisplayId(r.id)) + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">User ID</span><span class="detail-value">' + esc(formatDisplayId(r.userId)) + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Hike ID</span><span class="detail-value">' + esc(r.hikeId || '-') + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Full Name</span><span class="detail-value">' + esc(r.fullName) + '</span></div>' +

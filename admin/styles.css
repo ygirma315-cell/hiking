@@ -313,6 +313,31 @@ input, select, textarea {
   background: var(--bg);
 }
 
+.header-brand-mini {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 42px;
+  padding: 4px 10px 4px 6px;
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  transition: var(--transition-fast);
+}
+
+.header-brand-mini:hover {
+  background: var(--bg);
+}
+
+.header-brand-mini img {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  object-fit: cover;
+  display: block;
+}
+
 .header-right {
   display: flex;
   align-items: center;
@@ -493,6 +518,19 @@ input, select, textarea {
   animation: fadeInUp 0.4s ease both;
 }
 
+.stat-card-link {
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+}
+
+.stat-card-link:focus-visible,
+.activity-link:focus-visible,
+.mini-trip-link:focus-visible {
+  outline: 3px solid rgba(249, 115, 22, 0.28);
+  outline-offset: 2px;
+}
+
 .stat-card:nth-child(1) { border-left-color: var(--primary); }
 .stat-card:nth-child(2) { border-left-color: var(--success); }
 .stat-card:nth-child(3) { border-left-color: var(--info); }
@@ -641,6 +679,11 @@ input, select, textarea {
   padding: 12px;
   border-radius: var(--radius-sm);
   transition: var(--transition-fast);
+}
+
+.activity-link {
+  width: 100%;
+  text-align: left;
 }
 
 .activity-item:hover {
@@ -865,7 +908,6 @@ input, select, textarea {
   background: var(--primary-very-light);
 }
 
-.reg-table .td-registration-id,
 .reg-table .td-userid {
   font-family: monospace;
   font-weight: 700;
@@ -884,6 +926,12 @@ input, select, textarea {
 .reg-table .td-name {
   font-weight: 600;
   white-space: nowrap;
+}
+
+.reg-table .td-username {
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--text);
 }
 
 .reg-table .td-actions {
@@ -2146,6 +2194,12 @@ select.form-input option {
   border-radius: var(--radius-sm);
   background: var(--bg);
   transition: var(--transition-fast);
+}
+
+.mini-trip-link {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
 }
 
 .mini-trip-card:hover {
