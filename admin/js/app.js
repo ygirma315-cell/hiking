@@ -355,6 +355,17 @@ function formatDisplayId(value) {
   return /^\d+$/.test(raw) ? raw.padStart(3, '0') : raw;
 }
 
+function userIdForRegistration(reg) {
+  if (!reg) return '';
+  if (reg.userId) return reg.userId;
+  var username = String(reg.username || '').toLowerCase();
+  if (!username) return '';
+  var user = (state.data.users || []).find(function(u) {
+    return String(u.username || '').toLowerCase() === username;
+  });
+  return user ? user.id : '';
+}
+
 function formatDate(d) {
   if (!d) return '';
   return new Date(d).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' });
@@ -1651,9 +1662,10 @@ function renderRegistrations() {
     : regs.map(function(r) {
         var cls = 'reg-row-' + r.status;
         var badge = registrationBadgeClass(r.status);
-        var refId = r.hikeId || (r.id ? r.id.toString().slice(0, 8).toUpperCase() : '-');
+        var displayUserId = userIdForRegistration(r);
+        var refId = r.hikeId || (r.id ? 'HIK-' + String(r.id).padStart(6, '0') : '-');
         return '<tr class="' + cls + '">' +
-          '<td class="td-userid" data-label="User ID">' + esc(formatDisplayId(r.userId)) + '</td>' +
+          '<td class="td-userid" data-label="User ID">' + esc(formatDisplayId(displayUserId)) + '</td>' +
           '<td class="td-username" data-label="Username">' + esc(r.username || '-') + '</td>' +
           '<td class="td-id" data-label="Hike ID">' + esc(refId) + '</td>' +
           '<td class="td-name" data-label="Name">' + esc(r.fullName || '-') + '</td>' +
@@ -1797,6 +1809,8 @@ function renderRegDetail(id) {
   var r = state.data.registrations.find(function(x){ return x.id === id });
   if (!r) return '';
   var badge = registrationBadgeClass(r.status);
+  var displayUserId = userIdForRegistration(r);
+  var displayHikeId = r.hikeId || (r.id ? 'HIK-' + String(r.id).padStart(6, '0') : '-');
   var notify = r.status === 'pending'
     ? '\u23F3 Waiting for payment confirmation.'
     : r.status === 'accepted'
@@ -1807,8 +1821,8 @@ function renderRegDetail(id) {
   return '<div class="modal-overlay" onclick="closeViewReg()"><div class="modal modal-xl" onclick="event.stopPropagation()">' +
     '<div class="modal-header"><h2>Registration Details</h2><button class="modal-close" onclick="closeViewReg()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>' +
     '<div class="modal-body"><div class="detail-grid reg-detail-grid">' +
-      '<div class="detail-item"><span class="detail-label">User ID</span><span class="detail-value">' + esc(formatDisplayId(r.userId)) + '</span></div>' +
-      '<div class="detail-item"><span class="detail-label">Hike ID</span><span class="detail-value">' + esc(r.hikeId || '-') + '</span></div>' +
+      '<div class="detail-item"><span class="detail-label">User ID</span><span class="detail-value">' + esc(formatDisplayId(displayUserId)) + '</span></div>' +
+      '<div class="detail-item"><span class="detail-label">Hike ID</span><span class="detail-value">' + esc(displayHikeId) + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Full Name</span><span class="detail-value">' + esc(r.fullName) + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Username</span><span class="detail-value">' + esc(r.username || '-') + '</span></div>' +
       '<div class="detail-item"><span class="detail-label">Phone</span><span class="detail-value">' + esc(r.phone || '-') + '</span></div>' +
