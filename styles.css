@@ -121,9 +121,15 @@ a{color:inherit;text-decoration:none}img{max-width:100%;display:block}
 .hero-overlay{position:absolute;inset:0;background:linear-gradient(90deg,rgba(6,43,22,.94) 0%,rgba(6,43,22,.78) 44%,rgba(6,43,22,.34) 100%),linear-gradient(0deg,rgba(0,0,0,.2),rgba(0,0,0,.12))}
 .hero-content{position:relative;z-index:1;color:white;padding:60px 0;max-width:var(--max-w);text-align:center}
 .hero-content .container{text-align:center}
-.hero h1{font-size:clamp(2rem,5.5vw,3rem);line-height:1.05;letter-spacing:-.04em;max-width:700px;margin:20px auto 16px;font-weight:900}
-.hero h1 .welcome{display:inline-block;font-weight:900;letter-spacing:-.04em;font-size:clamp(1.2rem,3vw,1.8rem);color:rgba(255,255,255,.6)}
-.hero h1 .brand-name{display:inline-block;color:var(--orange)}
+.hero-brand-lockup{display:grid;justify-items:center;gap:10px;margin:10px auto 18px;max-width:720px;text-shadow:0 8px 28px rgba(0,0,0,.42),0 2px 8px rgba(0,0,0,.32)}
+.hero-mountain-mark{position:relative;display:block;width:74px;height:38px}
+.hero-mountain-mark::before,.hero-mountain-mark::after{content:"";position:absolute;bottom:0;border-left:28px solid transparent;border-right:28px solid transparent;border-bottom:34px solid rgba(255,255,255,.94);filter:drop-shadow(0 8px 16px rgba(0,0,0,.28))}
+.hero-mountain-mark::before{left:3px}
+.hero-mountain-mark::after{right:3px;bottom:0;border-left-width:21px;border-right-width:21px;border-bottom-width:25px;opacity:.72}
+.hero h1{display:grid;gap:8px;font-size:4.8rem;line-height:.94;letter-spacing:0;max-width:760px;margin:0 auto;font-weight:950;color:#fff}
+.hero-title-main{display:block;color:#fff}
+.hero-title-sub{position:relative;display:inline-block;justify-self:center;padding-bottom:10px;font-size:1rem;line-height:1.2;letter-spacing:.32em;font-weight:900;color:rgba(255,255,255,.92)}
+.hero-title-sub::after{content:"";position:absolute;left:50%;bottom:0;width:72px;height:3px;border-radius:999px;background:linear-gradient(90deg,#64d278,#0b7d3a);transform:translateX(-50%);box-shadow:0 4px 12px rgba(11,125,58,.35)}
 .hero p{font-size:clamp(1rem,2vw,1.2rem);max-width:620px;margin:0 auto 28px;color:rgba(255,255,255,.88)}
 .hero-actions{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
 .hero-lower-action{display:flex;justify-content:center;margin-top:18px}
@@ -594,7 +600,7 @@ a{color:inherit;text-decoration:none}img{max-width:100%;display:block}
 .hero::after{display:none}
 .hero-overlay{background:linear-gradient(90deg,rgba(6,43,22,.66) 0%,rgba(6,43,22,.42) 44%,rgba(6,43,22,.16) 100%),linear-gradient(0deg,rgba(0,0,0,.14),rgba(0,0,0,.04))}
 .hero-content{padding:68px 0;}
-.hero h1{font-size:clamp(2rem,4.2vw,2.95rem);max-width:680px;}
+.hero h1{font-size:4.8rem;max-width:760px;}
 .hero p{font-size:clamp(.96rem,1.35vw,1.08rem);max-width:590px;}
 .hero-lower-action{margin-top:18px;}
 .hero-promo{margin:12px auto 0 !important;font-size:.88rem !important;letter-spacing:.02em;color:rgba(255,255,255,.82) !important;max-width:680px !important;text-align:center !important;}
@@ -666,6 +672,11 @@ body.modal-open{overflow:hidden;}
 
 @media (max-width:920px){
   .hero{min-height:76vh;}
+  .hero h1{font-size:3.35rem;}
+  .hero-title-sub{font-size:.88rem;letter-spacing:.26em;}
+  .hero-mountain-mark{width:64px;height:32px}
+  .hero-mountain-mark::before{border-left-width:24px;border-right-width:24px;border-bottom-width:30px}
+  .hero-mountain-mark::after{border-left-width:18px;border-right-width:18px;border-bottom-width:22px}
   .destination-body p{min-height:auto;}
   .package-toggle{width:min(100%,360px);}
   .trip-detail-columns{grid-template-columns:1fr;}
@@ -675,7 +686,13 @@ body.modal-open{overflow:hidden;}
   .section-anchor{scroll-margin-top:calc(var(--header-h) + 20px)}
   .hero{min-height:68vh;align-items:center;}
   .hero-content{padding:34px 0;}
-  .hero h1{font-size:1.82rem;line-height:1.1;margin:14px 0 12px;}
+  .hero-brand-lockup{gap:8px;margin:6px auto 14px;}
+  .hero h1{font-size:2.15rem;line-height:.98;margin:0 auto;}
+  .hero-title-sub{font-size:.66rem;letter-spacing:.2em;padding-bottom:8px;}
+  .hero-title-sub::after{width:54px;height:2px;}
+  .hero-mountain-mark{width:50px;height:26px}
+  .hero-mountain-mark::before{border-left-width:19px;border-right-width:19px;border-bottom-width:24px}
+  .hero-mountain-mark::after{border-left-width:14px;border-right-width:14px;border-bottom-width:18px}
   .hero p{font-size:.9rem;line-height:1.55;margin-bottom:16px;}
   .hero-promo{font-size:.76rem !important;line-height:1.5;}
   .contact-section{padding:46px 0 38px}
