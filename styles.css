@@ -45,7 +45,7 @@ a{color:inherit;text-decoration:none}img{max-width:100%;display:block}
 
 /* --- Header --- */
 .site-header{position:sticky;top:0;z-index:50;background:linear-gradient(135deg,rgba(24,104,55,.98) 0%,rgba(11,77,39,.98) 48%,rgba(29,123,63,.96) 100%);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid rgba(191,221,144,.3);box-shadow:0 14px 34px rgba(3,31,16,.18),0 0 28px rgba(144,188,69,.1);isolation:isolate}
-.site-header::before,.site-header::after{content:"";position:absolute;top:-76px;width:330px;height:190px;z-index:0;pointer-events:none;background-image:url("assets/decor/leaf-corner-tl.webp");background-repeat:no-repeat;background-position:top left;background-size:330px 330px;opacity:.76;filter:saturate(1.35) contrast(1.04);mix-blend-mode:soft-light}
+.site-header::before,.site-header::after{content:"";position:absolute;top:-76px;width:330px;height:190px;z-index:0;pointer-events:none;background-image:url("assets/decor/leaf-corner-tl.webp");background-repeat:no-repeat;background-position:top left;background-size:330px 330px;opacity:.76;filter:blur(.8px) saturate(1.35) contrast(1.04);mix-blend-mode:soft-light}
 .site-header::before{left:0;background-image:url("assets/decor/leaf-corner-tl.webp");background-position:top left}
 .site-header::after{right:0;transform:scaleX(-1)}
 .header-inner{position:relative;z-index:1;height:var(--header-h);display:flex;align-items:center;gap:32px}
@@ -712,7 +712,7 @@ a{color:inherit;text-decoration:none}img{max-width:100%;display:block}
 
 /* --- Nature Leaf Decorations --- */
 .nature-page{position:relative;overflow:hidden;isolation:isolate}
-.leaf-deco{--leaf-flip-x:1;--leaf-flip-y:1;position:absolute;pointer-events:none;z-index:0;width:250px;height:250px;background:url("assets/decor/leaf-corner-tl.webp") center/contain no-repeat;opacity:.58;filter:saturate(1.32) contrast(1.04) drop-shadow(0 12px 20px rgba(11,77,36,.12));mix-blend-mode:multiply;transform:scaleX(var(--leaf-flip-x)) scaleY(var(--leaf-flip-y))}
+.leaf-deco{--leaf-flip-x:1;--leaf-flip-y:1;position:absolute;pointer-events:none;z-index:0;width:250px;height:250px;background:url("assets/decor/leaf-corner-tl.webp") center/contain no-repeat;opacity:.58;filter:blur(1.35px) saturate(1.32) contrast(1.04) drop-shadow(0 12px 20px rgba(11,77,36,.12));mix-blend-mode:multiply;transform:scaleX(var(--leaf-flip-x)) scaleY(var(--leaf-flip-y))}
 .leaf-deco-sm{width:210px;height:210px;opacity:.48}
 .leaf-deco-md{width:320px;height:320px;opacity:.52}
 .leaf-deco-lg{width:410px;height:410px;opacity:.5}
@@ -728,7 +728,7 @@ a{color:inherit;text-decoration:none}img{max-width:100%;display:block}
   .site-header::before,.site-header::after{top:-44px;width:170px;height:92px;background-size:170px 170px;opacity:.46}
   .site-header::before{left:0}
   .site-header::after{right:0}
-  .hero .leaf-deco-lg.leaf-deco-tl,.discover-section .leaf-deco-sm.leaf-deco-bl,#hikings .leaf-deco-sm.leaf-deco-tl,.register-section .leaf-deco-sm.leaf-deco-tl,.register-section .leaf-deco-sm.leaf-deco-br,#gallery .leaf-deco-sm.leaf-deco-tr,.about-section .leaf-deco-sm.leaf-deco-side-r,.contact-section .leaf-deco-md.leaf-deco-br{display:block;width:108px;height:108px;filter:saturate(1.2) contrast(1.02);opacity:.34}
+  .hero .leaf-deco-lg.leaf-deco-tl,.discover-section .leaf-deco-sm.leaf-deco-bl,#hikings .leaf-deco-sm.leaf-deco-tl,.register-section .leaf-deco-sm.leaf-deco-tl,.register-section .leaf-deco-sm.leaf-deco-br,#gallery .leaf-deco-sm.leaf-deco-tr,.about-section .leaf-deco-sm.leaf-deco-side-r,.about-faq-section .leaf-deco-sm.leaf-deco-tl,.contact-section .leaf-deco-md.leaf-deco-br{display:block;width:108px;height:108px;filter:blur(1.15px) saturate(1.2) contrast(1.02);opacity:.34}
   .register-section .leaf-deco-sm.leaf-deco-tl{top:18px;left:-42px}
   .register-section .leaf-deco-sm.leaf-deco-br{right:-38px;bottom:18px}
   .about-section .leaf-deco-sm.leaf-deco-side-r{width:92px;height:210px;right:-52px}

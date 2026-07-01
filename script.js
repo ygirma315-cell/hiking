@@ -1345,12 +1345,11 @@ function renderPackageCards() {
   var fd = sharedPkgData ? sharedPkgData.foreignerDay : null;
   var fo = sharedPkgData ? sharedPkgData.foreignerOvernight : null;
 
-  function card(pkg, features, featured) {
+  function card(pkg, features, featured, isDayTrip) {
     if (!pkg || !pkg.name) return "";
     var price = formatPackagePrice(pkg);
-    var isDay = pkg.name && pkg.name.toLowerCase().indexOf('day') !== -1;
-    var typeLabel = isDay ? 'Day Trip' : 'Overnight';
-    var typeEmoji = isDay ? '☀️' : '🌙';
+    var typeLabel = isDayTrip ? 'Day Trip' : 'Overnight';
+    var typeEmoji = isDayTrip ? '\u2600\uFE0F' : '\uD83C\uDF19';
     var list = normalizePackageFeatures(features).map(function(item) {
       return '<li><span class="pkg-check"></span><span class="pkg-feat-text">' + esc(item) + '</span><span class="pkg-feat-emoji">' + includedEmoji(item) + '</span></li>';
     }).join("");
@@ -1370,8 +1369,8 @@ function renderPackageCards() {
 
   pricingGrid.className = "pricing-grid " + activePackageView;
   pricingGrid.innerHTML = activePackageView === "native"
-    ? card(nd, nativeFeatures, true) + card(no, nativeOvernightFeatures, false)
-    : card(fd, foreignerFeatures, true) + card(fo, foreignerOvernightFeatures, false);
+    ? card(nd, nativeFeatures, true, true) + card(no, nativeOvernightFeatures, false, false)
+    : card(fd, foreignerFeatures, true, true) + card(fo, foreignerOvernightFeatures, false, false);
   pricingGrid.scrollLeft = 0;
 
   if (!pricingGrid.innerHTML) {
