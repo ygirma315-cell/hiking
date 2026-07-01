@@ -1335,7 +1335,7 @@ function renderDestinations() {
 
 function updateSelectedDestination() {
   if (!selectedDestination && hikingDestinations[0]) selectedDestination = hikingDestinations[0].name;
-  selectedDestinationLabel.textContent = selectedDestination || "No destination selected";
+  if (selectedDestinationLabel) selectedDestinationLabel.textContent = selectedDestination || "No destination selected";
   if (destinationSelect) destinationSelect.value = selectedDestination;
 }
 
@@ -1372,6 +1372,7 @@ function renderPackageCards() {
   pricingGrid.innerHTML = activePackageView === "native"
     ? card(nd, nativeFeatures, true) + card(no, nativeOvernightFeatures, false)
     : card(fd, foreignerFeatures, true) + card(fo, foreignerOvernightFeatures, false);
+  pricingGrid.scrollLeft = 0;
 
   if (!pricingGrid.innerHTML) {
     pricingGrid.className = "pricing-grid";
