@@ -45,7 +45,7 @@ a{color:inherit;text-decoration:none}img{max-width:100%;display:block}
 
 /* --- Header --- */
 .site-header{position:sticky;top:0;z-index:50;background:linear-gradient(135deg,rgba(24,104,55,.98) 0%,rgba(11,77,39,.98) 48%,rgba(29,123,63,.96) 100%);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid rgba(191,221,144,.3);box-shadow:0 14px 34px rgba(3,31,16,.18),0 0 28px rgba(144,188,69,.1);isolation:isolate;overflow:hidden}
-.site-header::before,.site-header::after{content:"";position:absolute;top:-76px;width:330px;height:190px;z-index:0;pointer-events:none;background-image:url("assets/decor/leaf-corner-tl.png");background-repeat:no-repeat;background-position:top left;background-size:330px 330px;opacity:.58;filter:blur(.2px);mix-blend-mode:soft-light}
+.site-header::before,.site-header::after{content:"";position:absolute;top:-76px;width:330px;height:190px;z-index:0;pointer-events:none;background-image:url("assets/decor/leaf-corner-tl.png");background-repeat:no-repeat;background-position:top left;background-size:330px 330px;opacity:.76;filter:saturate(1.35) contrast(1.04);mix-blend-mode:soft-light}
 .site-header::before{left:-70px;background-image:url("assets/decor/leaf-corner-tl.png");background-position:top left}
 .site-header::after{right:-70px;transform:scaleX(-1)}
 .header-inner{position:relative;z-index:1;height:var(--header-h);display:flex;align-items:center;gap:32px}
@@ -712,24 +712,24 @@ a{color:inherit;text-decoration:none}img{max-width:100%;display:block}
 
 /* --- Nature Leaf Decorations --- */
 .nature-page{position:relative;overflow:hidden;isolation:isolate}
-.leaf-deco{--leaf-flip-x:1;--leaf-flip-y:1;position:absolute;pointer-events:none;z-index:0;width:250px;height:250px;background:url("assets/decor/leaf-corner-tl.png") center/contain no-repeat;opacity:.42;filter:blur(.35px);mix-blend-mode:multiply;transform:scaleX(var(--leaf-flip-x)) scaleY(var(--leaf-flip-y))}
-.leaf-deco-sm{width:190px;height:190px;opacity:.36}
-.leaf-deco-md{width:290px;height:290px;opacity:.38}
-.leaf-deco-lg{width:380px;height:380px;opacity:.38}
-.leaf-deco-tl{top:-92px;left:-92px}
-.leaf-deco-tr{top:-92px;right:-92px;--leaf-flip-x:-1}
-.leaf-deco-bl{bottom:-106px;left:-96px;--leaf-flip-y:-1}
-.leaf-deco-br{bottom:-106px;right:-96px;--leaf-flip-x:-1;--leaf-flip-y:-1}
-.leaf-deco-side-r{top:50%;right:-22px;width:210px;height:520px;background-image:url("assets/decor/leaf-side-r.png");transform:translateY(-50%) scaleX(var(--leaf-flip-x));opacity:.36}
-.leaf-deco-side-l{top:48%;left:-22px;width:210px;height:520px;background-image:url("assets/decor/leaf-side-r.png");--leaf-flip-x:-1;transform:translateY(-50%) scaleX(var(--leaf-flip-x));opacity:.36}
+.leaf-deco{--leaf-flip-x:1;--leaf-flip-y:1;position:absolute;pointer-events:none;z-index:0;width:250px;height:250px;background:url("assets/decor/leaf-corner-tl.png") center/contain no-repeat;opacity:.58;filter:saturate(1.32) contrast(1.04) drop-shadow(0 12px 20px rgba(11,77,36,.12));mix-blend-mode:multiply;transform:scaleX(var(--leaf-flip-x)) scaleY(var(--leaf-flip-y))}
+.leaf-deco-sm{width:210px;height:210px;opacity:.48}
+.leaf-deco-md{width:320px;height:320px;opacity:.52}
+.leaf-deco-lg{width:410px;height:410px;opacity:.5}
+.leaf-deco-tl{top:-98px;left:-86px}
+.leaf-deco-tr{top:-98px;right:-86px;--leaf-flip-x:-1}
+.leaf-deco-bl{bottom:-108px;left:-88px;--leaf-flip-y:-1}
+.leaf-deco-br{bottom:-108px;right:-88px;--leaf-flip-x:-1;--leaf-flip-y:-1}
+.leaf-deco-side-r{top:0;bottom:0;right:-16px;width:250px;height:auto;background-image:url("assets/decor/leaf-side-r.png");background-size:250px auto;background-repeat:repeat-y;background-position:right top;transform:none;opacity:.58}
+.leaf-deco-side-l{top:0;bottom:0;left:-16px;width:250px;height:auto;background-image:url("assets/decor/leaf-side-r.png");background-size:250px auto;background-repeat:repeat-y;background-position:right top;--leaf-flip-x:-1;transform:scaleX(-1);opacity:.58}
 .hero .container,.discover-section .container,.section-warm .container,.about-section .container,.contact-section .container,.about-faq-section .container,.about-grid,.discover-grid{position:relative;z-index:1}
 @media(max-width:560px){
   .leaf-deco{display:none}
-  .site-header::before,.site-header::after{top:-44px;width:170px;height:92px;background-size:170px 170px;opacity:.34}
+  .site-header::before,.site-header::after{top:-44px;width:170px;height:92px;background-size:170px 170px;opacity:.46}
   .site-header::before{left:-54px}
   .site-header::after{right:-54px}
-  .hero .leaf-deco-lg.leaf-deco-tl,.discover-section .leaf-deco-sm.leaf-deco-bl,#hikings .leaf-deco-sm.leaf-deco-tl,#gallery .leaf-deco-sm.leaf-deco-tr,.about-section .leaf-deco-sm.leaf-deco-side-r,.contact-section .leaf-deco-md.leaf-deco-br{display:block;width:102px;height:102px;filter:blur(.7px);opacity:.24}
-  .about-section .leaf-deco-sm.leaf-deco-side-r{width:84px;height:190px;right:-48px}
+  .hero .leaf-deco-lg.leaf-deco-tl,.discover-section .leaf-deco-sm.leaf-deco-bl,#hikings .leaf-deco-sm.leaf-deco-tl,#gallery .leaf-deco-sm.leaf-deco-tr,.about-section .leaf-deco-sm.leaf-deco-side-r,.contact-section .leaf-deco-md.leaf-deco-br{display:block;width:108px;height:108px;filter:saturate(1.2) contrast(1.02);opacity:.34}
+  .about-section .leaf-deco-sm.leaf-deco-side-r{width:92px;height:210px;right:-52px}
 }
 
 .register-section{padding:50px 0 60px;}
