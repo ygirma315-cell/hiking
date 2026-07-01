@@ -37,6 +37,12 @@ const supabaseClient = window.ereftSupabaseClient ? window.ereftSupabaseClient()
 const SITE_SESSION_KEY = "ereft_site_session";
 const GOOGLE_AUTH_ACTION_KEY = "ereft_google_pending_action";
 const GOOGLE_AUTH_LOGOUT_KEY = "ereft_google_logged_out";
+const CARD_CALENDAR_ICON = '<svg class="card-meta-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h2v3h6V2h2v3h3a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h3V2Zm13 8H4v10h16V10ZM4 8h16V7H4v1Z"/></svg>';
+const CARD_PEOPLE_ICON = '<svg class="card-meta-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 11a3 3 0 1 1 .01 0H8Zm8 0a3 3 0 1 1 .01 0H16ZM4 20v-1.2C4 16.7 5.7 15 7.8 15h.4c2.1 0 3.8 1.7 3.8 3.8V20H4Zm8 0v-1.3c0-1.3-.4-2.5-1.2-3.5.7-.2 1.4-.2 2.2-.2h.2c2.7 0 4.8 2.1 4.8 4.8V20h-6Z"/></svg>';
+const CARD_CLOCK_ICON = '<svg class="card-meta-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22a10 10 0 1 1 0-20 10 10 0 0 1 0 20Zm0-2a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm1-8.4 3.1 3.1-1.4 1.4L11 12.4V6h2v5.6Z"/></svg>';
+const CARD_PIN_ICON = '<svg class="card-meta-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22c-4.4-3.6-7-7.2-7-10.3A7 7 0 0 1 19 10.7C19 13.8 16.4 17.4 12 22Zm0-2.7c3.1-2.8 5-5.5 5-7.6a5 5 0 0 0-10 0c0 2.1 1.9 4.8 5 7.6Zm0-5.3a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5Z"/></svg>';
+const CARD_EYE_ICON = '<svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5c5.2 0 9.3 5 10 6.1a1.6 1.6 0 0 1 0 1.8C21.3 14 17.2 19 12 19S2.7 14 2 12.9a1.6 1.6 0 0 1 0-1.8C2.7 10 6.8 5 12 5Zm0 2C7.9 7 4.6 10.7 3.9 12c.7 1.3 4 5 8.1 5s7.4-3.7 8.1-5C19.4 10.7 16.1 7 12 7Zm0 2.2a2.8 2.8 0 1 1 0 5.6 2.8 2.8 0 0 1 0-5.6Z"/></svg>';
+const CARD_PACKAGE_ICON = '<svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6V5a4 4 0 0 1 8 0v1h2.2A2.8 2.8 0 0 1 21 8.8v8.4a2.8 2.8 0 0 1-2.8 2.8H5.8A2.8 2.8 0 0 1 3 17.2V8.8A2.8 2.8 0 0 1 5.8 6H8Zm2 0h4V5a2 2 0 0 0-4 0v1ZM5.8 8a.8.8 0 0 0-.8.8v8.4c0 .4.4.8.8.8h12.4c.4 0 .8-.4.8-.8V8.8a.8.8 0 0 0-.8-.8H16v2h-2V8h-4v2H8V8H5.8Z"/></svg>';
 var currentUser = null;
 var currentProfile = null;
 var currentSessionToken = null;
@@ -619,7 +625,7 @@ async function signInUser(form) {
       throw new Error((result.data && result.data.error) || "Username or password is incorrect.");
     }
     if (!saveSiteSession(result.data)) {
-      throw new Error("Login setup is incomplete. Run the latest Supabase SQL setup.");
+      throw new Error("Login setup is incomplete. Please contact Ereft Hiking.");
     }
     form.reset();
     showSuccessToast("Welcome back!");
@@ -672,7 +678,7 @@ async function signUpUser(form) {
       throw new Error((result.data && result.data.error) || "Could not create account.");
     }
     if (!saveSiteSession(result.data)) {
-      throw new Error("Signup setup is incomplete. Run the latest Supabase SQL setup.");
+      throw new Error("Sign up setup is incomplete. Please contact Ereft Hiking.");
     }
 
     form.reset();
@@ -701,7 +707,7 @@ function getGoogleRedirectUrl() {
 
 async function startGoogleAuth(mode) {
   if (!supabaseClient || !supabaseClient.auth || !supabaseClient.auth.signInWithOAuth) {
-    showSiteNotice("Google login needs Supabase Auth to be enabled.", "error");
+    showSiteNotice("Google login is not fully set up yet. Please contact Ereft Hiking.", "error");
     return;
   }
 
@@ -723,7 +729,7 @@ async function startGoogleAuth(mode) {
     if (response.error) throw response.error;
   } catch (error) {
     console.error("Google auth failed:", error);
-    showSiteNotice(error.message || "Google login could not start. Check your Supabase Google provider setup.", "error");
+    showSiteNotice(error.message || "Google login could not start. Please try again later.", "error");
     if (button) {
       button.disabled = false;
       button.classList.remove("is-loading");
@@ -757,7 +763,7 @@ async function completeGoogleAuth() {
       throw new Error((result.data && result.data.error) || "Google login could not finish.");
     }
     if (!saveSiteSession(result.data)) {
-      throw new Error("Google login setup is incomplete. Run the latest Supabase SQL update.");
+      throw new Error("Google login setup is incomplete. Please contact Ereft Hiking.");
     }
 
     var action = sessionStorage.getItem(GOOGLE_AUTH_ACTION_KEY) || pendingAuthAction;
@@ -772,7 +778,7 @@ async function completeGoogleAuth() {
     console.error("Google login completion failed:", error);
     var msg = error.message || "Google login could not finish.";
     if (msg.toLowerCase().includes("function") || msg.toLowerCase().includes("user_google_login")) {
-      msg = "Google login needs the latest Supabase SQL update.";
+      msg = "Google login setup is incomplete. Please contact Ereft Hiking.";
     }
     showSiteNotice(msg, "error");
   }
@@ -1263,6 +1269,23 @@ function reduceLocalTripSeats(destination, count) {
   });
 }
 
+function tripDateLabel(trip) {
+  return trip.date || "Coming soon";
+}
+
+function tripDurationLabel(trip) {
+  return trip.duration || "Trip";
+}
+
+function tripLocationLabel(trip) {
+  return trip.location || trip.place || trip.category || trip.start || "Ethiopia";
+}
+
+function tripSpotsLabel(trip) {
+  var spots = Number(trip.spotsLeft || 0);
+  return spots === 1 ? "1 Left" : spots + " Left";
+}
+
 function renderDestinations() {
   if (!hikingDestinations.length) {
     destinationGrid.innerHTML = '<div class="empty-state">Trips are not available right now. Please check again soon.</div>';
@@ -1273,18 +1296,24 @@ function renderDestinations() {
     <article class="destination-card fade-up">
       <div class="destination-image">
         ${trip.image ? `<img src="${esc(trip.image)}" alt="${esc(trip.name)} trip photo" loading="lazy" decoding="async">` : ""}
-        <span class="duration-badge">${esc(trip.date || trip.duration || "Trip")}</span>
+        <span class="duration-badge">${esc(tripDateLabel(trip))}</span>
       </div>
       <div class="destination-body">
-        <h3>${esc(trip.name)}</h3>
-        <p>${esc(trip.description || "")}</p>
-        <div class="card-info-row">
-          <span class="card-date"><span class="emo-icon">📅</span> ${esc(trip.date || "")}</span>
-          <span class="card-spots"><span class="emo-icon">👥</span> ${Number(trip.spotsLeft || 0)} left</span>
+        <div class="destination-content-row">
+          <div class="destination-main">
+            <h3>${esc(trip.name)}</h3>
+            <span class="destination-location">${CARD_PIN_ICON}${esc(tripLocationLabel(trip))}</span>
+            <p>${esc(trip.description || "")}</p>
+          </div>
+          <div class="trip-meta-card" aria-label="Trip quick details">
+            <span class="trip-meta-item trip-meta-date">${CARD_CALENDAR_ICON}<span>${esc(tripDateLabel(trip))}</span></span>
+            <span class="trip-meta-item trip-meta-duration">${CARD_CLOCK_ICON}<span>${esc(tripDurationLabel(trip))}</span></span>
+            <span class="trip-meta-item trip-meta-seats">${CARD_PEOPLE_ICON}<span>${esc(tripSpotsLabel(trip))}</span></span>
+          </div>
         </div>
         <div class="card-actions">
-          <button class="card-details" data-destination="${esc(trip.name)}">View Details</button>
-          <button class="card-register" data-destination="${esc(trip.name)}">Packages</button>
+          <button class="card-details" data-destination="${esc(trip.name)}">${CARD_EYE_ICON}View Details</button>
+          <button class="card-register" data-destination="${esc(trip.name)}">${CARD_PACKAGE_ICON}Packages</button>
         </div>
       </div>
     </article>
