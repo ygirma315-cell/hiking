@@ -1348,13 +1348,23 @@ function renderPackageCards() {
   function card(pkg, features, featured) {
     if (!pkg || !pkg.name) return "";
     var price = formatPackagePrice(pkg);
-    var list = normalizePackageFeatures(features).map(function(item) { return '<li>' + esc(item) + '</li>'; }).join("");
+    var isDay = pkg.name && pkg.name.toLowerCase().indexOf('day') !== -1;
+    var typeLabel = isDay ? 'Day Trip' : 'Overnight';
+    var typeEmoji = isDay ? '☀️' : '🌙';
+    var list = normalizePackageFeatures(features).map(function(item) {
+      return '<li><span class="pkg-check"></span><span class="pkg-feat-text">' + esc(item) + '</span><span class="pkg-feat-emoji">' + includedEmoji(item) + '</span></li>';
+    }).join("");
     return '<article class="pricing-card' + (featured ? ' featured' : '') + '">' +
-      '<h3>' + esc(pkg.name) + '</h3>' +
-      (pkg.sub ? '<p>' + esc(pkg.sub) + '</p>' : '') +
-      (price ? '<div class="price">' + esc(price) + ' <small>/ person</small></div>' : '') +
-      '<ul class="check-list compact">' + list + '</ul>' +
-      '<button class="btn btn-orange full choose-package" data-package="' + esc(pkg.name) + '">Choose Package</button>' +
+      '<div class="pkg-top">' +
+        '<h3>' + esc(pkg.name) + '</h3>' +
+        '<span class="pkg-badge">' + typeEmoji + ' ' + typeLabel + '</span>' +
+      '</div>' +
+      (pkg.sub ? '<p class="pkg-sub">' + esc(pkg.sub) + '</p>' : '') +
+      '<div class="pkg-price-row">' +
+        (price ? '<span class="pkg-price-icon">💵</span><span class="price">' + esc(price) + '</span> <span class="pkg-person">/ person</span>' : '') +
+      '</div>' +
+      '<ul class="pkg-features">' + list + '</ul>' +
+      '<button class="btn btn-orange full choose-package" data-package="' + esc(pkg.name) + '">🎒 Choose Package</button>' +
     '</article>';
   }
 
