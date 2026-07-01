@@ -35,6 +35,7 @@ const senderAccountLabel = document.getElementById("senderAccountLabel");
 const senderAccountHelp = document.getElementById("senderAccountHelp");
 const supabaseClient = window.ereftSupabaseClient ? window.ereftSupabaseClient() : null;
 const SITE_SESSION_KEY = "ereft_site_session";
+const GOOGLE_AUTH_ACTION_KEY = "ereft_google_pending_action";
 var currentUser = null;
 var currentProfile = null;
 var currentSessionToken = null;
@@ -667,12 +668,88 @@ async function signUpUser(form) {
   }
 }
 
+function getGoogleRedirectUrl() {
+  return window.location.href.split("#")[0].split("?")[0];
+}
+
+async function startGoogleAuth(mode) {
+  if (!supabaseClient || !supabaseClient.auth || !supabaseClient.auth.signInWithOAuth) {
+    showSiteNotice("Google login needs Supabase Auth to be enabled.", "error");
+    return;
+  }
+
+  var button = document.querySelector('[data-google-auth="' + mode + '"]');
+  if (button) {
+    button.disabled = true;
+    button.classList.add("is-loading");
+  }
+
+  try {
+    sessionStorage.setItem(GOOGLE_AUTH_ACTION_KEY, pendingAuthAction || "");
+    var response = await supabaseClient.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: getGoogleRedirectUrl()
+      }
+    });
+    if (response.error) throw response.error;
+  } catch (error) {
+    console.error("Google auth failed:", error);
+    showSiteNotice(error.message || "Google login could not start. Check your Supabase Google provider setup.", "error");
+    if (button) {
+      button.disabled = false;
+      button.classList.remove("is-loading");
+    }
+  }
+}
+
+async function completeGoogleAuth() {
+  if (!supabaseClient || !supabaseClient.auth || currentSessionToken) return;
+
+  try {
+    var sessionResult = await supabaseClient.auth.getSession();
+    var session = sessionResult && sessionResult.data && sessionResult.data.session;
+    var googleUser = session && session.user;
+    if (!googleUser) return;
+
+    var metadata = googleUser.user_metadata || {};
+    var result = await supabaseClient.rpc("user_google_login", {
+      p_google_id:googleUser.id,
+      p_email:googleUser.email || "",
+      p_name:metadata.full_name || metadata.name || ""
+    });
+    if (result.error) throw result.error;
+    if (!result.data || !result.data.success) {
+      throw new Error((result.data && result.data.error) || "Google login could not finish.");
+    }
+    if (!saveSiteSession(result.data)) {
+      throw new Error("Google login setup is incomplete. Run the latest Supabase SQL update.");
+    }
+
+    var action = sessionStorage.getItem(GOOGLE_AUTH_ACTION_KEY) || pendingAuthAction;
+    sessionStorage.removeItem(GOOGLE_AUTH_ACTION_KEY);
+    showSuccessToast("Signed in with Google!");
+    await handleSignedIn(action);
+    pendingAuthAction = null;
+  } catch (error) {
+    console.error("Google login completion failed:", error);
+    var msg = error.message || "Google login could not finish.";
+    if (msg.toLowerCase().includes("function") || msg.toLowerCase().includes("user_google_login")) {
+      msg = "Google login needs the latest Supabase SQL update.";
+    }
+    showSiteNotice(msg, "error");
+  }
+}
+
 async function signOutUser() {
   stopDashboardLiveRefresh();
   userBookings = [];
   var token = currentSessionToken;
   if (supabaseClient && token) {
     supabaseClient.rpc("user_logout", { p_session_token:token }).catch(function() {});
+  }
+  if (supabaseClient && supabaseClient.auth) {
+    supabaseClient.auth.signOut().catch(function() {});
   }
   clearSiteSession();
   updateAuthUI();
@@ -1470,6 +1547,9 @@ function setupFormsAndModals() {
   document.querySelectorAll(".auth-tab").forEach(function(tab) {
     tab.addEventListener("click", function() { switchAuthTab(tab.dataset.authTab); });
   });
+  document.querySelectorAll("[data-google-auth]").forEach(function(button) {
+    button.addEventListener("click", function() { startGoogleAuth(button.dataset.googleAuth); });
+  });
   document.getElementById("signinForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     await signInUser(e.currentTarget);
@@ -1752,6 +1832,7 @@ async function initSite() {
   try {
     await loadSharedData();
     await loadCurrentUser();
+    await completeGoogleAuth();
   } catch(e) {
     console.warn('Website content load issue:', e);
     showSiteNotice('Some website content could not load. Please refresh the page.', 'error');
