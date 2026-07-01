@@ -1426,6 +1426,43 @@ function renderGallery() {
   });
 }
 
+function expectEmoji(text) {
+  var t = (text || "").toLowerCase();
+  if (t.includes("air") || t.includes("fresh") || t.includes("breeze") || t.includes("አየር")) return "💨";
+  if (t.includes("mountain") || t.includes("lake") || t.includes("view") || t.includes("scenery") || t.includes("landscape") || t.includes("ተራራ") || t.includes("ሐይቅ") || t.includes("እይታ")) return "🏞️";
+  if (t.includes("nature") || t.includes("trail") || t.includes("forest") || t.includes("tree") || t.includes("plant") || t.includes("ተፈጥሮ") || t.includes("ጫካ") || t.includes("ዛፍ")) return "🌿";
+  if (t.includes("coffee") || t.includes("ceremony") || t.includes("ቡና") || t.includes("ፍዩል")) return "☕";
+  if (t.includes("photo") || t.includes("camera") || t.includes("picture") || t.includes("instagram") || t.includes("ፎቶ") || t.includes("ስዕል")) return "📸";
+  if (t.includes("group") || t.includes("fun") || t.includes("friend") || t.includes("community") || t.includes("team") || t.includes("ቡድን") || t.includes("ወዳጅ")) return "👥";
+  if (t.includes("hike") || t.includes("walk") || t.includes("trek") || t.includes("climb") || t.includes("trail") || t.includes("እግር") || t.includes("መራመድ")) return "🚶";
+  if (t.includes("culture") || t.includes("local") || t.includes("tradition") || t.includes("heritage") || t.includes("ባህል") || t.includes("ልማድ")) return "🎭";
+  if (t.includes("river") || t.includes("waterfall") || t.includes("stream") || t.includes("pond") || t.includes("ወንዝ") || t.includes("ፏፏቴ")) return "🌊";
+  if (t.includes("sunset") || t.includes("sunrise") || t.includes("dawn") || t.includes("dusk") || t.includes("ፀሐይ")) return "🌅";
+  if (t.includes("bird") || t.includes("animal") || t.includes("wildlife") || t.includes("monkey") || t.includes("አውሬ") || t.includes("ወፍ")) return "🦅";
+  if (t.includes("camp") || t.includes("outdoor") || t.includes("camping") || t.includes("ካምፕ")) return "⛺";
+  if (t.includes("food") || t.includes("meal") || t.includes("lunch") || t.includes("breakfast") || t.includes("dinner") || t.includes("eat") || t.includes("ምግብ") || t.includes("ቁርስ") || t.includes("ምሳ")) return "🍽️";
+  if (t.includes("water") || t.includes("drink") || t.includes("hydrat") || t.includes("ውሃ") || t.includes("መጠጥ")) return "💧";
+  if (t.includes("fire") || t.includes("bbq") || t.includes("grill") || t.includes("እሳት") || t.includes("ጥብስ")) return "🔥";
+  if (t.includes("swim") || t.includes("swimming") || t.includes("pool") || t.includes("መዋኘት")) return "🏊";
+  if (t.includes("game") || t.includes("play") || t.includes("activity") || t.includes("ጨዋታ") || t.includes("መጫወት")) return "🎯";
+  if (t.includes("rest") || t.includes("relax") || t.includes("break") || t.includes("ማረፍ") || t.includes("ዕረፍት")) return "😌";
+  return "🌄";
+}
+
+function includedEmoji(text) {
+  var t = (text || "").toLowerCase();
+  if (t.includes("ትራንስ") || t.includes("ኮስተር") || t.includes("ባስ") || t.includes("transport") || t.includes("bus") || t.includes("coaster") || t.includes("transp")) return "🚌";
+  if (t.includes("አስጎብ") || t.includes("ጀት") || t.includes("ጠባቂ") || t.includes("guide") || t.includes("leader") || t.includes("escort") || t.includes("ranger") || t.includes("security")) return "🧑‍💼";
+  if (t.includes("ቁርስ") || t.includes("ምሳ") || t.includes("እራት") || t.includes("ምግብ") || t.includes("ድንሽ") || t.includes("food") || t.includes("meal") || t.includes("lunch") || t.includes("breakfast") || t.includes("dinner") || t.includes("eat") || t.includes("potato")) return "🍽️";
+  if (t.includes("ውሃ") || t.includes("ሻይ") || t.includes("ቡና") || t.includes("water") || t.includes("drink") || t.includes("beverage")) return "💧";
+  if (t.includes("ካምፕ") || t.includes("ምሽት") || t.includes("ድንኳን") || t.includes("መሳርያ") || t.includes("ቡርድ") || t.includes("ልብስ") || t.includes("camp") || t.includes("tent") || t.includes("camping") || t.includes("sleep") || t.includes("overnight") || t.includes("equipment") || t.includes("gear") || t.includes("blanket") || t.includes("clothes")) return "⛺";
+  if (t.includes("ፓርክ") || t.includes("ዋጋ") || t.includes("መግቢያ") || t.includes("ቲኬት") || t.includes("ticket") || t.includes("entrance") || t.includes("entry") || t.includes("fee") || t.includes("park")) return "📋";
+  if (t.includes("ፎቶ") || t.includes("photo") || t.includes("camera") || t.includes("picture")) return "📸";
+  if (t.includes("ጨዋታ") || t.includes("ሽልማት") || t.includes("ፈን") || t.includes("እሳት") || t.includes("ትብስ") || t.includes("ጥብስ") || t.includes("game") || t.includes("prize") || t.includes("award") || t.includes("fun") || t.includes("play") || t.includes("group") || t.includes("team") || t.includes("fire") || t.includes("bbq") || t.includes("grill")) return "👥";
+  if (t.includes("ደስ") || t.includes("enjoy")) return "🎉";
+  return "✅";
+}
+
 function openTripDetails(name) {
   const trip = findTrip(name);
   if (!trip) {
@@ -1436,11 +1473,18 @@ function openTripDetails(name) {
   document.getElementById("tripDetailImage").alt = `${trip.name} hiking image`;
   document.getElementById("tripDetailTitle").textContent = trip.name;
   document.getElementById("tripDetailDescription").textContent = trip.description;
-  document.getElementById("tripDetailDuration").textContent = trip.duration;
+  document.getElementById("tripDetailDuration").textContent = trip.duration || "Trip";
+  document.getElementById("tripDetailDate").textContent = trip.date || "Coming soon";
   document.getElementById("tripDetailStart").textContent = trip.start || "Not specified";
-  document.getElementById("tripExpectList").innerHTML = (trip.expect || []).map(item => `<li>${esc(item)}</li>`).join("");
+  var spots = Number(trip.spotsLeft || 0);
+  document.getElementById("tripDetailSpots").textContent = spots === 1 ? "1 Left" : spots + " Left";
+  document.getElementById("tripExpectList").innerHTML = (trip.expect || []).map(function(item) {
+    return '<li><span>' + esc(item) + '</span><span class="expect-emoji">' + expectEmoji(item) + '</span></li>';
+  }).join("");
   const features = activePackageView === "native" ? nativeFeatures : foreignerFeatures;
-  document.getElementById("tripIncludedList").innerHTML = normalizePackageFeatures(features).map(item => `<li>${esc(item)}</li>`).join("");
+  document.getElementById("tripIncludedList").innerHTML = normalizePackageFeatures(features).map(function(item) {
+    return '<li><span class="incl-check"></span><span class="incl-text">' + esc(item) + '</span><span class="incl-emoji">' + includedEmoji(item) + '</span></li>';
+  }).join("");
   selectedDestination = trip.name;
   updateSelectedDestination();
   openModal("tripDetailsModal");

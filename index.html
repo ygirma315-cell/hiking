@@ -422,27 +422,76 @@
   <div class="modal" id="tripDetailsModal" aria-hidden="true">
     <div class="modal-panel trip-panel">
       <button class="modal-close" data-close-modal aria-label="Close">&times;</button>
-      <div class="trip-detail-image"><img id="tripDetailImage" src="" alt="Trip image"></div>
-      <div class="trip-detail-content">
-        <span class="eyebrow">Hiking details</span>
-        <h3 id="tripDetailTitle">Trip Details</h3>
-        <p id="tripDetailDescription" class="modal-subtitle"></p>
-        <div class="trip-detail-meta">
-          <div class="meta-item"><strong>Duration</strong> <em id="tripDetailDuration"></em></div>
-          <div class="meta-item"><strong>Meeting point</strong> <em id="tripDetailStart"></em></div>
-          <div class="meta-item"><strong>መገናኛ 12:00 · መነሻ 12:30</strong> <svg class="meta-icon" viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/></svg></div>
-        </div>
-        <div class="trip-detail-columns">
-          <div>
+      <div class="trip-detail-layout">
+        <div class="trip-detail-left">
+          <div class="trip-detail-image-wrap">
+            <img id="tripDetailImage" src="" alt="Trip image">
+          </div>
+          <div class="trip-expect-card">
             <h4>What to expect</h4>
-            <ul class="check-list compact" id="tripExpectList"></ul>
-          </div>
-          <div>
-            <h4>Included</h4>
-            <ul class="check-list compact" id="tripIncludedList"></ul>
+            <ul id="tripExpectList" class="trip-expect-list"></ul>
           </div>
         </div>
-        <button class="btn btn-orange full" id="tripRegisterBtn">Register for this trip</button>
+        <div class="trip-detail-right">
+          <span class="trip-detail-badge">HIKING DETAILS</span>
+          <h3 id="tripDetailTitle">Trip Details</h3>
+          <p id="tripDetailDescription" class="trip-detail-desc"></p>
+
+          <div class="trip-info-grid">
+            <div class="trip-info-item">
+              <span class="trip-info-icon trip-info-icon-date">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </span>
+              <div>
+                <span class="trip-info-label">Duration</span>
+                <strong class="trip-info-value" id="tripDetailDuration"></strong>
+              </div>
+            </div>
+            <div class="trip-info-item">
+              <span class="trip-info-icon trip-info-icon-date">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </span>
+              <div>
+                <span class="trip-info-label">Date</span>
+                <strong class="trip-info-value" id="tripDetailDate"></strong>
+              </div>
+            </div>
+            <div class="trip-info-item">
+              <span class="trip-info-icon trip-info-icon-pin">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              </span>
+              <div>
+                <span class="trip-info-label">Meeting point</span>
+                <strong class="trip-info-value" id="tripDetailStart"></strong>
+              </div>
+            </div>
+            <div class="trip-info-item">
+              <span class="trip-info-icon trip-info-icon-clock">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </span>
+              <div>
+                <span class="trip-info-label">Time</span>
+                <strong class="trip-info-value" id="tripDetailTime">መገናኛ 12:00 · መነሻ 12:30</strong>
+              </div>
+            </div>
+            <div class="trip-info-item">
+              <span class="trip-info-icon trip-info-icon-people">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </span>
+              <div>
+                <span class="trip-info-label">Spots left</span>
+                <strong class="trip-info-value trip-info-value-blue" id="tripDetailSpots"></strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="trip-included-card">
+            <h4>Included</h4>
+            <ul id="tripIncludedList" class="trip-included-list"></ul>
+          </div>
+
+          <button class="btn btn-orange full" id="tripRegisterBtn">Register for this trip</button>
+        </div>
       </div>
     </div>
   </div>
