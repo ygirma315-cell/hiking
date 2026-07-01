@@ -723,6 +723,25 @@ a{color:inherit;text-decoration:none}img{max-width:100%;display:block}
 .card-register{background:var(--orange);color:white;box-shadow:0 8px 18px rgba(244,122,32,.28)}
 .card-register:hover{background:var(--orange-2);transform:translateY(-2px);box-shadow:0 12px 24px rgba(244,122,32,.34)}
 
+/* --- Nature Leaf Decorations --- */
+.leaf-deco{position:absolute;pointer-events:none;z-index:0;opacity:0.07;filter:blur(4px);border-radius:0 70% 50% 40%;background:linear-gradient(135deg,#0b4d24,#2d7a3f);}
+.leaf-deco-r{border-radius:70% 0 40% 50%;background:linear-gradient(225deg,#1a6b36,#3d8a52);}
+.leaf-deco-sm{width:80px;height:50px;filter:blur(3px);opacity:0.06;}
+.leaf-deco-md{width:130px;height:75px;}
+.leaf-deco-lg{width:180px;height:95px;filter:blur(5px);opacity:0.05;}
+.leaf-deco-tl{top:-20px;left:-20px;transform:rotate(20deg);}
+.leaf-deco-tr{top:-15px;right:-15px;transform:rotate(-25deg);}
+.leaf-deco-bl{bottom:-20px;left:-15px;transform:rotate(-160deg);}
+.leaf-deco-br{bottom:-15px;right:-15px;transform:rotate(160deg);}
+.leaf-deco-side-r{top:50%;right:-10px;transform:translateY(-50%) rotate(-15deg);}
+.leaf-deco-side-l{top:40%;left:-10px;transform:translateY(-50%) rotate(15deg);}
+.hero,.discover-section,.section-warm,.register-section,.about-section,.contact-section,.about-faq-section{position:relative;overflow:hidden;}
+.hero .container,.discover-section .container,.section-warm .container,.register-section .container,.about-section .container,.contact-section .container,.about-faq-section .container,.about-grid,.discover-grid{position:relative;z-index:1;}
+@media(max-width:560px){
+  .leaf-deco{display:none;}
+  .leaf-deco-sm.leaf-deco-tl,.leaf-deco-sm.leaf-deco-bl{display:block;width:50px;height:30px;filter:blur(2px);opacity:0.05;}
+}
+
 .register-section{padding:50px 0 60px;}
 .register-section .section-heading{margin-bottom:6px;}
 .register-section .section-heading h2{font-size:clamp(2rem,3.8vw,3rem);}
