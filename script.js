@@ -36,6 +36,7 @@ const senderAccountHelp = document.getElementById("senderAccountHelp");
 const supabaseClient = window.ereftSupabaseClient ? window.ereftSupabaseClient() : null;
 const SITE_SESSION_KEY = "ereft_site_session";
 const GOOGLE_AUTH_ACTION_KEY = "ereft_google_pending_action";
+const GOOGLE_AUTH_LOGOUT_KEY = "ereft_google_logged_out";
 var currentUser = null;
 var currentProfile = null;
 var currentSessionToken = null;
@@ -44,6 +45,7 @@ var dashboardRefreshTimer = null;
 var pendingAuthAction = null;
 var selectedPackageMeta = null;
 var registrationStep = 1;
+var signingOut = false;
 
 const PAYMENT_ACCOUNTS = {
   cbe: {
@@ -528,6 +530,31 @@ function clearSiteSession() {
   localStorage.removeItem(SITE_SESSION_KEY);
 }
 
+function supabaseProjectRef() {
+  try {
+    var cfg = window.EREFT_SUPABASE || {};
+    return cfg.url ? new URL(cfg.url).hostname.split(".")[0] : "";
+  } catch (_) {
+    return "";
+  }
+}
+
+function clearSupabaseAuthStorage() {
+  var ref = supabaseProjectRef();
+  var prefixes = ref ? ["sb-" + ref + "-auth-token"] : [];
+
+  [localStorage, sessionStorage].forEach(function(storage) {
+    try {
+      Object.keys(storage).forEach(function(key) {
+        var isSupabaseAuthKey = prefixes.some(function(prefix) { return key.indexOf(prefix) === 0; });
+        if (isSupabaseAuthKey || key === GOOGLE_AUTH_ACTION_KEY) {
+          storage.removeItem(key);
+        }
+      });
+    } catch (_) {}
+  });
+}
+
 async function loadCurrentUser() {
   var saved = readStoredSiteSession();
   if (!saved) {
@@ -685,6 +712,7 @@ async function startGoogleAuth(mode) {
   }
 
   try {
+    localStorage.removeItem(GOOGLE_AUTH_LOGOUT_KEY);
     sessionStorage.setItem(GOOGLE_AUTH_ACTION_KEY, pendingAuthAction || "");
     var response = await supabaseClient.auth.signInWithOAuth({
       provider: "google",
@@ -707,6 +735,12 @@ async function completeGoogleAuth() {
   if (!supabaseClient || !supabaseClient.auth || currentSessionToken) return;
 
   try {
+    if (localStorage.getItem(GOOGLE_AUTH_LOGOUT_KEY)) {
+      await supabaseClient.auth.signOut().catch(function() {});
+      clearSupabaseAuthStorage();
+      return;
+    }
+
     var sessionResult = await supabaseClient.auth.getSession();
     var session = sessionResult && sessionResult.data && sessionResult.data.session;
     var googleUser = session && session.user;
@@ -728,6 +762,9 @@ async function completeGoogleAuth() {
 
     var action = sessionStorage.getItem(GOOGLE_AUTH_ACTION_KEY) || pendingAuthAction;
     sessionStorage.removeItem(GOOGLE_AUTH_ACTION_KEY);
+    if (window.location.hash || window.location.search) {
+      history.replaceState(null, "", getGoogleRedirectUrl());
+    }
     showSuccessToast("Signed in with Google!");
     await handleSignedIn(action);
     pendingAuthAction = null;
@@ -742,19 +779,48 @@ async function completeGoogleAuth() {
 }
 
 async function signOutUser() {
+  if (signingOut) return;
+  signingOut = true;
+  var logoutButton = document.getElementById("profileLogoutBtn");
+  var originalLogoutText = logoutButton ? logoutButton.textContent : "";
+  if (logoutButton) {
+    logoutButton.disabled = true;
+    logoutButton.textContent = "Logging out...";
+  }
+
   stopDashboardLiveRefresh();
   userBookings = [];
   var token = currentSessionToken;
-  if (supabaseClient && token) {
-    supabaseClient.rpc("user_logout", { p_session_token:token }).catch(function() {});
-  }
-  if (supabaseClient && supabaseClient.auth) {
-    supabaseClient.auth.signOut().catch(function() {});
+  localStorage.setItem(GOOGLE_AUTH_LOGOUT_KEY, String(Date.now()));
+  if (window.location.hash.indexOf("access_token") !== -1 || window.location.search.indexOf("code=") !== -1) {
+    history.replaceState(null, "", getGoogleRedirectUrl());
   }
   clearSiteSession();
+  clearSupabaseAuthStorage();
   updateAuthUI();
   closeModals();
-  showSiteNotice("Logged out.", "success");
+
+  try {
+    var tasks = [];
+    if (supabaseClient && token) {
+      tasks.push(supabaseClient.rpc("user_logout", { p_session_token:token }));
+    }
+    if (supabaseClient && supabaseClient.auth) {
+      tasks.push(supabaseClient.auth.signOut());
+    }
+    await Promise.allSettled(tasks);
+    clearSupabaseAuthStorage();
+    showSiteNotice("Logged out.", "success");
+  } catch (error) {
+    console.error("Logout cleanup failed:", error);
+    showSiteNotice("Logged out on this device.", "success");
+  } finally {
+    if (logoutButton) {
+      logoutButton.disabled = false;
+      logoutButton.textContent = originalLogoutText || "Logout";
+    }
+    signingOut = false;
+  }
 }
 
 async function loadUserBookings() {
@@ -1520,7 +1586,12 @@ function setupFormsAndModals() {
   document.getElementById("profileInboxBtn").addEventListener("click", function() { toggleProfileMenu(false); openInbox(); });
   document.getElementById("profileDashBtn").addEventListener("click", function() { toggleProfileMenu(false); openDashboard(); });
   document.getElementById("profileSettingsBtn").addEventListener("click", function() { toggleProfileMenu(false); openUserSettings(); });
-  document.getElementById("profileLogoutBtn").addEventListener("click", function(e) { e.preventDefault(); e.stopPropagation(); toggleProfileMenu(false); signOutUser(); });
+  document.getElementById("profileLogoutBtn").addEventListener("click", async function(e) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    toggleProfileMenu(false);
+    await signOutUser();
+  });
   document.getElementById("dashboardRefreshButton").addEventListener("click", () => refreshDashboard(false));
   document.getElementById("successViewDashboardButton").addEventListener("click", function() {
     closeModals();
